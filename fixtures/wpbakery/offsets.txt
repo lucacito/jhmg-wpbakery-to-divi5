@@ -1,0 +1,1 @@
+[vc_row][vc_column width="1/2" offset="vc_col-lg-4 vc_col-md-6 vc_hidden-xs"][vc_column_text]Responsive column[/vc_column_text][/vc_column][vc_column width="1/2" offset="vc_col-sm-offset-2"][vc_column_text]Inset column[/vc_column_text][/vc_column][/vc_row]

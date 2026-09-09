@@ -1,0 +1,1 @@
+Intro paragraph outside the builder.[vc_row][vc_column]Loose text in a column [1] and more.[vc_column_text]Proper text[/vc_column_text][/vc_column][/vc_row]

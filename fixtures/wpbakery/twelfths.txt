@@ -1,0 +1,1 @@
+[vc_row][vc_column width="5/12"][vc_column_text]Five[/vc_column_text][/vc_column][vc_column width="7/12"][vc_column_text]Seven[/vc_column_text][/vc_column][/vc_row]

@@ -375,6 +375,13 @@ if ( ! function_exists( '__' ) ) { function __( string $text, string $domain = '
 if ( ! function_exists( '_x' ) ) { function _x( string $text, string $context, string $domain = 'default' ): string { return $text; } }
 if ( ! function_exists( '_n' ) ) { function _n( string $single, string $plural, int $number, string $domain = 'default' ): string { return $number === 1 ? $single : $plural; } }
 if ( ! function_exists( 'wp_kses_post' ) ) { function wp_kses_post( $t ): string { return (string) $t; } }
+if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    function wp_strip_all_tags( $text, $remove_breaks = false ) {
+        $text = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text );
+        $text = strip_tags( (string) $text ); // phpcs:ignore
+        return $remove_breaks ? trim( preg_replace( '/[\\r\\n\\t ]+/', ' ', $text ) ) : $text;
+    }
+}
 if ( ! function_exists( 'wp_json_encode' ) ) { function wp_json_encode( $data, $options = 0, $depth = 512 ) { return json_encode( $data, $options, $depth ); } }
 if ( ! function_exists( 'wp_slash' ) ) { function wp_slash( $value ) { return is_string( $value ) ? addslashes( $value ) : $value; } }
 if ( ! function_exists( 'wp_unslash' ) ) { function wp_unslash( $v ) { return is_string( $v ) ? stripslashes( $v ) : $v; } }

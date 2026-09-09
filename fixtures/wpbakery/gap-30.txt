@@ -1,0 +1,1 @@
+[vc_row gap="30"][vc_column width="1/3"][vc_column_text]One[/vc_column_text][/vc_column][vc_column width="1/3"][vc_column_text]Two[/vc_column_text][/vc_column][vc_column width="1/3"][vc_column_text]Three[/vc_column_text][/vc_column][/vc_row]

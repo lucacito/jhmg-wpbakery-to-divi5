@@ -1,0 +1,962 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "1_2,1_2"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "12_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "1_2"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_column_text-1",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Left text block.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_btn-1",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_btn --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_btn\">Left button</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "vc_column-2",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "12_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "1_2"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_column_text-2",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Right text block.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_single_image-1",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_single_image --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_single_image\"></div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "vc_row-2-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "40px",
+                                            "right": "0px",
+                                            "bottom": "40px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            },
+                            "background": {
+                                "desktop": {
+                                    "value": {
+                                        "color": "#f1f5f9"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-2",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "15px",
+                                                    "right": "0px",
+                                                    "bottom": "15px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "30px",
+                                                "rowGap": "30px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "1_3,1_3,1_3"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-3",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "background": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "color": "#ffffff"
+                                                    }
+                                                }
+                                            },
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "8_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "35px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "1_3"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_column_text-3",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Filled column one.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "vc_column-4",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "background": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "color": "#ffffff"
+                                                    }
+                                                }
+                                            },
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "8_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "35px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "1_3"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_column_text-4",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Filled column two.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "vc_column-5",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "8_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "35px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "1_3"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_column_text-5",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Plain column three.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "vc_row-3-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-3",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "4_4"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-6",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "35px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "4_4"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_column_text-6",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "0px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Zero-margin text.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_column_text-7",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Following text.</div>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_row_inner-1",
+                                        "name": "divi/row",
+                                        "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "padding": {
+                                                                    "top": "0px",
+                                                                    "right": "0px",
+                                                                    "bottom": "0px",
+                                                                    "left": "0px",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                },
+                                                                "margin": {
+                                                                    "top": "0px",
+                                                                    "right": "-15px",
+                                                                    "bottom": "0px",
+                                                                    "left": "-15px",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "layout": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "columnGap": "0px",
+                                                                "rowGap": "0px"
+                                                            }
+                                                        }
+                                                    },
+                                                    "sizing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "width": "calc(100% + 30px)",
+                                                                "maxWidth": "none"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "advanced": {
+                                                    "columnStructure": {
+                                                        "desktop": {
+                                                            "value": "1_2,1_2"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": [
+                                            {
+                                                "id": "vc_column_inner-1",
+                                                "name": "divi/column",
+                                                "settings": {
+                                                    "module": {
+                                                        "decoration": {
+                                                            "sizing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "flexType": "12_24"
+                                                                    }
+                                                                },
+                                                                "phone": {
+                                                                    "value": {
+                                                                        "flexType": "24_24"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "spacing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "padding": {
+                                                                            "top": "0px",
+                                                                            "right": "15px",
+                                                                            "bottom": "0px",
+                                                                            "left": "15px",
+                                                                            "syncVertical": "off",
+                                                                            "syncHorizontal": "off"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "layout": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "rowGap": "0px"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "type": {
+                                                                "desktop": {
+                                                                    "value": "1_2"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": [
+                                                    {
+                                                        "id": "vc_column_text-8",
+                                                        "name": "divi/code",
+                                                        "settings": {
+                                                            "content": {
+                                                                "innerContent": {
+                                                                    "desktop": {
+                                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Inner left.</div>"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "elements": []
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "id": "vc_column_inner-2",
+                                                "name": "divi/column",
+                                                "settings": {
+                                                    "module": {
+                                                        "decoration": {
+                                                            "sizing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "flexType": "12_24"
+                                                                    }
+                                                                },
+                                                                "phone": {
+                                                                    "value": {
+                                                                        "flexType": "24_24"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "spacing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "padding": {
+                                                                            "top": "0px",
+                                                                            "right": "15px",
+                                                                            "bottom": "0px",
+                                                                            "left": "15px",
+                                                                            "syncVertical": "off",
+                                                                            "syncHorizontal": "off"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "layout": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "rowGap": "0px"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "type": {
+                                                                "desktop": {
+                                                                    "value": "1_2"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": [
+                                                    {
+                                                        "id": "vc_column_text-9",
+                                                        "name": "divi/code",
+                                                        "settings": {
+                                                            "content": {
+                                                                "innerContent": {
+                                                                    "desktop": {
+                                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Inner right.</div>"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "elements": []
+                                                    }
+                                                ]
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": [
+        {
+            "id": "vc_column_text-1",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_btn-1",
+            "tag": "vc_btn"
+        },
+        {
+            "id": "vc_column_text-2",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_single_image-1",
+            "tag": "vc_single_image"
+        },
+        {
+            "id": "vc_column_text-3",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_column_text-4",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_column_text-5",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_column_text-6",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_column_text-7",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_column_text-8",
+            "tag": "vc_column_text"
+        },
+        {
+            "id": "vc_column_text-9",
+            "tag": "vc_column_text"
+        }
+    ]
+}

@@ -1,0 +1,1 @@
+[vc_section el_id="intro" css=".vc_custom_1600000000000{padding-top: 40px !important;padding-bottom: 40px !important;background-color: #f5f5f5 !important;}"][vc_row][vc_column][vc_column_text]First row[/vc_column_text][/vc_column][/vc_row][vc_row equal_height="yes" content_placement="middle"][vc_column][vc_column_text]Second row[/vc_column_text][/vc_column][/vc_row][/vc_section]
