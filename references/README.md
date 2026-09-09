@@ -13,5 +13,11 @@ Not committed. The Docker environment and the schema documentation expect these 
   `ult_content_box`).
 - `layouts-for-wpbakery.1.1.5.zip` — the free Layouts for WPBakery plugin; its public API is where
   `scripts/fetch-layouts-corpus.php` downloads the 35-layout smoke corpus from.
+- `themeforest-KBeonkGF-the-retailer-…-wordpress-theme.zip` — The Retailer 10.0.13 (Get Bowtied), a
+  WPBakery-based WooCommerce theme. The "installable WordPress file" download: it holds the theme only,
+  no demo pages. Its WPBakery elements live in the separate "The Retailer Extender" plugin
+  (`https://getbowtied.github.io/repository/plugins/the-retailer-extender/the-retailer-extender.zip`,
+  10.0.6), which is the source for the "The Retailer" theme family in `Helpers\ThemeShortcodes`. The
+  theme's demo-content WXR belongs in `wpbakery templates/` once obtained.
 
 `scripts/docker/setup_wp.sh` stops with instructions when `Divi.zip` or `js_composer.9.0.1.zip` is missing.
