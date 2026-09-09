@@ -26,17 +26,31 @@ if ( '' === $content ) {
     exit( 1 );
 }
 
-// wp_update_post() unslashes its input; without wp_slash() the JSON escapes
-// inside block attributes lose their backslashes and the page renders
-// "u003Cp" where a paragraph should be.
-wp_update_post( [
-    'ID'           => $page_id,
-    'post_content' => wp_slash( $content ),
-] );
+$post = get_post( $page_id );
+if ( ! $post ) {
+    fwrite( STDERR, "No post {$page_id}\n" );
+    exit( 1 );
+}
 
 $version = defined( 'ET_BUILDER_VERSION' ) ? ET_BUILDER_VERSION : '';
 if ( '' === $version ) {
     fwrite( STDERR, "ET_BUILDER_VERSION is not defined — is Divi active?\n" );
+    exit( 1 );
+}
+
+// wp_update_post() unslashes its input; without wp_slash() the JSON escapes
+// inside block attributes lose their backslashes and the page renders
+// "u003Cp" where a paragraph should be.
+$updated = wp_update_post( [
+    'ID'           => $page_id,
+    'post_content' => wp_slash( $content ),
+], true );
+if ( is_wp_error( $updated ) ) {
+    fwrite( STDERR, "wp_update_post failed for page {$page_id}: " . $updated->get_error_message() . "\n" );
+    exit( 1 );
+}
+if ( ! $updated ) {
+    fwrite( STDERR, "wp_update_post failed for page {$page_id}\n" );
     exit( 1 );
 }
 

@@ -26,12 +26,26 @@ if ( ! file_exists( $file ) ) {
 
 $content = (string) file_get_contents( $file );
 
+$post = get_post( $page_id );
+if ( ! $post ) {
+    fwrite( STDERR, "No post {$page_id}\n" );
+    exit( 1 );
+}
+
 // wp_update_post() unslashes its input; without wp_slash() any backslash in
 // the shortcode string (and in Divi block JSON later) is eaten.
-wp_update_post( [
+$updated = wp_update_post( [
     'ID'           => $page_id,
     'post_content' => wp_slash( $content ),
-] );
+], true );
+if ( is_wp_error( $updated ) ) {
+    fwrite( STDERR, "wp_update_post failed for page {$page_id}: " . $updated->get_error_message() . "\n" );
+    exit( 1 );
+}
+if ( ! $updated ) {
+    fwrite( STDERR, "wp_update_post failed for page {$page_id}\n" );
+    exit( 1 );
+}
 
 // 'true' (the string) is what WPBakery writes when the builder owns the post.
 update_post_meta( $page_id, '_wpb_vc_js_status', 'true' );

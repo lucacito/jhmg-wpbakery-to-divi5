@@ -41,13 +41,13 @@
   `0 15px` (plus `35px` on top when the row is filled **and** on the columns of the row that follows
   a filled row) and `layout.rowGap` `0px`. Gaps are written `"0px"`, never `"0"` — Divi tests the
   value for truthiness. Default element spacing is a module bottom margin taken from
-  `js_composer.min.css` per element (35 px `.wpb_content_element`/`.vc_icon_element`, 21.74 px
-  `.vc_btn3-container`/`.vc_message_box`/`.vc_toggle_content`, none on inner rows or
-  `vc_custom_heading`), written at the path that module reads — `module.advanced.spacing` for
-  `divi/image`, `module.decoration.spacing` elsewhere; check the module's own source before choosing,
-  the same rule as every other attribute path. Blocks built by a handler's `delegate()` are pieces of
-  one element and get no default margins. All of it sits behind `wbdc_layout_defaults`
-  (`GlobalSettingsResolver`).
+  `js_composer.min.css` per element (35 px `.wpb_content_element`/`.vc_icon_element`, buttons 22px
+  (`.vc_do_btn`, which overrides the stylesheet's 21.74px), 21.74 px `.vc_message_box`/
+  `.vc_toggle_content`, none on inner rows or `vc_custom_heading`), written at the path that module
+  reads — `module.advanced.spacing` for `divi/image`, `module.decoration.spacing` elsewhere; check
+  the module's own source before choosing, the same rule as every other attribute path. Blocks built
+  by a handler's `delegate()` are pieces of one element and get no default margins. All of it sits
+  behind `wbdc_layout_defaults` (`GlobalSettingsResolver`).
 - Expected fixtures are a reviewed specification, not a snapshot: run
   `php scripts/render-fixture.php fixtures/wpbakery/<name>.txt --report`, read the output, then
   `php scripts/update-expected.php <name>`.

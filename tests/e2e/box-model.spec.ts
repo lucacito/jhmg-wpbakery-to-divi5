@@ -78,10 +78,13 @@ async function measure(page: import('@playwright/test').Page, kind: 'wpbakery' |
     };
     const round = (n: number) => Math.round(n * 100) / 100;
 
-    // Divi's theme container: 80% of the viewport, capped at 1080px, centred.
-    // `.container` (WPBakery page) and `.et_pb_row` (Divi page) both use it.
-    const docWidth = document.documentElement.clientWidth;
-    const containerLeft = round((docWidth - Math.min(docWidth * 0.8, 1080)) / 2);
+    // Measured, not derived: `#main-header .container` renders on every page
+    // built with this theme (WPBakery page and Divi candidates alike), sharing
+    // the same `.container{width:80%;max-width:1080px;margin:auto}` rule as
+    // `.et_pb_row`, so its left edge is a real cross-page theme-container
+    // measurement rather than a re-derivation of Divi's row-width formula.
+    const containerEl = document.querySelector('#main-header .container');
+    const containerLeft = containerEl ? round(geom(containerEl).left) : NaN;
 
     const rows = Array.from(document.querySelectorAll(sel.row));
     const out: any[] = [];
@@ -206,11 +209,16 @@ test.describe.serial('WPBakery box model versus three Divi 5 candidates', () => 
   }
 
   test.afterAll(() => {
-    fs.writeFileSync(
-      path.join(rootDir, 'test-results', 'box-model.json'),
-      JSON.stringify({ pages, viewport: 1280, results }, null, 2)
-    );
-    // eslint-disable-next-line no-console
-    console.log(JSON.stringify(results, null, 2));
+    const requiredSubjects = ['wpbakery', 'divi-a', 'divi-b', 'divi-c'];
+    for (const subject of requiredSubjects) {
+      if (!results[subject]) {
+        throw new Error(`box-model.json not written: missing measurement for "${subject}"`);
+      }
+    }
+    const payload = JSON.stringify({ pages, viewport: 1280, results }, null, 2);
+    // test-results/ is wiped at the start of every Playwright run; docs/box-model.json
+    // is the committed copy docs/box-model.md cites.
+    fs.writeFileSync(path.join(rootDir, 'test-results', 'box-model.json'), payload);
+    fs.writeFileSync(path.join(rootDir, 'docs', 'box-model.json'), payload);
   });
 });

@@ -7,8 +7,9 @@ what three hand-written Divi 5 documents render beside it, and which of them the
 Every number below was measured in Chromium at a **1280 px viewport** on the Docker site
 (`scripts/docker/setup_wp.sh`, WordPress 7.1 · Divi 5.12.1 · WPBakery 9.0.1) by
 `tests/e2e/box-model.spec.ts` (`BOX_MODEL=1 npx playwright test tests/e2e/box-model.spec.ts`).
-The raw output is `test-results/box-model.json`; the screenshots are
-`tests/e2e/screenshots/box-model-{wpbakery,divi-a,divi-b,divi-c}.png`.
+The raw output is committed at `docs/box-model.json` (the spec also writes the same payload to
+`test-results/box-model.json`, which Playwright wipes at the start of every run); the screenshots
+are `tests/e2e/screenshots/box-model-{wpbakery,divi-a,divi-b,divi-c}.png`.
 
 The WPBakery page renders through Divi's page template with `_et_pb_page_layout = et_no_sidebar`, so
 both subjects sit in the identical theme container: `.container` and `.et_pb_row` are both
@@ -71,14 +72,21 @@ row) and `sizing.width` `calc(100% + 30px)` (`calc(100% + 60px)`), columns paddi
 
 ## Measurements (1280 px viewport)
 
-`container left edge` is the theme container's left edge (128 px). `content left edge` is the first
+`container left edge` is measured directly, not derived: `#main-header .container` renders on every
+page built with this theme (WPBakery page and Divi candidates alike) and shares the same
+`.container{width:80%;max-width:1080px;margin:auto}` rule as `.et_pb_row`, so its
+`getBoundingClientRect().left` (128 px) is a real cross-page reading of the shared theme container.
+`content left edge` is the first
 module's content-box left edge in the row's first column; `content inset` is the difference between
 the two — **WPBakery's is 0: its content sits flush with the container.** `column content gap` is the
 horizontal distance between column one's and column two's module content boxes; `column box gap` the
 distance between the two painted column backgrounds; `column top padding` the distance from the
-column box's top edge to its first module.
+column box's top edge to its first module. `row height` measures a different element per side —
+`.vc_row` for WPBakery, the enclosing `.et_pb_section` for the three Divi candidates — because that
+is where each side's design-options padding lives: on `.vc_column-inner` (a descendant of `.vc_row`)
+for WPBakery, on the section itself for the candidates.
 
-| measurement | WPBakery | A | B | **C** |
+| measurement | WPBakery | Candidate A | Candidate B | Candidate C — chosen |
 |---|---|---|---|---|
 | container left edge | 128 | 128 | 128 | 128 |
 | **row 1** row box left / width | 113 / 1054 | 100 / 1080 | 128 / 1024 | **113 / 1054** |
@@ -103,6 +111,10 @@ column box's top edge to its first module.
 | nested row box left / width | 113 / 1054 | 100 / 1080 | 143 / 994 | **113 / 1054** |
 | nested content left − parent content left | **0** | 0 | +15 | **0** |
 | image module computed `margin-bottom` | 35px | 0px | 0px | **35px** |
+
+*A bolded value equals WPBakery's on that row (not every tie is marked — see the row-by-row analysis
+below). **The converter follows Candidate C** — see "The decision" below for why, and "Deltas
+candidate C does not close" for the rows where no candidate reproduces WPBakery's number.*
 
 ## The decision
 

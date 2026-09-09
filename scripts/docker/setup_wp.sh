@@ -61,7 +61,7 @@ for s in set-wpbakery-content.php set-divi-content.php import-wpb-template.php c
 done
 
 echo "Seeding and converting a fixture page..."
-PAGE_ID=$(run "wp post list --post_type=page --name=wpbakery-source --field=ID --allow-root" | head -n1)
+PAGE_ID=$(run "wp post list --post_type=page --name=wpbakery-source --field=ID --allow-root" | sed -n 1p)
 if [ -z "$PAGE_ID" ]; then
   PAGE_ID=$(run "wp post create --post_type=page --post_status=publish --post_name=wpbakery-source --post_title='Box Model (WPBakery)' --porcelain --allow-root")
 fi
