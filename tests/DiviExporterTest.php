@@ -49,6 +49,14 @@ final class DiviExporterTest extends TestCase {
         $this->assertSame( 1, json_decode( get_post_meta( $post_id, '_wbdc_conversion_report', true ), true )['converted']['section'] );
     }
 
+    public function test_save_fails_without_writing_meta_when_the_post_cannot_be_updated(): void {
+        $converted = ( new ConverterEngine() )->convert( [ 'content' => '[vc_row][vc_column][/vc_column][/vc_row]' ] );
+
+        // 4242 is not in $GLOBALS['__test_posts'], so wp_update_post() fails.
+        $this->assertFalse( ( new DiviExporter() )->save( 4242, $converted ) );
+        $this->assertSame( '', get_post_meta( 4242, '_et_pb_use_divi_5', true ), 'a post that took no content is not marked as a Divi 5 page' );
+    }
+
     public function test_save_records_the_source_post(): void {
         $converted = ( new ConverterEngine() )->convert( [ 'content' => '[vc_row][vc_column][/vc_column][/vc_row]' ] );
         $post_id   = wp_insert_post( [ 'post_type' => 'page', 'post_content' => '' ] );

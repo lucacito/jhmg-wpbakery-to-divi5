@@ -68,11 +68,19 @@ class SectionConverter extends BaseWPBakeryConverter {
         $settings = $this->deepMergeSettings( $style['divi_attrs'], $this->heightAttrs( $atts ) );
         $settings = $this->deepMergeSettings( $settings, $this->contentPosition( $atts ) );
         $settings = $row->parallaxBackground( $id, $atts, $settings );
-        $settings = self::fillSectionPadding( $settings );
+        $settings = self::fillSectionPadding(
+            $settings,
+            ! empty( $node['filled'] ) || ! empty( $node['after_filled'] ) || RowConverter::isFilled( $node )
+        );
         $row->reportBackgrounds( $id, $atts );
+
+        $stretch = $this->stretch( $atts );
 
         $blocks = [];
         foreach ( $rows as $row_node ) {
+            if ( $stretch !== '' ) {
+                $row_node['section_stretch'] = $stretch;
+            }
             foreach ( ConverterEngine::asList( $this->engine->convertNode( $row_node ) ) as $block ) {
                 $blocks[] = $block;
             }
@@ -114,6 +122,9 @@ class SectionConverter extends BaseWPBakeryConverter {
 
             $blocks = ConverterEngine::asList( $this->engine->convertNode( $row_node ) );
             if ( $blocks === [] ) {
+                // Nothing a row handler produced: it has no section to live in.
+                $this->engine->logWarning( "empty row {$id} dropped: its handler produced no block to put in a section." );
+
                 continue;
             }
 
@@ -226,15 +237,45 @@ class SectionConverter extends BaseWPBakeryConverter {
         ] ] ] ] ] ];
     }
 
-    /** WPBakery contributes no section padding; every side its design options left blank is zero. */
-    public static function fillSectionPadding( array $attrs ): array {
+    /**
+     * How far a section stretches its rows.
+     *
+     * WPBakery marks a stretched section `data-vc-full-width`, and
+     * `stretch_row_content` also `data-vc-stretch-content`, which drops the
+     * section's own `padding-left/right: 15px`
+     * (`.vc_section[data-vc-stretch-content]`) so its rows run edge to edge.
+     * A Divi section is already full-bleed with no padding of its own, so
+     * `stretch_row` needs nothing extra and the content variants hand their
+     * rows the same geometry a row's own `full_width` would.
+     *
+     * The dropdown offers only `stretch_row` and `stretch_row_content`
+     * (`config/containers/shortcode-vc-section.php`), but a hand-edited
+     * document can carry the row's `_no_spaces` value, so it is honoured.
+     */
+    private function stretch( array $atts ): string {
+        return match ( $this->att( $atts, 'full_width' ) ) {
+            'stretch_row_content'           => 'content',
+            'stretch_row_content_no_spaces' => 'no_spaces',
+            default                         => '',
+        };
+    }
+
+    /**
+     * WPBakery contributes no section padding of its own — except the 35px on
+     * top of a section that paints a background or border, and on the section
+     * right after it (`.vc_section.vc_section-has-fill`,
+     * `.vc_section.vc_section-has-fill + .vc_section`, and the same across the
+     * full-width spacer div; `js_composer.min.css`). Every other blank side is
+     * zero, and a side the design options set keeps its value.
+     */
+    public static function fillSectionPadding( array $attrs, bool $filled = false ): array {
         $default = GlobalSettingsResolver::sectionPadding();
         $padding = $attrs['module']['decoration']['spacing']['desktop']['value']['padding'] ?? [];
         $padding = is_array( $padding ) ? $padding : [];
 
         foreach ( [ 'top', 'right', 'bottom', 'left' ] as $side ) {
             if ( ! isset( $padding[ $side ] ) || $padding[ $side ] === '' ) {
-                $padding[ $side ] = $default;
+                $padding[ $side ] = $side === 'top' && $filled ? GlobalSettingsResolver::filledColumnPaddingTop() : $default;
             }
         }
 

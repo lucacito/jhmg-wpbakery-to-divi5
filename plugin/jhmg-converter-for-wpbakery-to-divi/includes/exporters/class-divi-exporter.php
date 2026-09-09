@@ -46,6 +46,11 @@ class DiviExporter {
         return $meta;
     }
 
+    /**
+     * @return bool False when the post could not be written — the meta is not
+     *   written either, so a half-converted post never claims to be a Divi 5
+     *   page it has no content for.
+     */
     public function save( int $post_id, array $divi_data, int $source_post_id = 0 ): bool {
         $meta         = $this->export( $divi_data );
         $post_content = $this->serializer->serialize( $divi_data );
@@ -53,10 +58,14 @@ class DiviExporter {
         // wp_update_post() unslashes its input; without wp_slash() the JSON
         // escapes inside block attributes lose their backslashes and the page
         // renders "u003Cp" where a paragraph should be.
-        wp_update_post( [
+        $updated = wp_update_post( [
             'ID'           => $post_id,
             'post_content' => wp_slash( $post_content ),
-        ] );
+        ], true );
+
+        if ( is_wp_error( $updated ) || ! $updated ) {
+            return false;
+        }
 
         foreach ( $meta as $key => $value ) {
             update_post_meta( $post_id, $key, $value );

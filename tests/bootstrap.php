@@ -42,6 +42,7 @@ if ( ! function_exists( 'wbdc_test_reset_hooks' ) ) {
         $GLOBALS['__test_transients'] = [];
         $GLOBALS['__test_attachments'] = [];
         $GLOBALS['__test_rendered_shortcodes'] = [];
+        $GLOBALS['__test_is_rtl'] = false;
         if ( function_exists( 'wbdc_test_reset_divi' ) ) {
             wbdc_test_reset_divi();
         }
@@ -314,6 +315,8 @@ if ( ! function_exists( 'get_user_meta' ) ) {
 // --- environment ------------------------------------------------------------
 
 if ( ! function_exists( 'is_admin' ) ) { function is_admin() { return false; } }
+// Tests set $GLOBALS['__test_is_rtl'] to switch the site's text direction.
+if ( ! function_exists( 'is_rtl' ) ) { function is_rtl() { return ! empty( $GLOBALS['__test_is_rtl'] ); } }
 if ( ! function_exists( 'is_singular' ) ) { function is_singular() { return false; } }
 if ( ! function_exists( 'is_customize_preview' ) ) { function is_customize_preview() { return false; } }
 if ( ! function_exists( 'current_user_can' ) ) {

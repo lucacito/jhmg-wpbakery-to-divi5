@@ -34,6 +34,10 @@ class TextNodeConverter extends BaseWPBakeryConverter {
         $this->engine->logTextNode();
         $this->engine->logConverted( 'text' );
 
+        // A text node carries no attributes, so this reports nothing — but
+        // every handler calls it, and an invariant with an exception is not one.
+        $this->logUnmappedSettings( (string) ( $node['id'] ?? '' ), is_array( $node['atts'] ?? null ) ? $node['atts'] : [] );
+
         return $this->block( (string) ( $node['id'] ?? uniqid( 'wbdc_text_' ) ), 'divi/text', [
             'content' => [ 'innerContent' => [ 'desktop' => [ 'value' => trim( Autop::apply( trim( $text ) ) ) ] ] ],
         ] );

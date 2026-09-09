@@ -599,9 +599,13 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      */
     protected function logUnmappedSettings( string $node_id, array $atts, array $consumed = [], string $tag = '' ): void {
         static $always_ignore = [
+            // The StyleMapper owns these five and reports what it could not
+            // express — `css_animation` under `animation`, `disable_element`
+            // under `visibility`, leftover `css` under `custom_css_carried` —
+            // so a handler naming them again would report them twice.
             'css_animation', 'el_class', 'el_id', 'css', 'disable_element',
+            // Editor-only labels and generated ids: nothing renders from them.
             'row_title', 'flexbox_container_title', 'grid_container_title', 'section_index', 'tab_id',
-            'img_link_large',
         ];
 
         foreach ( $atts as $key => $value ) {

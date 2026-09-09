@@ -51,6 +51,7 @@ class ThemeShortcodeConverter extends BaseWPBakeryConverter {
         }
 
         $is_core = ThemeShortcodes::isCore( $tag );
+        $reason  = '';
 
         if ( $is_core ) {
             // Already recorded under `unsupported` by the engine; a second
@@ -60,10 +61,11 @@ class ThemeShortcodeConverter extends BaseWPBakeryConverter {
             );
         } else {
             $family = ThemeShortcodes::family( $tag );
+            $reason = $family['kind'];
             $this->engine->logThemeElement( $family['label'], $id, $tag );
         }
 
-        $copy = $this->staticCopy( $node, $is_core ? '' : ThemeShortcodes::family( $tag )['kind'] );
+        $copy = $this->staticCopy( $node, $reason );
 
         // The element's own design options still apply to the block that
         // stands in for it — but not WPBakery's default element margin: the

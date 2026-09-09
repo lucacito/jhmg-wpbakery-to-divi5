@@ -38,6 +38,13 @@ class RowConverter extends BaseWPBakeryConverter {
         'stretch' => 'stretch',
     ];
 
+    /** `content_placement` ⇒ the row `alignItems` it sets on a non-equal-height row. */
+    private const CONTENT_PLACEMENT = [
+        'top'    => 'flex-start',
+        'middle' => 'center',
+        'bottom' => 'flex-end',
+    ];
+
     /** WPBakery's `parallax` values ⇒ Divi's `image.parallax.method`. */
     private const PARALLAX_METHOD = [
         'content-moving'      => 'on',
@@ -58,7 +65,7 @@ class RowConverter extends BaseWPBakeryConverter {
         $lifted = ! empty( $node['lifted'] );
 
         $consumed = [ 'gap', 'equal_height', 'columns_placement', 'content_placement', 'rtl_reverse', 'full_width' ];
-        $settings = $this->geometry( $atts );
+        $settings = $this->geometry( $node, $atts );
 
         // A row whose design options went to the section keeps only its
         // layout; one that stands on its own paints them here.
@@ -73,7 +80,7 @@ class RowConverter extends BaseWPBakeryConverter {
             $consumed = array_merge( $consumed, StyleMapper::COMMON_KEYS, self::SECTION_KEYS );
         }
 
-        $settings = $this->deepMergeSettings( $settings, $this->layoutAttrs( $atts ) );
+        $settings = $this->deepMergeSettings( $settings, $this->layoutAttrs( $id, $atts ) );
 
         $columns = $this->convertColumns( $id, $node, $atts );
         $settings = $this->deepMergeSettings( $settings, $this->rowSettingsFromColumns( $columns ) );
@@ -179,9 +186,13 @@ class RowConverter extends BaseWPBakeryConverter {
      * `stretch_row_content` and `…_no_spaces` widen the row itself to 100 %
      * with no bleed (the no-spaces variant also drops the column side padding,
      * `.vc_row-no-padding .vc_column-inner`, which the columns are told about).
+     *
+     * A `vc_section` stretches the rows inside it the same way — its own
+     * `full_width` is what carries `data-vc-stretch-content` — and passes its
+     * choice down on the node as `section_stretch`.
      */
-    protected function geometry( array $atts ): array {
-        $settings = in_array( $this->att( $atts, 'full_width' ), [ 'stretch_row_content', 'stretch_row_content_no_spaces' ], true )
+    protected function geometry( array $node, array $atts ): array {
+        $settings = $this->stretched( $node, $atts )
             ? self::stretchedRowSettings()
             : $this->baseGeometry();
 
@@ -201,25 +212,82 @@ class RowConverter extends BaseWPBakeryConverter {
         return self::containerRowSettings();
     }
 
-    /** `equal_height`, `columns_placement` and `rtl_reverse` — how the columns sit. */
-    private function layoutAttrs( array $atts ): array {
-        $layout = [];
+    /** Whether this row runs the full width of its section — its own doing, or its section's. */
+    private function stretched( array $node, array $atts ): bool {
+        return in_array( $this->att( $atts, 'full_width' ), [ 'stretch_row_content', 'stretch_row_content_no_spaces' ], true )
+            || in_array( (string) ( $node['section_stretch'] ?? '' ), [ 'content', 'no_spaces' ], true );
+    }
+
+    /** Whether the columns lose their side padding — `_no_spaces`, from either level. */
+    private function noSpaces( array $node, array $atts ): bool {
+        return $this->att( $atts, 'full_width' ) === 'stretch_row_content_no_spaces'
+            || (string) ( $node['section_stretch'] ?? '' ) === 'no_spaces';
+    }
+
+    /**
+     * `content_placement`, `equal_height`, `columns_placement` and
+     * `rtl_reverse` — how the columns sit, in the order WPBakery's own
+     * stylesheet resolves them.
+     *
+     * `content_placement` has two halves. It sets `justify-content` on
+     * `.vc_column-inner`, which is where the column's modules sit — the Divi
+     * column's own `justifyContent`, written by `ColumnConverter` — and, only
+     * when the row is not equal-height, `align-items` on `.vc_column_container`
+     * (`.vc_row-o-content-*:not(.vc_row-o-equal-height) > .vc_column_container`),
+     * which is where the column sits in the row: the Divi row's `alignItems`.
+     * `.vc_row-o-equal-height > .vc_column_container{align-items:stretch}`
+     * takes over when it is on, and `columns_placement` — which WPBakery only
+     * emits on a full-height row — wins over both.
+     */
+    private function layoutAttrs( string $node_id, array $atts ): array {
+        $layout    = [];
+        $placement = $this->att( $atts, 'content_placement' );
+
+        if ( isset( self::CONTENT_PLACEMENT[ $placement ] ) ) {
+            $layout['alignItems'] = self::CONTENT_PLACEMENT[ $placement ];
+        }
 
         if ( $this->on( $atts, 'equal_height' ) ) {
             $layout['alignItems'] = 'stretch';
         }
 
-        // WPBakery only emits the column-position class on a full-height row.
-        $placement = $this->att( $atts, 'columns_placement' );
-        if ( $this->on( $atts, 'full_height' ) && isset( self::COLUMNS_PLACEMENT[ $placement ] ) ) {
-            $layout['alignItems'] = self::COLUMNS_PLACEMENT[ $placement ];
+        $columns = $this->att( $atts, 'columns_placement' );
+        if ( $this->on( $atts, 'full_height' ) && isset( self::COLUMNS_PLACEMENT[ $columns ] ) ) {
+            $layout['alignItems'] = self::COLUMNS_PLACEMENT[ $columns ];
         }
 
-        if ( $this->on( $atts, 'rtl_reverse' ) ) {
-            $layout['flexDirection'] = 'row-reverse';
-        }
+        $layout = $this->rtlReverse( $node_id, $atts, $layout );
 
         return $layout === [] ? [] : [ 'module' => [ 'decoration' => [ 'layout' => [ 'desktop' => [ 'value' => $layout ] ] ] ] ];
+    }
+
+    /**
+     * `rtl_reverse` reverses the column order — but every rule WPBakery writes
+     * for it is scoped to `[dir=rtl]` (`.vc_rtl-columns-reverse`), so on a
+     * left-to-right site it changes nothing at all. Divi's `flexDirection` is
+     * not direction-scoped, so writing it unconditionally would reverse the
+     * columns of every LTR page that happens to carry the attribute. It is
+     * written only where WPBakery would have applied it, and reported
+     * everywhere else.
+     */
+    private function rtlReverse( string $node_id, array $atts, array $layout ): array {
+        if ( ! $this->on( $atts, 'rtl_reverse' ) ) {
+            return $layout;
+        }
+
+        if ( function_exists( 'is_rtl' ) && is_rtl() ) {
+            $layout['flexDirection'] = 'row-reverse';
+
+            return $layout;
+        }
+
+        $this->engine->logNotCarriedOver(
+            'layout',
+            $node_id,
+            'rtl_reverse applies only on RTL sites; this site reads left to right, so the column order is unchanged'
+        );
+
+        return $layout;
     }
 
     /** `full_height` → 100vh, `min_height` → its own value; the explicit one wins, as in WPBakery. */
@@ -304,7 +372,7 @@ class RowConverter extends BaseWPBakeryConverter {
     /** @return array<int,array<string,mixed>> */
     private function convertColumns( string $id, array $node, array $atts ): array {
         $filled       = ! empty( $node['filled'] ) || ! empty( $node['after_filled'] );
-        $no_spaces    = $this->att( $atts, 'full_width' ) === 'stretch_row_content_no_spaces';
+        $no_spaces    = $this->noSpaces( $node, $atts );
         $placement    = $this->att( $atts, 'content_placement' );
         $column_nodes = [];
 

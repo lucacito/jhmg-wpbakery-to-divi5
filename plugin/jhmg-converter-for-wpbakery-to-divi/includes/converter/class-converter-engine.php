@@ -3,6 +3,7 @@
 namespace WPBakeryDivi5Converter\Converter;
 
 use WPBakeryDivi5Converter\Converter\Registry\ConverterRegistry;
+use WPBakeryDivi5Converter\Converter\Handlers;
 use WPBakeryDivi5Converter\Helpers\Arr;
 use WPBakeryDivi5Converter\Helpers\ThemeShortcodes;
 use WPBakeryDivi5Converter\Parsers\NodeTree;
@@ -98,8 +99,11 @@ class ConverterEngine {
             );
         }
 
+        // `.vc_section-has-fill` gives the section that paints 35px of top
+        // padding and gives the *next* section the same, so the run has to be
+        // walked where "next" means something: here, at the top level.
         $elements = [];
-        foreach ( $this->convertChildren( $roots ) as $block ) {
+        foreach ( $this->convertChildren( Handlers\RowConverter::markFilled( $roots ) ) as $block ) {
             $elements[] = $this->ensureSection( $block );
         }
 
@@ -227,20 +231,33 @@ class ConverterEngine {
         return $converted;
     }
 
-    /** @param array<string,mixed> $node */
+    /**
+     * One node through its handler.
+     *
+     * A handler that throws must not cost the reader the rest of the page: a
+     * single malformed element on a ten-year-old site would otherwise abort
+     * the whole conversion. The failure is reported against the node and the
+     * generic placeholder stands in for it, so the page still converts and the
+     * report says exactly what went wrong and where.
+     *
+     * @param array<string,mixed> $node
+     */
     public function convertNode( array $node ): array {
         $converter = $this->registry->getConverter( $node );
         $tag       = (string) ( $node['tag'] ?? '' );
 
         if ( $converter instanceof ConverterInterface ) {
-            if ( ! $this->registry->isApproximate( $node ) ) {
-                return $converter->convert( $node );
+            $approximate = $this->registry->isApproximate( $node );
+
+            if ( $approximate ) {
+                $this->flagApproximate( (string) ( $node['id'] ?? '' ), $tag, $this->registry->converterName( $node ) );
+                $this->countingApproximate = true;
             }
 
-            $this->flagApproximate( (string) ( $node['id'] ?? '' ), $tag, $this->registry->converterName( $node ) );
-            $this->countingApproximate = true;
             try {
                 return $converter->convert( $node );
+            } catch ( \Throwable $e ) {
+                return $this->handlerFailed( $node, $converter, $e );
             } finally {
                 $this->countingApproximate = false;
             }
@@ -260,7 +277,40 @@ class ConverterEngine {
             $this->unsupported[] = [ 'id' => $node['id'] ?? null, 'tag' => $tag ];
         }
 
-        return $this->registry->defaultConverter( $node )->convert( $node );
+        return $this->placeholderFor( $node );
+    }
+
+    /**
+     * A handler threw. The node is reported and replaced with the placeholder
+     * every unconvertible element gets; if even that fails, the node is
+     * reported and dropped rather than taking the page with it.
+     */
+    private function handlerFailed( array $node, ConverterInterface $converter, \Throwable $e ): array {
+        $node_id = (string) ( $node['id'] ?? '' );
+        $tag     = (string) ( $node['tag'] ?? '' );
+        $handler = basename( str_replace( '\\', '/', get_class( $converter ) ) );
+        $detail  = sprintf( '%s: %s', get_class( $e ), $e->getMessage() );
+
+        $this->logWarning( "handler {$handler} failed on {$node_id} ({$tag}): {$detail}" );
+        $this->logNotCarriedOver( 'error', $node_id, "{$tag} could not be converted ({$detail}); a labelled placeholder stands in for it" );
+
+        return $this->placeholderFor( $node );
+    }
+
+    /** The generic placeholder, itself guarded: nothing here may abort a page. */
+    private function placeholderFor( array $node ): array {
+        try {
+            return $this->registry->defaultConverter( $node )->convert( $node );
+        } catch ( \Throwable $e ) {
+            $this->logWarning( sprintf(
+                'nothing could stand in for %s (%s): %s',
+                (string) ( $node['id'] ?? '' ),
+                (string) ( $node['tag'] ?? '' ),
+                $e->getMessage()
+            ) );
+
+            return [];
+        }
     }
 
     /** A handler result normalised to a list of blocks. */
@@ -306,7 +356,7 @@ class ConverterEngine {
         }
     }
 
-    /** @param string $kind animation|visibility|background|interaction|integration|custom_code|addon|layout */
+    /** @param string $kind animation|visibility|background|interaction|integration|custom_code|addon|layout|error */
     public function logNotCarriedOver( string $kind, string $node_id, string $detail ): void {
         $entry = [ 'kind' => $kind, 'node_id' => $node_id, 'detail' => $detail ];
         if ( ! in_array( $entry, $this->notCarriedOver, true ) ) {

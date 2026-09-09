@@ -153,6 +153,158 @@ final class ConverterEngineTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
+    // Sections: stretch, fill, and a handler that throws
+    // -------------------------------------------------------------------------
+
+    public function test_a_stretched_section_stretches_the_rows_inside_it(): void {
+        $result = $this->convert(
+            '[vc_section full_width="stretch_row_content"][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+        );
+
+        $sizing = $result['divi']['elements'][0]['elements'][0]['settings']['module']['decoration']['sizing']['desktop']['value'];
+        $margin = $result['divi']['elements'][0]['elements'][0]['settings']['module']['decoration']['spacing']['desktop']['value']['margin'];
+
+        $this->assertSame( '100%', $sizing['width'] );
+        $this->assertSame( 'none', $sizing['maxWidth'] );
+        $this->assertSame( '0px', $margin['left'], 'a stretched section leaves its rows no bleed' );
+    }
+
+    public function test_a_stretched_section_is_not_reported_as_a_skipped_setting(): void {
+        $result = $this->convert(
+            '[vc_section full_width="stretch_row_content"][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+        );
+
+        $this->assertSame( [], $result['report']['skipped_settings'] );
+    }
+
+    public function test_a_plain_stretch_row_section_leaves_its_rows_alone(): void {
+        $result = $this->convert(
+            '[vc_section full_width="stretch_row"][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+        );
+
+        $sizing = $result['divi']['elements'][0]['elements'][0]['settings']['module']['decoration']['sizing']['desktop']['value'];
+
+        $this->assertSame( 'calc(var(--content-width, 80%) + 30px)', $sizing['width'] );
+    }
+
+    public function test_a_no_spaces_section_zeroes_its_column_side_padding(): void {
+        $result = $this->convert(
+            '[vc_section full_width="stretch_row_content_no_spaces"][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+        );
+
+        $padding = $result['divi']['elements'][0]['elements'][0]['elements'][0]['settings']['module']['decoration']['spacing']['desktop']['value']['padding'];
+
+        $this->assertSame( '0px', $padding['left'] );
+        $this->assertSame( '0px', $padding['right'] );
+    }
+
+    public function test_a_filled_section_and_the_one_after_it_take_35px_of_top_padding(): void {
+        $result = $this->convert(
+            '[vc_section css=".vc_custom_1{background-color: #eee !important;}"][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+            . '[vc_section][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+            . '[vc_section][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+        );
+
+        $top = static fn( array $section ): string => $section['settings']['module']['decoration']['spacing']['desktop']['value']['padding']['top'];
+
+        $this->assertSame( '35px', $top( $result['divi']['elements'][0] ), 'the section that paints' );
+        $this->assertSame( '35px', $top( $result['divi']['elements'][1] ), 'the section right after it' );
+        $this->assertSame( '0px', $top( $result['divi']['elements'][2] ), 'and no further' );
+    }
+
+    public function test_a_section_that_sets_its_own_padding_top_keeps_it(): void {
+        $result = $this->convert(
+            '[vc_section css=".vc_custom_1{padding-top: 8px !important;background-color: #eee !important;}"][vc_row][vc_column][/vc_column][/vc_row][/vc_section]'
+        );
+
+        $padding = $result['divi']['elements'][0]['settings']['module']['decoration']['spacing']['desktop']['value']['padding'];
+
+        $this->assertSame( '8px', $padding['top'] );
+    }
+
+    public function test_a_handler_that_throws_costs_one_node_not_the_page(): void {
+        $engine = new ConverterEngine();
+        $engine->registry()->registerElement( 'vc_flickr', ThrowingProbeConverter::class );
+
+        $result = $engine->convert( [
+            'content' => '[vc_row][vc_column][vc_flickr][vc_gallery][/vc_column][/vc_row]',
+        ] );
+
+        // The page still converts, and the rest of it is untouched.
+        $blocks = $result['divi']['elements'][0]['elements'][0]['elements'][0]['elements'];
+        $this->assertCount( 2, $blocks );
+        $this->assertSame( 'divi/code', $blocks[0]['name'] );
+        $this->assertStringContainsString( 'vc_flickr', $blocks[0]['settings']['content']['innerContent']['desktop']['value'] );
+
+        $this->assertNotEmpty( array_filter(
+            $result['report']['warnings'],
+            static fn( string $w ): bool => str_contains( $w, 'handler ThrowingProbeConverter failed on vc_flickr-1 (vc_flickr)' )
+                && str_contains( $w, 'RuntimeException: the plugin exploded' )
+        ) );
+
+        $errors = array_values( array_filter(
+            $result['report']['not_carried_over'],
+            static fn( array $e ): bool => $e['kind'] === 'error'
+        ) );
+        $this->assertCount( 1, $errors );
+        $this->assertSame( 'vc_flickr-1', $errors[0]['node_id'] );
+    }
+
+    // -------------------------------------------------------------------------
+    // Row layout
+    // -------------------------------------------------------------------------
+
+    public function test_content_placement_aligns_the_columns_when_the_row_is_not_equal_height(): void {
+        $result = $this->convert( '[vc_row content_placement="middle"][vc_column][/vc_column][/vc_row]' );
+
+        $row    = $result['divi']['elements'][0]['elements'][0];
+        $column = $row['elements'][0];
+
+        $this->assertSame( 'center', $row['settings']['module']['decoration']['layout']['desktop']['value']['alignItems'] );
+        $this->assertSame( 'center', $column['settings']['module']['decoration']['layout']['desktop']['value']['justifyContent'] );
+    }
+
+    public function test_equal_height_wins_over_content_placement_on_the_row(): void {
+        $result = $this->convert( '[vc_row content_placement="middle" equal_height="yes"][vc_column][/vc_column][/vc_row]' );
+
+        $row = $result['divi']['elements'][0]['elements'][0];
+
+        $this->assertSame( 'stretch', $row['settings']['module']['decoration']['layout']['desktop']['value']['alignItems'] );
+        // The column half of `content_placement` still applies.
+        $this->assertSame( 'center', $row['elements'][0]['settings']['module']['decoration']['layout']['desktop']['value']['justifyContent'] );
+    }
+
+    public function test_rtl_reverse_is_written_only_on_an_rtl_site(): void {
+        $GLOBALS['__test_is_rtl'] = true;
+        $result = $this->convert( '[vc_row rtl_reverse="yes"][vc_column][/vc_column][/vc_row]' );
+
+        $this->assertSame(
+            'row-reverse',
+            $result['divi']['elements'][0]['elements'][0]['settings']['module']['decoration']['layout']['desktop']['value']['flexDirection']
+        );
+        $this->assertSame( [], array_filter(
+            $result['report']['not_carried_over'],
+            static fn( array $e ): bool => str_contains( $e['detail'], 'rtl_reverse' )
+        ) );
+    }
+
+    public function test_rtl_reverse_is_reported_on_a_left_to_right_site(): void {
+        $GLOBALS['__test_is_rtl'] = false;
+        $result = $this->convert( '[vc_row rtl_reverse="yes"][vc_column][/vc_column][/vc_row]' );
+
+        $layout = $result['divi']['elements'][0]['elements'][0]['settings']['module']['decoration']['layout']['desktop']['value'] ?? [];
+        $this->assertArrayNotHasKey( 'flexDirection', $layout );
+
+        $entries = array_values( array_filter(
+            $result['report']['not_carried_over'],
+            static fn( array $e ): bool => str_contains( $e['detail'], 'rtl_reverse' )
+        ) );
+        $this->assertCount( 1, $entries );
+        $this->assertSame( 'layout', $entries[0]['kind'] );
+        $this->assertSame( 'vc_row-1', $entries[0]['node_id'] );
+    }
+
+    // -------------------------------------------------------------------------
     // The registry, and the base-converter helpers Tasks 8 and 9 build on
     // -------------------------------------------------------------------------
 
@@ -317,6 +469,13 @@ final class DelegatingProbeConverter extends \WPBakeryDivi5Converter\Converter\B
             $this->codeBlock( (string) $node['id'], 'own', $style['divi_attrs'] ),
             $this->delegate( PieceConverter::class, (string) $node['id'] . '-piece', [] ),
         ];
+    }
+}
+
+/** A handler that fails the way a real one would: mid-conversion, on one node. */
+final class ThrowingProbeConverter extends \WPBakeryDivi5Converter\Converter\BaseWPBakeryConverter {
+    public function convert( array $node ): array {
+        throw new \RuntimeException( 'the plugin exploded' );
     }
 }
 
