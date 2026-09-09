@@ -125,7 +125,7 @@ final class PackedParams {
 
     /** `include/templates/shortcodes/vc_raw_html.php`'s `$content` decode. */
     public static function rawHtml( string $raw ): string {
-        return rawurldecode( (string) base64_decode( strip_tags( $raw ) ) );
+        return rawurldecode( (string) base64_decode( wp_strip_all_tags( $raw ) ) );
     }
 
     /**

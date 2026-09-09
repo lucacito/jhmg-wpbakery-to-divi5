@@ -156,7 +156,7 @@ final class ShortcodeParser {
         );
 
         if ( $found === false ) {
-            throw new \RuntimeException( 'Shortcode parsing failed: ' . preg_last_error_msg() );
+            throw new \RuntimeException( esc_html( 'Shortcode parsing failed: ' . preg_last_error_msg() ) );
         }
 
         if ( $found === 0 ) {
@@ -272,7 +272,7 @@ final class ShortcodeParser {
         $matched = preg_match_all( self::ATTS_REGEX, $text, $matches, PREG_SET_ORDER );
 
         if ( $matched === false ) {
-            throw new \RuntimeException( 'Shortcode attribute parsing failed: ' . preg_last_error_msg() );
+            throw new \RuntimeException( esc_html( 'Shortcode attribute parsing failed: ' . preg_last_error_msg() ) );
         }
 
         if ( $matched === 0 ) {
