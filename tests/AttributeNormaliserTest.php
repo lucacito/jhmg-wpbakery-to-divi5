@@ -105,8 +105,8 @@ final class AttributeNormaliserTest extends TestCase {
             'rounded'         => [ 'style' => 'flat', 'shape' => 'rounded' ],
             'square'          => [ 'style' => 'flat', 'shape' => 'square' ],
             'round'           => [ 'style' => 'flat', 'shape' => 'round' ],
-            'outlined'        => [ 'style' => 'outline-custom', 'shape' => null ],
-            'square_outlined' => [ 'style' => 'outline-custom', 'shape' => 'square' ],
+            'outlined'        => [ 'style' => 'outline', 'shape' => null ],
+            'square_outlined' => [ 'style' => 'outline', 'shape' => 'square' ],
         ];
 
         foreach ( $expected as $old => $new ) {
@@ -244,12 +244,14 @@ final class AttributeNormaliserTest extends TestCase {
         $this->assertArrayNotHasKey( 'color', $result['atts'] );
     }
 
-    public function test_a_cta_button2_outlined_button_becomes_an_outline_custom_one(): void {
+    public function test_a_cta_button2_outlined_button_keeps_the_outline_style(): void {
         $atts = $this->atts( 'vc_cta_button2', [ 'title' => 'Go', 'btn_style' => 'square_outlined', 'color' => 'green' ] );
 
-        $this->assertSame( 'outline-custom', $atts['btn_style'] );
+        $this->assertSame( 'outline', $atts['btn_style'] );
         $this->assertSame( 'square', $atts['btn_shape'] );
-        $this->assertSame( '#6dab3c', $atts['btn_outline_custom_color'] );
+        $this->assertSame( '#6dab3c', $atts['btn_custom_text'] );
+        $this->assertSame( '#6dab3c', $atts['btn_custom_border'] );
+        $this->assertSame( '#fff', $atts['btn_custom_hover_text'] );
     }
 
     public function test_a_cta_button2_3d_button_keeps_the_style_button_3_shares(): void {
@@ -350,20 +352,28 @@ final class AttributeNormaliserTest extends TestCase {
         $this->assertSame( '#5472d2', $atts['custom_background'] );
     }
 
-    public function test_an_outline_palette_button_becomes_an_outline_custom_button(): void {
+    /**
+     * `apply_btn_outline_color()` writes the five generic pickers the
+     * `outline` style exposes and leaves the style alone — `outline-custom` is
+     * a different state of the dropdown, with defaults of its own that the
+     * migration never writes.
+     */
+    public function test_an_outline_palette_button_takes_the_outline_pickers(): void {
         $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'outline', 'color' => 'green' ] );
 
         $this->assertEquals(
             [
-                'style'                           => 'outline-custom',
-                'outline_custom_color'            => '#6dab3c',
-                'outline_custom_hover_background' => '#6dab3c',
-                'outline_custom_hover_text'       => '#fff',
+                'style'                   => 'outline',
+                'custom_text'             => '#6dab3c',
+                'custom_border'           => '#6dab3c',
+                'custom_hover_background' => '#6dab3c',
+                'custom_hover_text'       => '#fff',
+                'custom_hover_border'     => '#6dab3c',
             ],
             $result['atts']
         );
         $this->assertContains(
-            'vc_btn: color → style="outline-custom", outline_custom_color, outline_custom_hover_background, outline_custom_hover_text',
+            'vc_btn: color → custom_text, custom_border, custom_hover_background, custom_hover_text, custom_hover_border',
             $result['notes']
         );
     }
@@ -373,11 +383,13 @@ final class AttributeNormaliserTest extends TestCase {
 
         $this->assertEquals(
             [
-                'title'                           => 'Go',
-                'style'                           => 'outline-custom',
-                'outline_custom_color'            => '#ebebeb',
-                'outline_custom_hover_background' => '#ebebeb',
-                'outline_custom_hover_text'       => '#666',
+                'title'                   => 'Go',
+                'style'                   => 'outline',
+                'custom_text'             => '#ebebeb',
+                'custom_border'           => '#ebebeb',
+                'custom_hover_background' => '#ebebeb',
+                'custom_hover_text'       => '#666',
+                'custom_hover_border'     => '#ebebeb',
             ],
             $result['atts']
         );
@@ -624,6 +636,16 @@ final class AttributeNormaliserTest extends TestCase {
         $this->assertArrayNotHasKey( 'customtxtcolor', $bars[1], 'a bar that had its own colour is left alone' );
 
         $this->assertSame( '#da4f49', $bars[2]['customcolor'] );
+    }
+
+    public function test_a_default_grey_bar_inside_the_values_group_says_so(): void {
+        $values = rawurlencode( (string) json_encode( [ [ 'label' => 'PHP', 'value' => '90', 'color' => 'bar_grey' ] ] ) );
+
+        $result = AttributeNormaliser::normalise( 'vc_progress_bar', [ 'values' => $values ] );
+        $bars   = PackedParams::paramGroup( $result['atts']['values'] );
+
+        $this->assertSame( [ 'label' => 'PHP', 'value' => '90' ], $bars[0] );
+        $this->assertContains( 'vc_progress_bar: values color="bar_grey" is the default bar colour', $result['notes'] );
     }
 
     public function test_a_bar_that_already_has_a_custom_colour_keeps_it(): void {

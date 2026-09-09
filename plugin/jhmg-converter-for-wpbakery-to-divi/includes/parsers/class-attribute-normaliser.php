@@ -38,6 +38,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   `shortcode_atts()` output, where the old key still has a registered
  *   default; here the result is the input to a converter, and a stale key
  *   would be reported as an unmapped setting.
+ * - A solid button (`modern`, `classic`, `flat`) is left on the `custom`
+ *   style rather than its own, because Divi has no WPBakery style class to
+ *   inherit the rest of the look from and `custom` is 9.0.1's own name for a
+ *   button whose colours are picked. That rename is the only one: an
+ *   `outline` or `3d` button keeps its style, exactly as the migration leaves
+ *   it, and every colour goes into the picker the migration puts it in.
  * - A colour value is only ever resolved through `Color`, whose tables are
  *   read from `vc_convert_vc_color()`, `VcSharedLibrary` and the migration
  *   itself: `Color::BUTTON_MIGRATION` and `Color::CTA_MIGRATION` are the rows
@@ -608,15 +614,21 @@ final class AttributeNormaliser {
     }
 
     /**
-     * `convert_btn_outline_dropdown_color_to_custom()` + `apply_btn_outline_color()`.
+     * `convert_btn_outline_dropdown_color_to_custom()` + `apply_btn_outline_color()`
+     * (abstract-class-wpb-attributes-migration.php:192), key for key.
      *
-     * `VcSharedLibrary::$btn_outline_colors` paints text and border with the
-     * accent colour, the hover background with the same value again, and the
-     * hover text with the row's label colour. 9.0.1's `outline-custom` style
-     * says exactly that in three pickers — `outline_custom_color`,
-     * `outline_custom_hover_background`, `outline_custom_hover_text`
-     * (config/content/vc-btn-element.php) — so the whole row is carried; the
-     * style rename is the only departure, and the note says so.
+     * `VcSharedLibrary::$btn_outline_colors` gives text, border and hover
+     * text; the source writes those into the five generic pickers the
+     * `outline` style exposes — `custom_text`, `custom_border`,
+     * `custom_hover_background` and `custom_hover_border` all taking the
+     * accent colour, `custom_hover_text` the row's label
+     * (config/content/vc-btn-element.php:191, :217, :180, :228, :206) — and
+     * leaves `style` alone.
+     *
+     * `outline-custom` is not that: it is a separate state of the same
+     * dropdown with three pickers of its own (:240, :255, :270) and its own
+     * defaults, which the migration never writes. Nothing is renamed here
+     * either.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -633,20 +645,20 @@ final class AttributeNormaliser {
         }
 
         $written = [
-            'outline_custom_color'            => $colour['bg'],
-            'outline_custom_hover_background' => $colour['bg'],
-            'outline_custom_hover_text'       => $colour['text'],
+            'custom_text'             => $colour['bg'],
+            'custom_border'           => $colour['bg'],
+            'custom_hover_background' => $colour['bg'],
+            'custom_hover_text'       => $colour['text'],
+            'custom_hover_border'     => $colour['bg'],
         ];
 
         foreach ( $written as $key => $value ) {
             $atts[ $prefix . $key ] = $value;
         }
 
-        $atts[ $prefix . 'style' ] = 'outline-custom';
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'style="outline-custom", '
-            . self::keyList( $prefix, array_keys( $written ) );
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . self::keyList( $prefix, array_keys( $written ) );
 
         return $atts;
     }
@@ -1273,7 +1285,9 @@ final class AttributeNormaliser {
 
                 if ( $value === null ) {
                     $notes[] = self::unresolved( $tag, 'values color', $slug );
-                } elseif ( $value !== '' ) {
+                } elseif ( $value === '' ) {
+                    $notes[] = $tag . ': values color="' . $slug . '" is the default bar colour';
+                } else {
                     $bar = self::applyProgressBarColour( $bar, $slug, $value, 'customcolor', 'customtxtcolor' );
                 }
             }

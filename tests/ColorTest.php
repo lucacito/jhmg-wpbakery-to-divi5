@@ -174,6 +174,19 @@ final class ColorTest extends TestCase {
         $this->assertNull( Color::progressBarLegacy( 'blue' ) );
     }
 
+    public function test_the_progress_bar_label_colours_and_shadow(): void {
+        // resolve_progress_bar_txt_color(): #ffffff for a coloured bar, #666666
+        // for the grey and white palette bars; apply_progress_bar_color()'s
+        // shadow is #00000040.
+        $this->assertSame( '#ffffff', Color::PROGRESS_BAR_TEXT );
+        $this->assertSame( '#666666', Color::PROGRESS_BAR_TEXT_DARK );
+        $this->assertSame( '#00000040', Color::PROGRESS_BAR_TEXT_SHADOW );
+    }
+
+    public function test_the_text_shadow_is_a_colour_divi_can_read(): void {
+        $this->assertSame( '#00000040', Color::normalize( Color::PROGRESS_BAR_TEXT_SHADOW ) );
+    }
+
     public function test_the_gradient_label_is_wpbakerys_own_white(): void {
         $this->assertSame( '#fff', Color::BUTTON_GRADIENT_TEXT );
     }
