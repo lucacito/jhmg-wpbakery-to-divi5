@@ -274,6 +274,60 @@ Hand-write two Divi block documents reproducing it (`fixtures/box-model/divi-can
 - [ ] **Step 1:** Fixtures and tests (`ContentFlattenerTest`: a tta section holding heading + text + image + nested `vc_row_inner` with two columns flattens to the HTML above; `ContentHandlersBTest`: accordion `active_section=2` opens the second item; legacy `vc_accordion` matches `vc_tta_accordion`; gallery ids; carousel slides; progress bars per `values`; chart placeholder keeps the values as a table; cta `btn_*` button; wp_archives direct → widget HTML static copy vs import → placeholder; grid container attributes; each Ultimate Addons element converts without `skipped_settings` on the corpus attribute sets (copy one real instance of each from `fixtures/wpbakery-layouts/`).
 - [ ] **Step 2:** Run → fail. **Step 3:** Implement and register (approximate: charts, social, sliders, woocommerce, hoverbox, tta_toggle, tta_pageable, media grids, containers when on the flex fallback, all Ultimate Addons). **Step 4:** Render, review, generate expected, run all → pass. Commit: `feat(handlers): accordions, tabs, galleries, sliders, counters, CTAs, pricing, grids, widgets, containers, Ultimate Addons`.
 
+### Task 9b: Ronneby element handlers (from the real theme corpus)
+
+Added after the plan was written: spec §7 says that once real theme exports arrive, every add-on element they
+contain that has a natural Divi equivalent gets a handler, with single-element fixtures cut from the exports.
+The corpus is DFD Ronneby's demo content (`wpbakery templates/ronneby/*.xml`, 96 exports, three committed:
+`04_pages_demo.xml`, `15_tenth.xml`, `23_eighteenth.xml`; the rest re-extracted by
+`scripts/extract-ronneby-corpus.sh`). The element source is Ronneby Core 1.5.74 (`references/ronneby-core.zip`,
+`vc_map` modules under `inc/vc_custom/dfd_vc_addons/modules/`, packed-param types under
+`inc/vc_custom/dfd_vc_addons/params/`). Every attribute name and every packed format is read from those files
+before it is written; nothing is inferred from the rendered demo site.
+
+**Files:**
+- Create: `includes/helpers/class-ronneby-params.php` (`Helpers\RonnebyParams`)
+- Create handlers under `includes/converter/ronneby/` (namespace `WPBakeryDivi5Converter\Converter\Ronneby`), one class per row of the table below, each `extends BaseWPBakeryConverter`
+- Create: `scripts/cut-corpus-element.php` (extracts the n-th `[tag …]…[/tag]` occurrence, with its attributes byte for byte, from a corpus export into a fixture wrapped in `[vc_row][vc_column]…[/vc_column][/vc_row]`, writing the sidecar `{"mode":"import","source":"<file>#<n>"}`)
+- Fixtures: `fixtures/wpbakery/ronneby-<element>.txt` + expected, one per handler, cut with the script from the three committed exports (a tag absent from those three is cut from any local export and the sidecar says which; the fixture is still committed)
+- Modify: `registry/class-converter-registry.php` (`registerDefaults()`: every handler below registered with `approximate: true`)
+- Test: `tests/RonnebyHandlersTest.php`
+
+**Interfaces:**
+- `RonnebyParams::fontOptions( string $raw ): array<string,string>` — decodes the Ronneby font-options packed value used by `dfd_heading`'s `title_font_options`/`subtitle_font_options` and the other `*_font_options` params (format from `params/Dfd_ParamHeading.php` and the `dfd_font_options` param type: `tag:h2|font_size:30|line_height:36|color:%23333333|…`, same `key:value|` shape as `font_container`; verify and cite). `RonnebyParams::responsiveSizes( array $atts, string $base ): array{desktop: string, tablet: string, phone: string}` — reads Ronneby's per-breakpoint size params (`<base>` for wide/normal, tablet, mobile variants as `dfd_spacer.php` declares them; wide and normal both map to Divi desktop, the wider one wins only when normal is empty) and returns px strings through `PackedParams::sizeWithUnit()`. `RonnebyParams::items( string $raw ): array` — `param_group` decode (`PackedParams::paramGroup`) for team members, testimonials, progress bars, icon lists, social accounts.
+- Handlers (element → Divi block; the module file each one reads its attribute names from):
+
+| handler | WPBakery tag(s) | Divi | module file |
+|---|---|---|---|
+| `DfdSpacerConverter` | `dfd_spacer` | `divi/divider` with `showDivider off`, per-breakpoint `sizing.height` from `responsiveSizes()`, margin `0px` (the element *is* the space) | `dfd_spacer.php` |
+| `DfdHeadingConverter` | `dfd_heading` | `divi/heading` (`title`, tag, alignment, `fontOptions()` → `StyleMapper::applyFontContainer`-equivalent paths); `subtitle` → a second block (`divi/text`) via `delegate()`; `title_google_fonts`/`subtitle_google_fonts` → `applyGoogleFonts` | `dfd_heading_module.php` |
+| `DfdSingleImageConverter` | `dfd_single_image` | `divi/image` (`module.advanced.spacing`/`sizing` paths; `image` id, `image_size`, link/lightbox, alignment; hover animations → note `animation`) | `dfd_image_module.php` |
+| `DfdButtonConverter` | `dfd_button` | `divi/button` (text, `link`, size table from the module's CSS classes, colours incl. hover, icon via `IconMap`, alignment; gradient styles → note) | `dfd_button.php` |
+| `DfdInfoBoxConverter` | `dfd_info_box` | `divi/blurb` (icon or image, title + tag, content, `read_more` link → blurb link, layout/`pos` → blurb `imagePlacement`; hover colours → note) | `dfd-info-box.php` |
+| `DfdIconListConverter` | `dfd_icon_list` + `dfd_icon_list_item` | `divi/icon-list` + one `divi/icon-list-item` per child (icon via `IconMap`, text, link) | `dfd-icon-list-module.php` |
+| `DfdDelimiterConverter` | `dfd_delimiter` | `divi/divider` (style/colour/thickness/width/alignment; icon-in-the-middle styles → note) | `dfd-delimiter.php` |
+| `DfdGoogleMapConverter` | `dfd_google_map` | `divi/map` + `divi/map-pin` (address or lat/lng, zoom; custom map styles/markers → note) | `dfd_google_map.php` |
+| `DfdAccordionConverter` | `dfd_accordion` (children `vc_tta_section`) | `divi/accordion` + `divi/accordion-item` through `ContentFlattener` exactly as Task 9's tta accordion | `dfd_accordion.php` |
+| `DfdTabsConverter` | `dfd_tta_tabs`, `dfd_tta_tour` (children `vc_tta_section`) | `divi/tabs` + `divi/tab` as Task 9's tta tabs | `dfd_tabs.php`, `dfd_tour.php` |
+| `DfdBlogPostsConverter` | `dfd_blog_posts` | `divi/blog` (`posts_per_page`, categories, order; Ronneby layouts → note) | `dfd_new_blog.php` |
+| `DfdSocialAccountsConverter` | `dfd_new_social_accounts` | `divi/social-media-follow` + `divi/social-media-follow-network` per item whose network Divi lists in `social-media-follow-network/module.json`; other networks → note | `dfd_new_social_accoun_module.php` |
+| `AnnouncementConverter` | `announcement` | `divi/cta` (title, content, button text/link) | `dfd-announcement.php` |
+| `InfoBannerConverter` | `info_banner` | `divi/cta` with background image/colour (title, subtitle, button) | `dfd-info-banner.php` |
+| `NewTeamMemberConverter` | `new_team_member` | `divi/team-member` (name, position, image, bio, social links → the module's `facebookUrl`/`twitterUrl`/`linkedinUrl` keys) | `dfd-team-member.php` |
+| `NewTestimonialsConverter` | `new_testimonials` | one `divi/testimonial` per `items()` entry (author, job, company, portrait, quote); slider/grid layout → note | `dfd-testimonials.php` |
+| `FactsConverter` | `facts` | `divi/number-counter` (number, title, prefix/suffix; icon → note) | `dfd-new-facts.php` |
+| `ProgressbarConverter` | `progressbar` | `divi/counters` + `divi/counter` per bar (title, percent, colours) | `dfd-progress-bar.php` |
+| `PiechartsConverter` | `piecharts` | `divi/circle-counter` (value, title, colours) | `dfd-piecharts.php` |
+| `CountdownConverter` | `countdown` | `divi/countdown-timer` (date/time, title) | `dfd-countdown.php` |
+| `VideoplayerConverter` | `videoplayer` | `divi/video` (self-hosted, YouTube or Vimeo URL, poster) | `dfd-video-module.php` |
+
+  Everything else Ronneby registers stays on the theme-family path (static copy on-site, placeholder from an export): `price_list`, `dfd_carousel`, `dfd_user_form`, `dfd_portfolio_module` (depends on the theme's portfolio post type), `dfd_new_subscribe` (needs a mail provider Divi cannot infer), `dfd_horizontal_scroll*`, `dfd_masonry_*`, `dfd_side_by_side_*`, `dfd_modal_box`, `dfd_hotspot`, `image_layers`, `rotate_box`, `button_gradient`, `woocomposer_*`, `rev_slider*`, `tooltip`, `popover`.
+- Every handler: `logUnmappedSettings()` for every attribute it does not map (nothing skipped silently); `mapStyle()` with the kind from `task-8-amendments.md` §2 (`content` for all of these; `button` for `dfd_button`); Divi attribute paths only from the 5.12.1 `module.json` files, each new path recorded for `docs/divi5-schema.md`; colours only from the attributes (Ronneby's defaults are theme options and are reported as `unresolved_global` when an attribute is empty).
+
+- [ ] **Step 1:** Write `scripts/cut-corpus-element.php`; cut one fixture per handler; write `tests/RonnebyHandlersTest.php`: (a) for every tag in the table, iterate every occurrence in the three committed exports, convert it in import mode, and assert `skipped_settings === []` and `unsupported === []` (report `not_carried_over` counts on failure only); (b) one exact mapping assertion per handler on its fixture (e.g. the spacer's three heights, the heading's tag/size/colour, the blurb's title and icon, the counters' percentages, the team member's name and image URL resolved from the export's attachment map); (c) `RonnebyParams` unit cases with values copied from the exports. Run → fail.
+- [ ] **Step 2:** Implement `RonnebyParams` and the handlers; register in `registerDefaults()` (all approximate).
+- [ ] **Step 3:** `php scripts/render-fixture.php fixtures/wpbakery/ronneby-<element>.txt --report` for each, review against the module source (every attribute either mapped or listed under not-carried-over), `php scripts/update-expected.php ronneby-<element>`. Run all tests (`ThirdPartyTemplateConversionTest` from Task 10 must stay green over the three committed exports and, locally, over all 96). Commit: `feat(handlers): Ronneby elements — spacer, headings, images, buttons, info boxes, icon lists, counters, CTAs, team, testimonials, maps, video`.
+
 ### Task 10: Report completeness and the validator-gated corpora
 
 **Files:**
