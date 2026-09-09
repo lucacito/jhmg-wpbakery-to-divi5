@@ -1,0 +1,4 @@
+/* Styles for markup this converter emits that Divi does not style itself. */
+.wbdc-photo-caption { font-size: 0.9em; opacity: 0.8; margin-top: 0.5em; }
+.wbdc-star-rating { letter-spacing: 0.1em; }
+.wbdc-unconverted-module { border: 1px dashed #c62828; padding: 8px 12px; color: #444; }

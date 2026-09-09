@@ -1,0 +1,24 @@
+{
+  "name": "jhmg/wpbakery-to-divi5",
+  "description": "Converts WPBakery Page Builder pages into native Divi 5 pages.",
+  "type": "project",
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "php": ">=8.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^13.2"
+  },
+  "autoload": {
+    "psr-4": {
+      "WPBakeryDivi5Converter\\": "plugin/jhmg-converter-for-wpbakery-to-divi/includes/",
+      "WPBakeryDivi5Converter\\Pro\\": "plugin/jhmg-converter-for-wpbakery-to-divi-pro/includes/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "WPBakeryDivi5Converter\\Tests\\": "tests/",
+      "Divi5Validator\\": "tests/support/divi5-validator/"
+    }
+  }
+}

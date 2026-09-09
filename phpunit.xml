@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php"
+         colors="true"
+         stopOnFailure="false">
+    <testsuites>
+        <testsuite name="WPBakery to Divi 5 Converter">
+            <directory>tests</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <ini name="display_errors" value="1"/>
+        <ini name="error_reporting" value="-1"/>
+    </php>
+</phpunit>
