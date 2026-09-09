@@ -79,6 +79,9 @@ class SchemaRules
         'divi/shop',
         // Compound module children (self-closing items inside structural parents)
         'divi/accordion-item',
+        // Divi 5.12.1 `map/module.json` declares `childrenName: ["divi/map-pin"]`
+        // and `map-pin/module.json` is `category: child-module`.
+        'divi/map-pin',
         'divi/contact-field',
         'divi/counter',
         'divi/icon-list-item',
@@ -169,6 +172,7 @@ class SchemaRules
         'divi/slider'         => ['divi/slide'],
         'divi/tabs'           => ['divi/tab'],
         'divi/social-media-follow' => ['divi/social-media-follow-network'],
+        'divi/map'            => ['divi/map-pin'],
         // Inner row holds inner columns; inner columns accept the same children
         // as top-level columns (see allowedChildrenOf).
         'divi/row-inner'      => ['divi/column-inner'],

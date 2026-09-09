@@ -232,12 +232,30 @@
                                                 "elements": [
                                                     {
                                                         "id": "vc_column_text-1",
-                                                        "name": "divi/code",
+                                                        "name": "divi/text",
                                                         "settings": {
+                                                            "module": {
+                                                                "decoration": {
+                                                                    "spacing": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "margin": {
+                                                                                    "top": "",
+                                                                                    "right": "",
+                                                                                    "bottom": "35px",
+                                                                                    "left": "",
+                                                                                    "syncVertical": "off",
+                                                                                    "syncHorizontal": "off"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
                                                             "content": {
                                                                 "innerContent": {
                                                                     "desktop": {
-                                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Inner left</div>"
+                                                                        "value": "<p>Inner left</p>"
                                                                     }
                                                                 }
                                                             }
@@ -298,12 +316,30 @@
                                                 "elements": [
                                                     {
                                                         "id": "vc_column_text-2",
-                                                        "name": "divi/code",
+                                                        "name": "divi/text",
                                                         "settings": {
+                                                            "module": {
+                                                                "decoration": {
+                                                                    "spacing": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "margin": {
+                                                                                    "top": "",
+                                                                                    "right": "",
+                                                                                    "bottom": "35px",
+                                                                                    "left": "",
+                                                                                    "syncVertical": "off",
+                                                                                    "syncHorizontal": "off"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
                                                             "content": {
                                                                 "innerContent": {
                                                                     "desktop": {
-                                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Inner right</div>"
+                                                                        "value": "<p>Inner right</p>"
                                                                     }
                                                                 }
                                                             }
@@ -322,14 +358,5 @@
             }
         ]
     },
-    "unsupported": [
-        {
-            "id": "vc_column_text-1",
-            "tag": "vc_column_text"
-        },
-        {
-            "id": "vc_column_text-2",
-            "tag": "vc_column_text"
-        }
-    ]
+    "unsupported": []
 }

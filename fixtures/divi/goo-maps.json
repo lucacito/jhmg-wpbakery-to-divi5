@@ -1,0 +1,232 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "4_4"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "4_4"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_goo_maps-1",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<iframe loading=\"lazy\" src=\"https://maps.google.com/maps?q=London%20Eye%2C%20London%2C%20United%20Kingdom&t=k&z=12&output=embed&iwloc=near\" title=\"London Eye, London, United Kingdom\" aria-label=\"London Eye, London, United Kingdom\" height=\"400\" width=\"100%\"></iframe>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_goo_maps-2",
+                                        "name": "divi/map",
+                                        "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "map": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": {
+                                                            "address": "51.503324,-0.119543",
+                                                            "zoom": "16",
+                                                            "lat": "51.503324",
+                                                            "lng": "-0.119543"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": [
+                                            {
+                                                "id": "vc_goo_maps-2-pin",
+                                                "name": "divi/map-pin",
+                                                "settings": {
+                                                    "pin": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "address": "51.503324,-0.119543",
+                                                                    "lat": "51.503324",
+                                                                    "lng": "-0.119543"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "51.503324,-0.119543"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": []
+}

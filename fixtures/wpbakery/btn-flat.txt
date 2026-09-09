@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_btn title="Order now" style="flat" custom_background="#ff9100" custom_text="#ffffff" shape="rounded" size="lg" align="center" link="url:%2Fshop|title:Shop"][/vc_column][/vc_row]

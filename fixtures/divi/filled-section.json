@@ -134,12 +134,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-1",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Filled section</div>"
+                                                        "value": "<p>Filled section</p>"
                                                     }
                                                 }
                                             }
@@ -278,12 +296,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-2",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Section after the filled one</div>"
+                                                        "value": "<p>Section after the filled one</p>"
                                                     }
                                                 }
                                             }
@@ -422,12 +458,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-3",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Third section, no fill above it</div>"
+                                                        "value": "<p>Third section, no fill above it</p>"
                                                     }
                                                 }
                                             }
@@ -573,12 +627,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-4",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Filled, but its own padding-top wins</div>"
+                                                        "value": "<p>Filled, but its own padding-top wins</p>"
                                                     }
                                                 }
                                             }
@@ -593,22 +665,5 @@
             }
         ]
     },
-    "unsupported": [
-        {
-            "id": "vc_column_text-1",
-            "tag": "vc_column_text"
-        },
-        {
-            "id": "vc_column_text-2",
-            "tag": "vc_column_text"
-        },
-        {
-            "id": "vc_column_text-3",
-            "tag": "vc_column_text"
-        },
-        {
-            "id": "vc_column_text-4",
-            "tag": "vc_column_text"
-        }
-    ]
+    "unsupported": []
 }

@@ -1,0 +1,287 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "5_6,1_6"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "20_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "5_6"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_custom_heading-1",
+                                        "name": "divi/heading",
+                                        "settings": {
+                                            "title": {
+                                                "decoration": {
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "headingLevel": "h3",
+                                                                    "size": "16px",
+                                                                    "textAlign": "left",
+                                                                    "lineHeight": "24px",
+                                                                    "color": "#ffffff",
+                                                                    "family": "Roboto",
+                                                                    "weight": "400"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "WE ARE HARD, WE PAY HARD"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_custom_heading-2",
+                                        "name": "divi/heading",
+                                        "settings": {
+                                            "title": {
+                                                "decoration": {
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "headingLevel": "h1",
+                                                                    "size": "80px",
+                                                                    "textAlign": "left",
+                                                                    "lineHeight": "90px",
+                                                                    "color": "#ffffff",
+                                                                    "family": "Roboto",
+                                                                    "weight": "700"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "WE ARE A DESIGN &amp; DEVELOPMENT AGENCY."
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_column_text-1",
+                                        "name": "divi/text",
+                                        "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<p style=\"text-align: left; color: #fff; font-family: Roboto; font-size: 17px; line-height: 27px;\">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "vc_column-2",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "4_24"
+                                                    }
+                                                },
+                                                "phone": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "1_6"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": []
+}

@@ -2,8 +2,10 @@
 
 namespace WPBakeryDivi5Converter\Converter;
 
+use WPBakeryDivi5Converter\Helpers\Autop;
 use WPBakeryDivi5Converter\Helpers\Color;
 use WPBakeryDivi5Converter\Helpers\PackedParams;
+use WPBakeryDivi5Converter\Helpers\ThemeShortcodes;
 use WPBakeryDivi5Converter\StyleMapper\GlobalSettingsResolver;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
 
@@ -190,6 +192,33 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         }
 
         return $value;
+    }
+
+    /**
+     * The parts of a packed link WPBakery prints on the anchor that the Divi
+     * module has no attribute for — its `title`, and its `rel` on the modules
+     * whose link value is only `{url, target}`. Reported rather than dropped.
+     */
+    protected function reportLinkExtras( array $atts, string $key, string $node_id, bool $keeps_rel = false ): void {
+        $packed = PackedParams::link( $this->att( $atts, $key ) );
+
+        $lost = [];
+        if ( trim( $packed['title'] ) !== '' ) {
+            $lost[] = 'title "' . trim( $packed['title'] ) . '"';
+        }
+        if ( ! $keeps_rel && trim( $packed['rel'] ) !== '' ) {
+            $lost[] = 'rel "' . trim( $packed['rel'] ) . '"';
+        }
+
+        if ( $lost === [] ) {
+            return;
+        }
+
+        $this->engine->logNotCarriedOver(
+            'layout',
+            $node_id,
+            'link ' . implode( ' and ', $lost ) . ': the Divi module\'s link holds only a URL and a target'
+        );
     }
 
     /** A normalised colour, or null. A palette name Divi cannot resolve is reported, never guessed at. */
@@ -457,6 +486,118 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
     }
 
     // -------------------------------------------------------------------------
+    // Shortcodes inside an element's HTML content
+    // -------------------------------------------------------------------------
+
+    /**
+     * A shortcode WPBakery's editor never wrote, sitting inside the HTML of a
+     * `textarea_html` field (`vc_column_text`, `vc_message`, `vc_toggle`, …).
+     *
+     * Spec §7's two behaviours, applied in place rather than to the block:
+     * on the site the page lives on the shortcode is rendered with
+     * `do_shortcode()` — exactly what `wpb_js_remove_wpautop()` does at the end
+     * of every one of those templates — and the HTML replaces it, a static
+     * copy; from an export nothing can render it, so the text is left where it
+     * was and the family is reported once per node.
+     *
+     * A bracketed token that is not a shortcode at all — `[1]`, a footnote
+     * marker — is prose: WordPress prints it verbatim because nothing
+     * registers it (amendment §5), so it is left alone and never reported.
+     *
+     * @param string $html    Content already through `Autop`.
+     * @param string $node_id The node the content belongs to.
+     */
+    protected function nestedShortcodes( string $html, string $node_id ): string {
+        if ( ! str_contains( $html, '[' ) ) {
+            return $html;
+        }
+
+        $options  = $this->engine->options();
+        $render   = $options['mode'] === 'direct' && $options['render_shortcodes'] && function_exists( 'do_shortcode' );
+        $reported = [];
+        $rendered = false;
+
+        $out = preg_replace_callback(
+            // One shortcode: an opening tag, and its closing tag when it has
+            // one. Same grammar as `ShortcodeParser`, narrowed to a scan — this
+            // is looking for spans to replace, not building a tree.
+            '/\[([a-zA-Z0-9_-]+)(?![\w-])([^\]]*)\](?:(.*?)\[\/\1\])?/s',
+            function ( array $m ) use ( $render, $node_id, &$reported, &$rendered ): string {
+                $tag = $m[1];
+
+                // Not a shortcode: a bare number, or a name no plugin could
+                // register. WordPress prints those as text.
+                if ( preg_match( '/^[A-Za-z][A-Za-z0-9_-]*$/', $tag ) !== 1 ) {
+                    return $m[0];
+                }
+
+                $family = ThemeShortcodes::family( $tag );
+
+                if ( $render ) {
+                    $html = (string) do_shortcode( $m[0] );
+                    if ( trim( $html ) !== '' ) {
+                        $rendered = true;
+                        $this->engine->logThemeElement( $family['label'], $node_id, $tag );
+                        if ( ! isset( $reported[ $tag ] ) ) {
+                            $reported[ $tag ] = true;
+                            $this->engine->logNotCarriedOver(
+                                $family['kind'],
+                                $node_id,
+                                sprintf( '%s inside the text: rendered on this site and kept as a static copy; it will not update when its plugin does', $tag )
+                            );
+                        }
+
+                        return $html;
+                    }
+                }
+
+                $this->engine->logThemeElement( $family['label'], $node_id, $tag );
+                if ( ! isset( $reported[ $tag ] ) ) {
+                    $reported[ $tag ] = true;
+                    $this->engine->logNotCarriedOver(
+                        $family['kind'],
+                        $node_id,
+                        sprintf( '%s inside the text: kept as the shortcode text it was; rebuild it with a Divi module or the plugin\'s own shortcode', $tag )
+                    );
+                }
+
+                return $m[0];
+            },
+            $html
+        );
+
+        if ( $rendered ) {
+            $this->engine->logStaticCopy( $node_id );
+        }
+
+        return is_string( $out ) ? $out : $html;
+    }
+
+    /**
+     * `wpb_js_remove_wpautop( $content, true )`
+     * (include/helpers/helpers.php, js_composer 9.0.1): every `<p>`/`</p>`
+     * becomes a newline, `wpautop()` runs over the result, and
+     * `shortcode_unautop()` unwraps a paragraph that holds nothing but one
+     * shortcode. Only the standalone case is reproduced, because that is the
+     * only case core's `shortcode_unautop()` fires in ("Don't do anything if
+     * it doesn't contain a single shortcode").
+     */
+    protected function editorHtml( string $content ): string {
+        $stripped = preg_replace( '#</?p>#', "\n", $content );
+
+        $html = Autop::apply( (string) $stripped . "\n" );
+
+        // A tag has to start with a letter, the way a registered shortcode does:
+        // core's `shortcode_unautop()` only unwraps shortcodes it knows, so a
+        // paragraph holding nothing but `[1]` keeps its `<p>` (amendment §5).
+        return (string) preg_replace(
+            '#<p>\s*(\[[A-Za-z][A-Za-z0-9_-]*(?![\w-])[^\]]*\](?:(?!\[[A-Za-z][A-Za-z0-9_-]*[^\]]*\]).*?\[/[A-Za-z][A-Za-z0-9_-]*\])?)\s*</p>#s',
+            '$1',
+            $html
+        );
+    }
+
+    // -------------------------------------------------------------------------
     // Keeping what cannot be converted
     // -------------------------------------------------------------------------
 
@@ -641,7 +782,13 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
             return false;
         }
 
-        $selected = $this->att( $atts, $m[1] === 'i_' ? 'i_type' : 'icon_type', 'fontawesome' );
+        // Which field names the library differs per element: `vc_btn` and
+        // `vc_text_separator` integrate the icon under an `i_` prefix,
+        // `vc_message` calls it `icon_type`, and `vc_icon`'s own field is
+        // simply `type` (config/content/vc-icon-element.php).
+        $selected = $m[1] === 'i_'
+            ? $this->att( $atts, 'i_type', 'fontawesome' )
+            : $this->att( $atts, 'icon_type', $this->att( $atts, 'type', 'fontawesome' ) );
 
         return $selected !== $m[2];
     }

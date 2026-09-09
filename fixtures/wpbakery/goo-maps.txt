@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_goo_maps location="London Eye, London, United Kingdom" height="400" zoom="12" type="k"][vc_goo_maps location="51.503324,-0.119543" zoom="16"][/vc_column][/vc_row]

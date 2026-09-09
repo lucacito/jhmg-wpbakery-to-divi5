@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_message color="warning" message_box_style="standard" style="rounded"]<p>Deliveries pause on public holidays.</p>[/vc_message][vc_message message_box_color="alert-danger" message_box_style="outline" style="square"]Payment failed.[/vc_message][/vc_column][/vc_row]

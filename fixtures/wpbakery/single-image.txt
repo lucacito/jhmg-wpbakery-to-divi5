@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_single_image image="1096" img_size="400x300" alignment="center" style="vc_box_border" border_color="#ff9100" onclick="custom_link" link="url:https%3A%2F%2Fexample.com%2Fgallery|target:%20_blank"][/vc_column][/vc_row]

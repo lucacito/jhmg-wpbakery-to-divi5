@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_gutenberg do_blocks="true"]<!-- wp:paragraph --><p>Written in the block editor.</p><!-- /wp:paragraph -->[/vc_gutenberg][/vc_column][/vc_row]

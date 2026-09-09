@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_zigzag color="custom" custom_color="#5472d2" el_border_width="12" el_width="40" align="center"][/vc_column][/vc_row]

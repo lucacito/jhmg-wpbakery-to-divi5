@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_single_image source="external_link" custom_src="https://cdn.example.com/hero.png" external_img_size="600x400" external_style="vc_box_rounded" caption="Our new studio" alignment="right"][/vc_column][/vc_row]

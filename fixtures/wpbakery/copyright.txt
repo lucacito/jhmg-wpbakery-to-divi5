@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_copyright prefix="Copyright " postfix=" Acme Ltd. All rights reserved" align="center"][/vc_column][/vc_row]

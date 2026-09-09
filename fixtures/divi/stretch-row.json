@@ -127,12 +127,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-1",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Stretched row</div>"
+                                                        "value": "<p>Stretched row</p>"
                                                     }
                                                 }
                                             }
@@ -271,12 +289,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-2",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Stretched row and content</div>"
+                                                        "value": "<p>Stretched row and content</p>"
                                                     }
                                                 }
                                             }
@@ -415,12 +451,30 @@
                                 "elements": [
                                     {
                                         "id": "vc_column_text-3",
-                                        "name": "divi/code",
+                                        "name": "divi/text",
                                         "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<!-- wpbakery element: vc_column_text --><div class=\"wbdc-unconverted-element\" data-wpbakery-element=\"vc_column_text\">Stretched, no paddings</div>"
+                                                        "value": "<p>Stretched, no paddings</p>"
                                                     }
                                                 }
                                             }
@@ -435,18 +489,5 @@
             }
         ]
     },
-    "unsupported": [
-        {
-            "id": "vc_column_text-1",
-            "tag": "vc_column_text"
-        },
-        {
-            "id": "vc_column_text-2",
-            "tag": "vc_column_text"
-        },
-        {
-            "id": "vc_column_text-3",
-            "tag": "vc_column_text"
-        }
-    ]
+    "unsupported": []
 }

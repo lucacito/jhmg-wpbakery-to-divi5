@@ -1,0 +1,194 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "4_4"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "4_4"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "vc_gmaps-1-title",
+                                        "name": "divi/heading",
+                                        "settings": {
+                                            "title": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "Where to find us"
+                                                    }
+                                                },
+                                                "decoration": {
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "headingLevel": "h2"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    },
+                                    {
+                                        "id": "vc_gmaps-1",
+                                        "name": "divi/code",
+                                        "settings": {
+                                            "module": {
+                                                "decoration": {
+                                                    "spacing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<iframe src=\"https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d6304.83!2d-122.47!3d37.80\" width=\"600\" height=\"360\" frameborder=\"0\" style=\"border:0\" allowfullscreen></iframe>"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": []
+}

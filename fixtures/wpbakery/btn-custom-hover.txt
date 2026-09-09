@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_btn title="Contact us" style="custom" custom_background="#0088cc" custom_text="#ffffff" custom_border="#005580" custom_hover_background="#005580" custom_hover_text="#ffffff" shape="round" size="md" button_block="true" custom_onclick="true" custom_onclick_code="alert('hi')"][/vc_column][/vc_row]

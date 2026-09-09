@@ -307,7 +307,9 @@ class ColumnConverter extends BaseWPBakeryConverter {
             $children[ array_keys( $rows )[ $position ] ] = $row;
         }
 
-        return $this->engine->convertChildren( array_values( $children ) );
+        // `.vc_toggle:last-of-type{margin-bottom:35px}` is a rule about a
+        // toggle's neighbours, so it is resolved here, where they are visible.
+        return $this->engine->convertChildren( ToggleConverter::markLastOfRun( array_values( $children ) ) );
     }
 
     /**

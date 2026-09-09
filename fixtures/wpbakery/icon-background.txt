@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_icon type="fontawesome" icon_fontawesome="far fa-envelope" color="custom" custom_color="#ffffff" background_style="rounded" background_color="custom" custom_background_color="#5472d2" size="md" align="left"][/vc_column][/vc_row]

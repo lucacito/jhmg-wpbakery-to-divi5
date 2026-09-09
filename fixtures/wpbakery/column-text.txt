@@ -1,0 +1,5 @@
+[vc_row][vc_column][vc_column_text el_id="intro" el_class="lead" css=".vc_custom_1568698091545{margin-bottom: 10px !important;}"]
+<p>First paragraph.</p>
+<p>Second paragraph with <strong>bold</strong> text.</p>
+[/vc_column_text][vc_column_text]Plain text with a line break
+and a second line.[/vc_column_text][/vc_column][/vc_row]

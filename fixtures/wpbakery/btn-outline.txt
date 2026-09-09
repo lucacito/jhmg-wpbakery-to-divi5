@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_btn title="40% off" style="outline-custom" outline_custom_color="#37a000" outline_custom_hover_background="#37a000" outline_custom_hover_text="#ffffff" shape="square" size="sm" align="left"][/vc_column][/vc_row]

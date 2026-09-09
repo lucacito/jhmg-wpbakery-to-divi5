@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_button title="Read more" target="_self" color="btn-primary" size="btn-large" href="https://example.com/read"][/vc_column][/vc_row]

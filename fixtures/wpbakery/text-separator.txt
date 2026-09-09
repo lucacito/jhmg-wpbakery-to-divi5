@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_text_separator title="Our services" title_align="separator_align_center" style="double" accent_color="#072338" border_width="2" el_width="60" align="align_center" add_icon="true" i_type="fontawesome" i_icon_fontawesome="fas fa-star"][/vc_column][/vc_row]

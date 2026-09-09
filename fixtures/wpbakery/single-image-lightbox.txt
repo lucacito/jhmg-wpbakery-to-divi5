@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_single_image image="1616" img_size="large" onclick="link_image" style="vc_box_shadow_circle"][/vc_column][/vc_row]

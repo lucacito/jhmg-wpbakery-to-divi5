@@ -328,7 +328,9 @@ final class ConverterEngineTest extends TestCase {
         $this->assertSame( [ [ 'node_id' => 'vc_flickr-1', 'tag' => 'vc_flickr', 'matched_to' => 'ProbeConverter' ] ], $result['report']['approximate_matches'] );
         $this->assertSame( 1, $result['report']['approximate']['probe'] );
         $this->assertArrayNotHasKey( 'probe', $result['report']['converted'] );
-        $this->assertSame( [ 'vc_flickr' ], $engine->registry()->approximateTags() );
+        // The registry ships approximate handlers of its own (Task 8), so this
+        // asserts the tag joined them rather than that it is the only one.
+        $this->assertContains( 'vc_flickr', $engine->registry()->approximateTags() );
     }
 
     public function test_the_registry_knows_its_structural_tags(): void {

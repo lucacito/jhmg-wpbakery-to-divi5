@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_btn title="Buy" style="flat" custom_background="#5472d2" custom_text="#ffffff" align="inline" link="url:%2Fbuy"][vc_btn title="Learn more" style="outline" custom_text="#5472d2" custom_border="#5472d2" align="inline" link="url:%2Flearn"][vc_column_text]After the buttons.[/vc_column_text][/vc_column][/vc_row]

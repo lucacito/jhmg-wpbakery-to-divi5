@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_custom_heading text="Section title" font_container="tag:h2|font_size:36px|text_align:center|color:%23072338|line_height:46px" use_theme_fonts="yes" link="url:https%3A%2F%2Fexample.com%2Fabout|title:About%20us|target:%20_blank|rel:nofollow"][/vc_column][/vc_row]

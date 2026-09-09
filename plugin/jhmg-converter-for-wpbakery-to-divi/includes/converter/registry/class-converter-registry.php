@@ -187,5 +187,40 @@ class ConverterRegistry {
         if ( class_exists( Handlers\TextNodeConverter::class ) ) {
             $this->registerElement( '#text', Handlers\TextNodeConverter::class );
         }
+
+        // Elements. `$approximate` is true where the handler's output is a
+        // deliberate stand-in rather than the same thing in Divi's vocabulary.
+        $elements = [
+            'vc_column_text'    => [ Handlers\ColumnTextConverter::class, false ],
+            'vc_custom_heading' => [ Handlers\CustomHeadingConverter::class, false ],
+            'vc_single_image'   => [ Handlers\SingleImageConverter::class, false ],
+            'vc_btn'            => [ Handlers\BtnConverter::class, false ],
+            'vc_icon'           => [ Handlers\IconConverter::class, false ],
+            'vc_separator'      => [ Handlers\SeparatorConverter::class, false ],
+            // No zigzag divider in Divi; a straight line stands in for it.
+            'vc_zigzag'         => [ Handlers\ZigzagConverter::class, true ],
+            // The rule runs through the title in WPBakery, under it in Divi.
+            'vc_text_separator' => [ Handlers\TextSeparatorConverter::class, true ],
+            'vc_empty_space'    => [ Handlers\EmptySpaceConverter::class, false ],
+            'vc_message'        => [ Handlers\MessageConverter::class, false ],
+            'vc_toggle'         => [ Handlers\ToggleConverter::class, false ],
+            'vc_copyright'      => [ Handlers\CopyrightConverter::class, false ],
+            'vc_raw_html'       => [ Handlers\RawHtmlConverter::class, false ],
+            'vc_raw_js'         => [ Handlers\RawHtmlConverter::class, false ],
+            // Both map elements keep an embed or need an API key; neither is
+            // the same object Divi's map module is.
+            'vc_gmaps'          => [ Handlers\GmapsConverter::class, true ],
+            'vc_goo_maps'       => [ Handlers\GmapsConverter::class, true ],
+            'vc_video'          => [ Handlers\VideoConverter::class, false ],
+            'vc_gutenberg'      => [ Handlers\GutenbergConverter::class, false ],
+            // WPBakery resolves its meta token only inside a grid item.
+            'vc_custom_field'   => [ Handlers\CustomFieldConverter::class, true ],
+        ];
+
+        foreach ( $elements as $tag => [ $class, $approximate ] ) {
+            if ( class_exists( $class ) ) {
+                $this->registerElement( $tag, $class, $approximate );
+            }
+        }
     }
 }

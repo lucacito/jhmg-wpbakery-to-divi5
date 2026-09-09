@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_video link="https://example.com/players/embed/abc123" el_aspect="43" align="left"][/vc_column][/vc_row]

@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_custom_heading text="Handmade" font_container="tag:h1|font_size:70px|text_align:left|color:%23ffffff|line_height:80px" google_fonts="font_family:Handlee%3Aregular|font_style:400%20regular%3A400%3Anormal"][/vc_column][/vc_row]

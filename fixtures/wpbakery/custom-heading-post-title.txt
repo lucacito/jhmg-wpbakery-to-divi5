@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_custom_heading source="post_title" font_container="tag:h1|text_align:left"][/vc_column][/vc_row]

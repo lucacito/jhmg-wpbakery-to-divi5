@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_btn title="Download" style="classic" custom_background="#0088cc" custom_text="#fff" size="md" align="left" add_icon="true" i_type="fontawesome" i_icon_fontawesome="fas fa-download" i_align="right" link="url:%2Ffiles%2Fbrochure.pdf"][/vc_column][/vc_row]
