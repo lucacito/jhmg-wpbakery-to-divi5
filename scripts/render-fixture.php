@@ -43,7 +43,7 @@ if ( isset( $sidecar['rendered'] ) && is_array( $sidecar['rendered'] ) ) {
     $GLOBALS['__test_rendered_shortcodes'] = $sidecar['rendered'];
 }
 
-$result = $engine_class::convert(
+$result = ( new $engine_class() )->convert(
     [ 'content' => $content, 'meta' => $meta ],
     [ 'mode' => $mode, 'attachments' => $attachments ]
 );
