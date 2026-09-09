@@ -25,5 +25,9 @@ Not committed. The Docker environment and the schema documentation expect these 
   exports are the real-world corpus under `wpbakery templates/ronneby/`. The package bundles
   `js_composer_9.0.1.zip` and Slider Revolution; the theme's own `dfd_*` elements live in the
   separate "Ronneby Core" plugin, which the package does not include.
+- `ronneby-core.zip` — the Ronneby Core plugin, downloaded from DFD's update server with the theme's
+  purchase code (the theme's TGM screen does the same). It defines every `dfd_*` element and the
+  unprefixed Ronneby elements (`announcement`, `new_team_member`, `price_list`, …) the demo exports
+  use, and is the source the Ronneby element handlers are written from.
 
 `scripts/docker/setup_wp.sh` stops with instructions when `Divi.zip` or `js_composer.9.0.1.zip` is missing.
