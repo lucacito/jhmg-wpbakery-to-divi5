@@ -1,11 +1,13 @@
 # WPBakery Page Builder → Divi 5 Converter — Design
 
 Date: 2026-09-09
-Status: draft, awaiting review (decisions taken autonomously are listed in §19)
+Status: approved 2026-09-09 (revision 2: re-pinned to WPBakery 9.0.1, layouts corpus and Ultimate Addons added)
 Modelled on: `../jhmg-beaver-to-divi5` (free 1.0.0 + Pro 1.0.0, prepared for directory review 2026-09-09);
 intake and Theme Builder code lineage: `../jhmg-elementor-to-divi5`.
-Source of truth for WPBakery: `references/js_composer.7.8.zip` (WPBakery Page Builder 7.8, 2024-07-22, the
-copy found in `PURCHASED PLUGINS/`). Source of truth for Divi: `references/Divi.zip` (Divi 5.12.1).
+Source of truth for WPBakery: `references/js_composer.9.0.1.zip` (WPBakery Page Builder 9.0.1, 2026-08-05).
+`references/js_composer.7.8.zip` (2024-07-22) is kept for the attribute forms that pages built before 9.0
+still carry. Add-on source: `references/Ultimate_VC_Addons.zip` (Ultimate Addons for WPBakery 3.19.3).
+Source of truth for Divi: `references/Divi.zip` (Divi 5.12.1).
 
 ## 1. Goal
 
@@ -60,7 +62,7 @@ Options: `wbdc_import_history`, `wbdc_telemetry_consent`, `wbdc_telemetry_last_s
 `wbdc_divi_requirement_failed`, review-prompt user meta. Telemetry product id: `wpbakery-to-divi5`.
 Product page: `https://divi5lab.com/plugins/wpbakery-to-divi-5`.
 
-## 3. Source format: what WPBakery stores (verified against js_composer 7.8)
+## 3. Source format: what WPBakery stores (verified against js_composer 9.0.1 and 7.8)
 
 - **Builder flag:** post meta `_wpb_vc_js_status` = `"true"` (`Vc_Post_Admin::setJsStatus()`). Pages
   whose content contains `[vc_row` or `[vc_section` but lack the flag (imports, templates) are also
@@ -97,8 +99,20 @@ Product page: `https://divi5lab.com/plugins/wpbakery-to-divi-5`.
   (`wpb_js_remove_wpautop($content, true)`).
 - **Images:** `image`, `images`, `parallax_image` are attachment ids (`images` comma-separated);
   `custom_src` / `custom_srcs` are URLs; `img_size` is a registered size name or `WxH`.
-- **Named colour palette** (`vc_convert_vc_color()` in `helpers_api.php`, also used by pie, hoverbox,
-  button gradients; identical hex values in the CSS for buttons, icons and separators):
+- **Two attribute eras.** WPBakery 9.0 replaced palette dropdowns with colour pickers, checkboxes with
+  toggles and several dropdowns with numbers, and reads pages saved before 9.0 through
+  `shortcode_atts_<tag>` filters in `WPB_Template_Attributes_Migration`
+  (`include/classes/migrations/`): palette names become custom hex colours on `vc_btn` (`color`,
+  `gradient_color_1/2` → `custom_*`, `gradient` → `gradient-custom`), `vc_cta`, `vc_icon`, `vc_separator`,
+  `vc_text_separator`, `vc_zigzag`, `vc_pie`, `vc_progress_bar` (`bgcolor`, per-bar `color`), charts,
+  `vc_hoverbox`, tta elements and grids; `vc_progress_bar options` → `striped`/`animated` toggles;
+  grid `element_width` → `items_per_row`; `vc_section content_placement` → `vertical_content_position`;
+  `vc_cta add_button` dropdown → toggle + `btn_position`; `vc_wp_archives options` → `type` + `count`;
+  `vc_wp_rss options` → `item_*` toggles; tta `no_fill*` → `fill_content_area`. The converter's
+  `AttributeNormaliser` applies the same rules, so both eras reach the handlers under the 9.0.1 names;
+  handlers are written to 9.0.1 names only. Toggle values are `true`/`yes`/`1`; numbers are bare px.
+- **Named colour palette** (`vc_convert_vc_color()` in `helpers_api.php`, unchanged in 9.0.1, also used by
+  pie, hoverbox and the 9.0 migration; identical hex values in the CSS for buttons, icons and separators):
   blue `#5472d2`, turquoise `#00c1cf`, pink `#fe6c61`, violet `#8d6dc4`, peacoc `#4cadc9`,
   chino `#cec2ab`, mulled_wine `#50485b`, vista_blue `#75d69c`, orange `#f7be68`, sky `#5aa1e3`,
   green `#6dab3c`, juicy_pink `#f4524d`, sandy_brown `#f79468`, purple `#b97ebb`, black `#2a2a2a`,
@@ -108,7 +122,18 @@ Product page: `https://divi5lab.com/plugins/wpbakery-to-divi-5`.
   text/border/background triples per colour (also read from the CSS; table in `docs/wpbakery-schema.md`).
 - **Element sizes** (`xs|sm|md|lg|xl` for buttons, icons, toggles) and button shapes resolve to the
   pixel values in `js_composer.min.css`; the schema doc tabulates them.
-- **Templates:** WPBakery 7.8 ships 14 default templates as shortcode strings in `config/templates.php`
+- **9.0 additions:** rows and sections take `min_height` (px number) and rows a `row_title`;
+  `vc_flexbox_container` › `vc_flexbox_container_item` (`gap` → CSS `--gap`; `.vc_flexbox_container{display:flex;
+  flex-wrap:wrap;margin:0 -15px}`, items `flex:1 0 auto`) and `vc_grid_container` › `vc_grid_container_item`
+  (`columns`, `rows`, `row_gap`, `col_gap` → CSS grid `repeat(N, minmax(0,1fr))`), both registered by
+  `WPB_Lean_Map_Hooks`; `vc_goo_maps` (`location`, `height`, `zoom`, `type` → the Google embed iframe
+  `https://maps.google.com/maps?q=…&t=…&z=…&output=embed&iwloc=near`) replaces `vc_gmaps`, which stays
+  registered as deprecated; `vc_copyright` (`prefix`, `postfix`, `align`; prints `prefix © <year> postfix`);
+  `vc_gutenberg` gained `do_blocks`; `vc_btn` gained `custom_hover_background/text/border` and
+  `custom_border`; tta elements gained `active_color`, `outline_color`, `active_title_color`,
+  `inactive_title_color`; `vc_progress_bar` gained `add_text_shadow`/`text_shadow_color`; Font Awesome 6
+  icon names (`fa-solid fa-…`) alongside FA5 (`fas fa-…`).
+- **Templates:** WPBakery 9.0.1 still ships the 14 default templates as shortcode strings in `config/templates.php`
   (Landing Page, Call to Action Page, Feature List, Description Page, Service List, Product Page, FAQ
   section, About section, About with features, Three image description, News list, Product description,
   Description with accordion, Two column list). User templates live in the `vc4_templates` post type
@@ -116,9 +141,23 @@ Product page: `https://divi5lab.com/plugins/wpbakery-to-divi-5`.
 - **Exports:** WordPress WXR carries the shortcodes in `content:encoded`, the metas in `wp:postmeta`,
   and attachments as `wp:post_type = attachment` items with `wp:attachment_url`, so image ids can be
   resolved from the export itself.
-- **Shortcode catalogue:** `config/lean-map.php` registers 69 shortcodes (§6 lists every one).
-  Templates exist for a few more registered elsewhere (`vc_gutenberg` from the Gutenberg integration,
-  `vc_custom_field`, and the slider bridges `rev_slider_vc`, `layerslider_vc`).
+- **Shortcode catalogue:** `config/lean-map.php` registers 69 shortcodes in 9.0.1 (7.8's list minus
+  `vc_button2`/`vc_cta_button2`, plus `vc_copyright`/`vc_goo_maps`); `WPB_Lean_Map_Hooks` adds the four
+  container elements; templates exist for a few more (`vc_gutenberg`, `vc_custom_field`, `vc_woocommerce`,
+  `rev_slider_vc`, `layerslider_vc`). The union of both versions' lists (75 tags) is what the converter
+  handles (§6).
+- **Real-layout corpus:** the free "Layouts for WPBakery" plugin (Techeshta, GPL-2.0, in `references/`)
+  serves 35 complete WPBakery layouts from a public REST API
+  (`https://www.layoutsforwpbakery.com/wp-json/layoutsforwpbakery/v1/templates`, `…/template/byid/?id=N`).
+  They use `vc_section` (251), `vc_row`/`vc_row_inner` (481), columns (1010), `vc_custom_heading` (821),
+  `vc_column_text` (471), `vc_single_image` (455), `vc_btn` (184), `vc_separator`, `vc_icon`, tta, toggles,
+  galleries, hoverboxes, a carousel, a video, a map, a progress bar, and six Ultimate Addons elements
+  (`bsf-info-box` 7, `just_icon` 6, `stat_counter` 4, `ultimate_pricing` 3, `ultimate_video` 2,
+  `ult_content_box` 1) plus `contact-form-7` (4). Their design options cover margins, paddings, borders
+  per side, radius, background colour/image/position/repeat/size (image URLs in the
+  `url(https://…/file.jpg?id=106)` form). This is the smoke-test corpus (`fixtures/wpbakery-layouts/`),
+  downloaded once by `scripts/fetch-layouts-corpus.php`, committed, credited in the fixtures README and
+  never shipped in the plugin zip.
 
 Full field reference, written from the source: `docs/wpbakery-schema.md`.
 
@@ -199,8 +238,9 @@ phone < 768, tablet 768–980, desktop ≥ 981.
 the row keeps the content width); `stretch_row_content` → row width 100 %, no max width;
 `stretch_row_content_no_spaces` → the same plus zero column side padding. `full_height` → section
 `minHeight: 100vh`; `columns_placement` and `equal_height` → row layout `alignItems`
-(top/middle/bottom/stretch); `content_placement` → column layout `justifyContent` (WPBakery applies it
-to `.vc_column-inner`, a flex column). `gap` → see §9. `rtl_reverse` → row `flexDirection: row-reverse`.
+(top/middle/bottom/stretch); `content_placement` (sections: `vertical_content_position`) → column layout `justifyContent` (WPBakery
+applies it to `.vc_column-inner`, a flex column). `min_height` (9.0) → section/row `minHeight` in px.
+`row_title` is editor-only and acknowledged. `gap` → see §9. `rtl_reverse` → row `flexDirection: row-reverse`.
 `video_bg`/`video_bg_url`: WPBakery row video backgrounds are YouTube only and Divi's background video
 takes mp4/webm files, so they are reported under `background` and the parallax image, when set, becomes
 the background image. `parallax` + `parallax_image` → background image with Divi's parallax enabled;
@@ -209,7 +249,7 @@ reported (`animation`). `el_id`, `el_class` → `module.advanced.htmlAttributes`
 
 ## 6. Element mapping
 
-Every shortcode in `config/lean-map.php` (69) has a handler; the table lists them by Divi target.
+Every shortcode WPBakery 7.8 or 9.0.1 registers (75 tags) has a handler; the table lists them by Divi target.
 "Exact" means every field the handler reads is taken from the 7.8 source. Divi block names are checked
 against the 5.12.1 module list (`module-library/src/components/*/module.json`) and every attribute
 path against that file before it is written.
@@ -219,7 +259,7 @@ path against that file before it is written.
 | `vc_column_text` | `divi/text` | content through `wpautop` exactly as WPBakery renders it; `el_id`/`el_class`; design options |
 | `vc_custom_heading` | `divi/heading` | `text`; `font_container` → `headingLevel` (tag), `textAlign`, `size`, `lineHeight`, `color`; `google_fonts` → family, weight, italic (ignored when `use_theme_fonts=yes`); `link` → module link; `source=post_title` → Divi dynamic content `post_title` token |
 | `vc_single_image` | `divi/image` (+ `divi/text` caption when `add_caption=yes`; + `divi/heading` when `title` set) | `image` id or `custom_src` (+`external_img_size`), `img_size` → that size's URL when the attachment is resolvable, else full; `alignment`; `style` (`vc_box_rounded` → radius, `vc_box_border`/`vc_box_outline` → border in `border_color`, `vc_box_shadow*` → box shadow, `*_circle*` → 50 % radius, `_3d` reported); `onclick`: `custom_link`+`link`+`img_link_target` → link, `link_image`/`img_link_large` → lightbox, `zoom` → lightbox + reported; alt/title from the attachment |
-| `vc_btn` (and the deprecated `vc_button`, `vc_button2`, `vc_cta_button`, `vc_cta_button2` after WPBakery's own attribute upgrade) | `divi/button` | `title`, `link` (url/title/target/rel); `style` flat/modern/classic/3d → palette background + white text (`grey`/`white`/`default` keep their dark text), `outline`/`outline-custom` → transparent background, palette border and text; `custom` → `custom_background`/`custom_text`; `gradient`/`gradient-custom` → button background gradient; `shape` rounded/square/round → radius 5px/0/50px (values from the CSS); `size` xs–lg → font size + padding from the CSS; `align` → alignment, `inline` → nested flexed row for consecutive inline buttons; `button_block` → width 100 %; `add_icon` + `i_type=fontawesome` + `i_icon_fontawesome` → icon `unicode, type, weight` via the FA map, other icon libraries reported; `custom_onclick` reported (`interaction`) |
+| `vc_btn` (and the deprecated `vc_button`, `vc_button2`, `vc_cta_button`, `vc_cta_button2` after WPBakery's own attribute upgrade) | `divi/button` | `title`, `link` (url/title/target/rel); `style` flat/modern/classic/3d → palette background + white text (`grey`/`white`/`default` keep their dark text; after the 9.0 normaliser these arrive as `custom_background`/`custom_text` hex values), `outline`/`outline-custom` → transparent background, palette border and text; `custom` → `custom_background`/`custom_text`/`custom_border`; `custom_hover_*` reported (`hover`); `gradient`/`gradient-custom` → button background gradient; `shape` rounded/square/round → radius 5px/0/50px (values from the CSS); `size` xs–lg → font size + padding from the CSS; `align` → alignment, `inline` → nested flexed row for consecutive inline buttons; `button_block` → width 100 %; `add_icon` + `i_type=fontawesome` + `i_icon_fontawesome` → icon `unicode, type, weight` via the FA map, other icon libraries reported; `custom_onclick` reported (`interaction`) |
 | `vc_icon` | `divi/icon` | `icon_fontawesome` (other libraries reported), `color`/`custom_color`, `size` xs–xl → font size from the CSS, `align`, `link`; `background_style` + `background_color`/`custom_background_color` → module background + radius (`rounded`/`circle`/`boxed`/`outline` approximated, reported) |
 | `vc_separator` | `divi/divider` | `color`/`accent_color`, `style` solid/dotted/dashed/double, `border_width` → weight, `el_width` % → width, `align` |
 | `vc_zigzag` | `divi/divider` | colour, width, alignment; the zigzag pattern reported (`layout`) |
@@ -234,7 +274,11 @@ path against that file before it is written.
 | `vc_media_grid`, `vc_masonry_media_grid` | `divi/gallery` grid | `include` ids; `element_width` → columns; grid item template reported (`integration`) |
 | `vc_images_carousel` | `divi/slider` › `divi/slide` | one slide per image (image as slide background, `onclick` link); `slides_per_view` > 1, `partial_view`, `mode` reported |
 | `vc_video` | `divi/video` (YouTube, Vimeo, media file) else `divi/code` holding the URL as an `[embed]` | `link`, `el_width` → width, `align`; `el_aspect`, `title` → heading |
-| `vc_gmaps` | `divi/code` | the decoded iframe; `size` → iframe height |
+| `vc_gmaps` (deprecated in 9.0) | `divi/code` | the decoded iframe; `size` → iframe height |
+| `vc_goo_maps` (9.0) | `divi/code` | the Google embed iframe built exactly as `WPBakeryShortCode_Vc_Goo_Maps::getIframeLink()` does from `location`, `type`, `zoom`; `height` |
+| `vc_copyright` (9.0) | `divi/text` | `prefix` + `©` + Divi dynamic content `current_date` (format `Y`) + `postfix`; `align` |
+| `vc_flexbox_container` › `vc_flexbox_container_item` (9.0) | `divi/group` (flex, wrap, `gap`) › one `divi/group` per item holding its converted children | items keep `flex: 1 0 auto` via a flexType-free width; margin `0 -15px` as WPBakery |
+| `vc_grid_container` › `vc_grid_container_item` (9.0) | `divi/group` with Divi's grid layout (`columns`, `row_gap`, `col_gap`) › one `divi/group` per item | grid attribute names read from `group/module.json` at implementation; if Divi 5.12's grid layout cannot express it, flex wrap with `flexType` = 24/columns per item, reported (`layout`) |
 | `vc_raw_html`, `vc_raw_js` | `divi/code` | decoded content verbatim |
 | `vc_progress_bar` | `divi/counters` › `divi/counter` | one bar per `values` entry: `label`, `value` (+`units`), per-bar `color`/`customcolor`, `bgcolor`/`custombgcolor` track; `options` striped/animated reported |
 | `vc_pie` | `divi/circle-counter` | `value`, `label_value`, `units` (`%` → percent sign), `color`/`custom_color`, `title` |
@@ -252,6 +296,14 @@ path against that file before it is written.
 | `vc_facebook`, `vc_tweetmeme`, `vc_pinterest`, `vc_googleplus`, `vc_flickr` | labelled placeholder | reported (`integration`) |
 | `vc_gutenberg` | `do_blocks()` into `divi/code` on this site; placeholder keeping the text from an export | reported static copy |
 | `vc_custom_field` | `divi/text` with Divi dynamic content `post_meta_key` | approximate |
+| `vc_woocommerce` (9.0 template; wraps a WooCommerce shortcode) | `divi/code` holding the WooCommerce shortcode | reported (`integration`) |
+| `contact-form-7` | `divi/contact-form-7` (Divi 5.12 ships this module) | form `id`; `title` |
+| `bsf-info-box` (Ultimate Addons) | `divi/blurb` | icon/image, title, description, read-more link and button; fields from `modules/ultimate_info_box.php` |
+| `just_icon` (Ultimate Addons) | `divi/icon` | icon, colour, size, background style, link (`modules/ultimate_just_icon.php`) |
+| `stat_counter` (Ultimate Addons) | `divi/number-counter` | value, prefix/suffix, title, colours (`modules/ultimate_stats_counter.php`) |
+| `ultimate_pricing` (Ultimate Addons) | `divi/pricing-tables` › `divi/pricing-table` | heading, sub-heading, price, features list, button (`modules/ultimate_pricing_tables.php`) |
+| `ultimate_video` (Ultimate Addons) | `divi/video` | URL, thumbnail, play-button styling reported (`modules/ultimate_videos.php`) |
+| `ult_content_box` (Ultimate Addons) | `divi/group` with background, border, padding | children converted inside (`modules/ultimate_content_box.php`) |
 | `rev_slider_vc`, `rev_slider`, `layerslider_vc`, `layerslider` | labelled placeholder naming the slider alias | reported (`integration`) |
 | anything else | see §7 | |
 
@@ -284,10 +336,11 @@ Handling is uniform and never silent:
   a `div` holding the text content, tags stripped) keeps the text and position; reported the same way.
 - Nested shortcodes inside `vc_column_text` HTML get the same two behaviours in place (rendered on-site,
   left as text and reported from an export).
-- Once the two real theme exports arrive, every add-on element they contain that has a natural Divi
-  equivalent (a heading, spacer, button, icon box, testimonial) gets a real handler registered
-  `approximate: true`, as the Beaver converter did for PowerPack; single-element fixtures are cut from
-  the exports. The generic path above stays for everything else.
+- The six Ultimate Addons elements the layouts corpus uses get real handlers from the add-on's source
+  (§6, registered `approximate: true` because the source is 3.19.3 while sites run newer builds); once
+  the two real theme exports arrive, every further add-on element they contain that has a natural Divi
+  equivalent gets one too, with single-element fixtures cut from the exports. The generic path above
+  stays for everything else.
 
 ## 8. Design settings (StyleMapper)
 
@@ -300,7 +353,9 @@ Handling is uniform and never silent:
 | `css` `border-*-width`, `border-color`, `border-style` | `module.decoration.border.desktop.value.styles.{all|top…}` |
 | `css` `border-radius` | `…border.desktop.value.radius` (all corners) |
 | `css` `background-color` | `module.decoration.background.desktop.value.color` |
-| `css` `background-image: url(…)`, `background-position`, `background-repeat`, `background-size` | `…background.desktop.value.image.{url,position,repeat,size}` (`background-style: stretch` → `cover`, `cover`/`contain`/`no-repeat`/`repeat` as named; the image URL is `url(123)` on some sites: resolved as an attachment id) |
+| `css` `background-image: url(…)`, `background-position`, `background-repeat`, `background-size` | `…background.desktop.value.image.{url,position,repeat,size}` (`background-style: stretch` → `cover`, `cover`/`contain`/`no-repeat`/`repeat` as named; the URL usually carries `?id=<attachment>`: the id is resolved on this site or through the export's attachment map, else the URL is kept as is; a bare `url(123)` is an attachment id) |
+| `css` `background` shorthand | split into colour and image parts |
+| `css` `*background-color` and other IE hacks | dropped silently (WPBakery's own output artefacts) |
 | any other `css` declaration | the module's custom CSS `css.desktop.value.main`, verbatim, counted under `custom_css_carried` |
 | `!important` | stripped |
 | `font_container` (`vc_custom_heading`) | `title.decoration.font.font.desktop.value.{size,lineHeight,textAlign,color,headingLevel}` |
@@ -438,6 +493,10 @@ export has no counterpart. Pro instead ships:
   extracted by `scripts/wpb-templates-to-fixtures.php`) convert without exception, keep every heading,
   text and button string, and pass the vendored Divi 5 Deterministic Validator
   (`tests/support/divi5-validator/`).
+- **Layouts corpus:** the 35 Layouts for WPBakery layouts (`fixtures/wpbakery-layouts/*.txt`) convert
+  validator-clean with zero skipped settings and every heading, text and button string kept
+  (`LayoutsCorpusConversionTest`); `unresolved_media` entries are expected there (the attachment ids
+  belong to the source site) and are the only report noise allowed.
 - **Real-world exports:** `wpbakery templates/*.xml` (the theme exports you supply; committed, like the
   Beaver repo's `beaver templates/`) must convert validator-clean with zero skipped settings and no unlabelled
   placeholder (`ThirdPartyTemplateConversionTest`; incomplete, not green, while the folder is empty).
@@ -452,7 +511,9 @@ export has no counterpart. Pro instead ships:
 
 `docker-compose.yml`: `wordpress:php8.3-apache` on port **8020** (8000, 8001, 8010, 8080, 8081 are
 taken by the sibling projects) + `mysql:8.0`. Mounts both plugin dirs, `fixtures/`,
-`references/Divi.zip` and `references/js_composer.7.8.zip` (both gitignored).
+`references/Divi.zip` and `references/js_composer.9.0.1.zip` (both gitignored; Ultimate Addons is not
+installed by default, since the 3.19.3 build predates current WordPress, and the corpus' add-on elements are
+exercised through the export path).
 `scripts/docker/setup_wp.sh` installs WP-CLI, core (admin/admin), Divi from the zip (activated),
 WPBakery from the zip (activated), Plugin Check, both converters, then seeds a bundled template page and
 converts it. Helpers via `wp eval-file`: `set-wpbakery-content.php` (fixture → `post_content` + flag),
@@ -483,9 +544,12 @@ visual preview; Divi 4 output; theme header/footer builders.
 3. **Column widths** use the 24-grid `flexType` directly for every twelfth (§5); the kickoff assumed a
    flex-group fallback for 5/12, 7/12 and 11/12, which Divi 5.12's own CSS makes unnecessary.
 4. **Box-model targets** (§9) are proposals; the screenshot pass decides and `CLAUDE.md` records it.
-5. **WPBakery version**: the only copy on this machine is 7.8 (July 2024). The shortcode format has
-   not changed since, but if you have an 8.x zip, drop it in `references/` and the schema doc is
-   re-verified against it.
+5. **WPBakery version**: pinned to 9.0.1 (August 2026), with 7.8 kept for the pre-9.0 attribute forms
+   that most live sites still carry; both eras are normalised with WPBakery's own migration rules.
 6. **Docker port 8020**; fixtures as `.txt` shortcode files with an optional `.json` sidecar for metas.
 7. **Theme elements**: static copy on-site / labelled placeholder from an export for every non-core
-   shortcode; real handlers only for the add-on elements present in the two exports you supply.
+   shortcode; real handlers for the six Ultimate Addons elements in the layouts corpus and for the add-on
+   elements present in the two exports you supply.
+8. **Layouts corpus**: the 35 free layouts are fetched from the plugin's public API and committed as test
+   fixtures with credit; they are never shipped in the plugin zip. Say so if you would rather keep them out
+   of the repository.
