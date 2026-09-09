@@ -30,17 +30,23 @@
 - Divi 5 nests column → row → column. Anything that must sit inline (button groups, icon rows) goes
   in a nested flexed row, not in stacked blocks.
 - **Box model** (measured on the Docker site, `docs/box-model.md`): reproduce WPBakery's, not Divi's
-  defaults. Section padding `0` unless the row's design options set one; row padding `0`; column
-  padding `0 15px` (plus `gap/2` on all sides when the row sets `gap`, plus `35px` on top when the
-  row is filled); row `columnGap`/`rowGap` `0px` (the string `"0px"`, never `"0"`). Divi's
-  `.et_pb_row` keeps `max-width: 1080px`, so WPBakery's `-15px` row bleed cannot be reproduced with
-  `width: calc(100% + 30px)` — the converted content is inset 15 px per side instead, and that is the
-  accepted approximation. Default module spacing goes on the column's `rowGap` (35px), not on
-  per-module margins: Divi emits the text module's margin `!important` but not the image module's,
-  where `flex_grid.css` overrides it to `0`. Blocks built by a handler's `delegate()` are pieces of
-  one element and get no default margins. Section padding `0` also drops the first row under Divi's
-  fixed header (measured: content at y=224, header bottom at y=271) — the theme offset a WPBakery
-  page gets from `.container` is a separate decision. All of it sits behind `wbdc_layout_defaults`
+  defaults. Section padding `0` unless the row's design options set one. Every top-level row carries
+  WPBakery's 15 px bleed — `sizing.width` `calc(var(--content-width, 80%) + 30px)`, `sizing.maxWidth`
+  `calc(var(--content-max-width, 1080px) + 30px)`, `spacing.margin` `0px -15px 0px -15px` — the same
+  Divi `:root` properties and plain fallbacks Divi's own row rule uses, so an unknown property
+  degrades to Divi's shipped width instead of to `auto`; the bleed stays 15 px whatever the gap.
+  A nested row uses `calc(100% + 30px)` with `maxWidth: none` and the same `0 -15px` margin.
+  Row padding `0`, except `gap` N, which goes on the row: `layout.columnGap` and `layout.rowGap`
+  `Npx` plus `spacing.padding` `N/2px 0px N/2px 0px` — never as column padding. Columns keep padding
+  `0 15px` (plus `35px` on top when the row is filled **and** on the columns of the row that follows
+  a filled row) and `layout.rowGap` `0px`. Gaps are written `"0px"`, never `"0"` — Divi tests the
+  value for truthiness. Default element spacing is a module bottom margin taken from
+  `js_composer.min.css` per element (35 px `.wpb_content_element`/`.vc_icon_element`, 21.74 px
+  `.vc_btn3-container`/`.vc_message_box`/`.vc_toggle_content`, none on inner rows or
+  `vc_custom_heading`), written at the path that module reads — `module.advanced.spacing` for
+  `divi/image`, `module.decoration.spacing` elsewhere; check the module's own source before choosing,
+  the same rule as every other attribute path. Blocks built by a handler's `delegate()` are pieces of
+  one element and get no default margins. All of it sits behind `wbdc_layout_defaults`
   (`GlobalSettingsResolver`).
 - Expected fixtures are a reviewed specification, not a snapshot: run
   `php scripts/render-fixture.php fixtures/wpbakery/<name>.txt --report`, read the output, then
