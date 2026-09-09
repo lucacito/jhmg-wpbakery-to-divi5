@@ -135,6 +135,44 @@ final class NodeTreeTest extends TestCase {
         $this->assertContains( 'row child is not a column: vc_column_text', $tree['warnings'] );
     }
 
+    public function test_an_element_directly_inside_an_inner_row_gets_an_implicit_inner_column(): void {
+        $tree = $this->tree( '[vc_row][vc_column][vc_row_inner][vc_column_text]Hi[/vc_column_text][/vc_row_inner][/vc_column][/vc_row]' );
+
+        $inner_row = $tree['roots'][0]['children'][0]['children'][0]['children'][0];
+        $this->assertSame( 'vc_row_inner', $inner_row['tag'] );
+
+        $column = $inner_row['children'][0];
+        $this->assertSame( 'vc_column_inner', $column['tag'] );
+        $this->assertSame( 'column_inner', $column['kind'] );
+        $this->assertTrue( $column['implicit'] );
+        $this->assertSame( '1/1', $column['atts']['width'] );
+        $this->assertSame( 'vc_column_text', $column['children'][0]['tag'] );
+
+        $this->assertContains( 'row child is not a column: vc_column_text', $tree['warnings'] );
+    }
+
+    public function test_a_correctly_nested_inner_row_is_left_alone(): void {
+        $tree = $this->tree(
+            '[vc_row][vc_column][vc_row_inner][vc_column_inner width="1/2"][vc_column_text]Hi[/vc_column_text][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]'
+        );
+
+        $inner_row = $tree['roots'][0]['children'][0]['children'][0]['children'][0];
+        $this->assertSame( 'vc_column_inner', $inner_row['children'][0]['tag'] );
+        $this->assertFalse( isset( $inner_row['children'][0]['implicit'] ) );
+        $this->assertSame( [], $tree['warnings'] );
+    }
+
+    public function test_an_inner_row_inside_an_implicit_column_is_repaired_too(): void {
+        $tree = $this->tree( '[vc_row][vc_row_inner][vc_column_text]Hi[/vc_column_text][/vc_row_inner][/vc_row]' );
+
+        $column    = $tree['roots'][0]['children'][0]['children'][0];
+        $inner_row = $column['children'][0];
+        $this->assertTrue( $column['implicit'] );
+        $this->assertSame( 'vc_row_inner', $inner_row['tag'] );
+        $this->assertSame( 'vc_column_inner', $inner_row['children'][0]['tag'] );
+        $this->assertTrue( $inner_row['children'][0]['implicit'] );
+    }
+
     public function test_a_top_level_row_inner_is_treated_as_a_row(): void {
         $tree = $this->tree( '[vc_row_inner][vc_column_inner][/vc_column_inner][/vc_row_inner]' );
 

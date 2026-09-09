@@ -132,26 +132,38 @@ foreach ( $index['templates'] as $entry ) {
 
 $total = count( glob( $directory . '/*.txt' ) ?: [] );
 
-file_put_contents(
-    $directory . '/README.md',
-    "# Layouts for WPBakery — layout corpus\n\n"
-    . "The " . $total . " `.txt` files beside this README are the layouts published by\n"
-    . "**[Layouts for WPBakery](https://wordpress.org/plugins/layouts-for-wpbakery/)**, a free plugin by\n"
-    . "Techeshta (contributors: techeshta, alkesh7, vastarpara, hadihirpara), licensed **GPL-2.0-or-later**.\n"
-    . "Each file is the `template` string of one layout, byte for byte: a WPBakery shortcode document.\n\n"
-    . "They are here as test input only. The converter is tested against real pages rather than\n"
-    . "hand-written snippets, and these are the largest set of current, freely licensed WPBakery\n"
-    . "layouts there is. No layout, image or copy from them ships in the plugin.\n\n"
-    . "Fetched from the plugin's own public API:\n\n"
-    . "- index: `" . API_BASE . "/templates`\n"
-    . "- layout: `" . API_BASE . "/template/byid/?id=<id>`\n\n"
-    . "Last fetched: " . gmdate( 'Y-m-d' ) . " (UTC).\n\n"
-    . "Regenerate with `php scripts/fetch-layouts-corpus.php`; it only writes files that are not\n"
-    . "already there, so an existing layout is never silently rewritten.\n"
-);
+/*
+ * The README carries a fetch date, so it is only rewritten when this run
+ * actually fetched something: a re-run that skips every layout must not
+ * restamp a corpus it did not touch.
+ */
+if ( $written > 0 ) {
+    write_readme( $directory, $total );
+}
 
 echo 'wrote ' . $written . ' layouts, skipped ' . $skipped . ' already there, ' . $failed . " failed\n";
 
 if ( $failed > 0 ) {
     exit( 1 );
+}
+
+/** The credit file beside the corpus. */
+function write_readme( string $directory, int $total ): void {
+    file_put_contents(
+        $directory . '/README.md',
+        "# Layouts for WPBakery — layout corpus\n\n"
+        . "The " . $total . " `.txt` files beside this README are the layouts published by\n"
+        . "**[Layouts for WPBakery](https://wordpress.org/plugins/layouts-for-wpbakery/)**, a free plugin by\n"
+        . "Techeshta (contributors: techeshta, alkesh7, vastarpara, hadihirpara), licensed **GPL-2.0-or-later**.\n"
+        . "Each file is the `template` string of one layout, byte for byte: a WPBakery shortcode document.\n\n"
+        . "They are here as test input only. The converter is tested against real pages rather than\n"
+        . "hand-written snippets, and these are the largest set of current, freely licensed WPBakery\n"
+        . "layouts there is. No layout, image or copy from them ships in the plugin.\n\n"
+        . "Fetched from the plugin's own public API:\n\n"
+        . "- index: `" . API_BASE . "/templates`\n"
+        . "- layout: `" . API_BASE . "/template/byid/?id=<id>`\n\n"
+        . "Last fetched: " . gmdate( 'Y-m-d' ) . " (UTC).\n\n"
+        . "Regenerate with `php scripts/fetch-layouts-corpus.php`; it only writes files that are not\n"
+        . "already there, so an existing layout is never silently rewritten.\n"
+    );
 }

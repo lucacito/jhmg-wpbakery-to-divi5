@@ -10,6 +10,11 @@
 # gitignored and re-extracted on demand with this script. Files that already exist are left
 # alone, so a re-run never overwrites a reviewed sample.
 #
+# The default zip is the buyer's own ThemeForest download of the theme, placed by hand in
+# references/ (which is gitignored in full): it is a commercial archive, it is not in this
+# repository, and this script cannot fetch it. Without it, run the script with the path to
+# your own copy, or skip it — nothing in the test suite needs the 93 uncommitted exports.
+#
 # Usage: scripts/extract-ronneby-corpus.sh [path/to/theme.zip]
 set -euo pipefail
 
@@ -19,6 +24,8 @@ OUT="$ROOT/wpbakery templates/ronneby"
 
 if [ ! -f "$ZIP" ]; then
   echo "no such zip: $ZIP" >&2
+  echo "the Ronneby theme archive is a commercial ThemeForest download and is not committed;" >&2
+  echo "put your own copy in references/ or pass its path." >&2
   echo "usage: $0 [path/to/theme.zip]" >&2
   exit 1
 fi

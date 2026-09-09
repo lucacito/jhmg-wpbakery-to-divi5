@@ -25,6 +25,11 @@ scripts/extract-ronneby-corpus.sh                    # references/themeforest-s0
 scripts/extract-ronneby-corpus.sh path/to/theme.zip
 ```
 
+That default path is **your own ThemeForest download**, placed by hand in `references/`, which is
+gitignored in full — the archive is commercial, it is not in this repository, and no script can
+fetch it. Without it the three committed samples are all there is, which is enough for the test
+suite; the other 93 are for wider spot checks.
+
 which copies every `Mainfiles/import/<demo>/content.xml` out of the archive to
 `ronneby/<demo>.xml`, skips the demos whose name says Elementor (they hold no WPBakery
 shortcodes), and never overwrites a file that is already there.

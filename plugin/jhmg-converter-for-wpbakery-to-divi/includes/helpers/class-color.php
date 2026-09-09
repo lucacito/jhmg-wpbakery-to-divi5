@@ -200,6 +200,22 @@ final class Color {
     ];
 
     /**
+     * `Wpb_Attributes_Migration_Abstract::resolve_progress_bar_txt_color()`
+     * (same file): the label colour a migrated progress bar takes — the light
+     * one for every coloured bar, the dark one for the `grey` and `white`
+     * palette bars, and none at all for the uncoloured `bar_grey`.
+     */
+    public const PROGRESS_BAR_TEXT      = '#ffffff';
+    public const PROGRESS_BAR_TEXT_DARK = '#666666';
+
+    /**
+     * `Wpb_Attributes_Migration_Abstract::apply_progress_bar_color()`'s
+     * `$data['text_shadow_color'] = '#00000040'`, which it writes beside
+     * `add_text_shadow` whenever it resolves a bar colour.
+     */
+    public const PROGRESS_BAR_TEXT_SHADOW = '#00000040';
+
+    /**
      * The label colour
      * `Wpb_Template_Attributes_Migration::convert_btn_gradient_style_to_gradient_custom()`
      * writes when a gradient button becomes a custom gradient:

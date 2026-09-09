@@ -9,7 +9,7 @@
   `references/js_composer.7.8.zip` for the pre-9.0 forms, `references/Ultimate_VC_Addons.zip`
   (`modules/*.php`) for the add-on. What they map to is recorded in `docs/wpbakery-schema.md`.
 - Handlers are written to the 9.0.1 attribute names; `AttributeNormaliser` converts the pre-9.0 forms
-  (and the deprecated tags: `vc_button`/`vc_button2`/`vc_cta_button` → `vc_btn`, `vc_tabs`/`vc_tour`/
+  (and the deprecated tags: `vc_button`/`vc_button2` → `vc_btn`, `vc_cta_button` → `vc_cta`, `vc_tabs`/`vc_tour`/
   `vc_accordion` → the tta equivalents) before any handler runs. Both eras go through the normaliser.
 - Divi attribute paths only as documented in `docs/divi5-schema.md`, read from the Divi source
   (`references/Divi.zip` is Divi 5.12.1): unzip it and check

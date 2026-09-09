@@ -99,16 +99,21 @@ final class AttributeNormaliserTest extends TestCase {
     }
 
     public function test_every_button_1_style_maps_to_a_button_3_style_and_shape(): void {
+        // The outline styles pick up the grey the 9.0 migration back-fills for
+        // a colourless outline button, so only the two keys are compared.
         $expected = [
             'rounded'         => [ 'style' => 'flat', 'shape' => 'rounded' ],
             'square'          => [ 'style' => 'flat', 'shape' => 'square' ],
             'round'           => [ 'style' => 'flat', 'shape' => 'round' ],
-            'outlined'        => [ 'style' => 'outline' ],
-            'square_outlined' => [ 'style' => 'outline', 'shape' => 'square' ],
+            'outlined'        => [ 'style' => 'outline-custom', 'shape' => null ],
+            'square_outlined' => [ 'style' => 'outline-custom', 'shape' => 'square' ],
         ];
 
         foreach ( $expected as $old => $new ) {
-            $this->assertEquals( $new, $this->atts( 'vc_button2', [ 'style' => $old ] ), $old );
+            $atts = $this->atts( 'vc_button2', [ 'style' => $old ] );
+
+            $this->assertSame( $new['style'], $atts['style'], $old );
+            $this->assertSame( $new['shape'], $atts['shape'] ?? null, $old );
         }
     }
 
@@ -152,7 +157,7 @@ final class AttributeNormaliserTest extends TestCase {
                 'el_class'              => 'promo',
                 'btn_title'             => 'Sign up',
                 'btn_link'              => 'url:https%3A%2F%2Fexample.com%2Fgo|title:Sign up|target:_blank',
-                'btn_color'             => 'btn-primary',
+                'btn_color'             => 'primary',
                 'btn_size'              => 'lg',
                 'btn_add_icon'          => 'true',
                 'btn_i_type'            => 'pixelicons',
@@ -209,13 +214,50 @@ final class AttributeNormaliserTest extends TestCase {
         $this->assertContains( 'vc_cta_button2 → vc_cta', $result['notes'] );
     }
 
-    public function test_a_cta_button2_palette_colour_becomes_the_integrated_buttons_custom_colour(): void {
-        $atts = $this->atts( 'vc_cta_button2', [ 'title' => 'Go', 'btn_style' => 'flat', 'color' => 'blue' ] );
+    /**
+     * `btn_style` holds one of `VcSharedLibrary::$button_styles` — the
+     * button-1 styles — so it has to be split before the button colour rules
+     * can read it.
+     */
+    public function test_a_cta_button2_button_style_and_colour_become_the_integrated_buttons(): void {
+        $result = AttributeNormaliser::normalise( 'vc_cta_button2', [
+            'h2'        => 'Grow',
+            'title'     => 'Go',
+            'btn_style' => 'rounded',
+            'color'     => 'blue',
+        ] );
 
-        $this->assertSame( 'custom', $atts['btn_style'] );
-        $this->assertSame( '#5472d2', $atts['btn_custom_background'] );
-        $this->assertSame( '#fff', $atts['btn_custom_text'] );
-        $this->assertArrayNotHasKey( 'color', $atts );
+        $this->assertEquals(
+            [
+                'h2'                          => 'Grow',
+                'add_button'                  => 'true',
+                'btn_title'                   => 'Go',
+                'btn_style'                   => 'custom',
+                'btn_shape'                   => 'rounded',
+                'btn_custom_background'       => '#5472d2',
+                'btn_custom_text'             => '#fff',
+                'btn_custom_hover_background' => '#3c5ecc',
+                'btn_custom_hover_text'       => '#f7f7f7',
+            ],
+            $result['atts']
+        );
+        $this->assertArrayNotHasKey( 'color', $result['atts'] );
+    }
+
+    public function test_a_cta_button2_outlined_button_becomes_an_outline_custom_one(): void {
+        $atts = $this->atts( 'vc_cta_button2', [ 'title' => 'Go', 'btn_style' => 'square_outlined', 'color' => 'green' ] );
+
+        $this->assertSame( 'outline-custom', $atts['btn_style'] );
+        $this->assertSame( 'square', $atts['btn_shape'] );
+        $this->assertSame( '#6dab3c', $atts['btn_outline_custom_color'] );
+    }
+
+    public function test_a_cta_button2_3d_button_keeps_the_style_button_3_shares(): void {
+        $atts = $this->atts( 'vc_cta_button2', [ 'title' => 'Go', 'btn_style' => '3d', 'color' => 'black' ] );
+
+        $this->assertSame( '3d', $atts['btn_style'] );
+        $this->assertSame( '#2a2a2a', $atts['btn_custom_background'] );
+        $this->assertSame( '#0e0e0e', $atts['btn_custom_border'] );
     }
 
     // --- deprecated elements: tabs, tours, accordions ------------------------
@@ -250,30 +292,61 @@ final class AttributeNormaliserTest extends TestCase {
         $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'flat', 'color' => 'blue' ] );
 
         $this->assertEquals(
-            [ 'style' => 'custom', 'custom_background' => '#5472d2', 'custom_text' => '#fff' ],
+            [
+                'style'                   => 'custom',
+                'custom_background'       => '#5472d2',
+                'custom_text'             => '#fff',
+                'custom_hover_background' => '#3c5ecc',
+                'custom_hover_text'       => '#f7f7f7',
+            ],
             $result['atts']
         );
-        $this->assertContains( 'vc_btn: color → custom_background, custom_text', $result['notes'] );
+        $this->assertContains(
+            'vc_btn: color → style="custom", custom_background, custom_text, custom_hover_background, custom_hover_text',
+            $result['notes']
+        );
+    }
+
+    public function test_a_modern_button_also_takes_its_borders(): void {
+        $this->assertEquals(
+            [
+                'style'                   => 'custom',
+                'custom_background'       => '#6dab3c',
+                'custom_text'             => '#fff',
+                'custom_hover_background' => '#5f9434',
+                'custom_hover_text'       => '#f7f7f7',
+                'custom_border'           => '#6dab3c',
+                'custom_hover_border'     => '#5f9434',
+            ],
+            $this->atts( 'vc_btn', [ 'style' => 'modern', 'color' => 'green' ] )
+        );
     }
 
     public function test_a_classic_button_takes_its_legacy_background_and_text(): void {
-        $this->assertEquals(
-            [ 'style' => 'custom', 'custom_background' => '#0088cc', 'custom_text' => '#fff' ],
-            $this->atts( 'vc_btn', [ 'style' => 'classic', 'color' => 'primary' ] )
-        );
+        $atts = $this->atts( 'vc_btn', [ 'style' => 'classic', 'color' => 'primary' ] );
+
+        $this->assertSame( '#0088cc', $atts['custom_background'] );
+        $this->assertSame( '#fff', $atts['custom_text'] );
+        $this->assertSame( '#0074ad', $atts['custom_hover_background'] );
+        $this->assertArrayNotHasKey( 'custom_border', $atts, 'only the modern style has borders' );
     }
 
     public function test_a_light_palette_button_takes_wpbakerys_dark_label(): void {
-        $this->assertEquals(
-            [ 'style' => 'custom', 'custom_background' => '#ebebeb', 'custom_text' => '#666' ],
-            $this->atts( 'vc_btn', [ 'style' => 'flat', 'color' => 'grey' ] )
-        );
+        $atts = $this->atts( 'vc_btn', [ 'style' => 'flat', 'color' => 'grey' ] );
+
+        $this->assertSame( '#ebebeb', $atts['custom_background'] );
+        $this->assertSame( '#666', $atts['custom_text'] );
+        $this->assertSame( '#5e5e5e', $atts['custom_hover_text'] );
     }
 
-    public function test_a_hand_picked_colour_is_never_overwritten_by_a_migrated_one(): void {
+    /**
+     * `apply_btn_solid_color()` assigns rather than back-fills, so a slug
+     * beside a picked colour resolves in favour of the slug — this follows it.
+     */
+    public function test_a_colour_slug_beside_a_picked_colour_wins_as_it_does_in_wpbakery(): void {
         $atts = $this->atts( 'vc_btn', [ 'style' => 'flat', 'color' => 'blue', 'custom_text' => '#101010' ] );
 
-        $this->assertSame( '#101010', $atts['custom_text'] );
+        $this->assertSame( '#fff', $atts['custom_text'] );
         $this->assertSame( '#5472d2', $atts['custom_background'] );
     }
 
@@ -281,10 +354,54 @@ final class AttributeNormaliserTest extends TestCase {
         $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'outline', 'color' => 'green' ] );
 
         $this->assertEquals(
-            [ 'style' => 'outline-custom', 'outline_custom_color' => '#6dab3c' ],
+            [
+                'style'                           => 'outline-custom',
+                'outline_custom_color'            => '#6dab3c',
+                'outline_custom_hover_background' => '#6dab3c',
+                'outline_custom_hover_text'       => '#fff',
+            ],
             $result['atts']
         );
-        $this->assertContains( 'vc_btn: color → outline_custom_color', $result['notes'] );
+        $this->assertContains(
+            'vc_btn: color → style="outline-custom", outline_custom_color, outline_custom_hover_background, outline_custom_hover_text',
+            $result['notes']
+        );
+    }
+
+    public function test_an_outline_button_with_no_colour_defaults_to_grey(): void {
+        $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'outline', 'title' => 'Go' ] );
+
+        $this->assertEquals(
+            [
+                'title'                           => 'Go',
+                'style'                           => 'outline-custom',
+                'outline_custom_color'            => '#ebebeb',
+                'outline_custom_hover_background' => '#ebebeb',
+                'outline_custom_hover_text'       => '#666',
+            ],
+            $result['atts']
+        );
+        $this->assertContains( 'vc_btn: style="outline" with no colour defaults to grey', $result['notes'] );
+    }
+
+    public function test_a_3d_button_with_no_colour_defaults_to_grey(): void {
+        $this->assertEquals(
+            [
+                'title'             => 'Go',
+                'style'             => '3d',
+                'custom_background' => '#ebebeb',
+                'custom_text'       => '#666',
+                'custom_border'     => '#cfcfcf',
+            ],
+            $this->atts( 'vc_btn', [ 'style' => '3d', 'title' => 'Go' ] )
+        );
+    }
+
+    public function test_a_button_that_already_carries_picked_colours_is_not_given_grey(): void {
+        $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'outline', 'custom_text' => '#101010' ] );
+
+        $this->assertSame( [ 'style' => 'outline', 'custom_text' => '#101010' ], $result['atts'] );
+        $this->assertSame( [], $result['notes'] );
     }
 
     public function test_a_3d_palette_button_keeps_its_style_and_gains_custom_colours(): void {
@@ -292,6 +409,25 @@ final class AttributeNormaliserTest extends TestCase {
             [ 'style' => '3d', 'custom_background' => '#2a2a2a', 'custom_text' => '#fff', 'custom_border' => '#0e0e0e' ],
             $this->atts( 'vc_btn', [ 'style' => '3d', 'color' => 'black' ] )
         );
+    }
+
+    public function test_a_button_1_colour_class_becomes_the_slug_the_tables_use(): void {
+        $expected = [
+            'wpb_button'  => '#f7f7f7',
+            'btn-primary' => '#0088cc',
+            'btn-info'    => '#58b9da',
+            'btn-success' => '#6ab165',
+            'btn-warning' => '#ff9900',
+            'btn-danger'  => '#ff675b',
+            'btn-inverse' => '#555555',
+        ];
+
+        foreach ( $expected as $class => $background ) {
+            $atts = $this->atts( 'vc_button', [ 'color' => $class, 'style' => 'rounded' ] );
+
+            $this->assertSame( 'custom', $atts['style'], $class );
+            $this->assertSame( $background, $atts['custom_background'], $class );
+        }
     }
 
     public function test_a_gradient_button_becomes_a_custom_gradient(): void {
@@ -422,16 +558,36 @@ final class AttributeNormaliserTest extends TestCase {
 
     public function test_a_progress_bar_background_colour_becomes_a_custom_colour(): void {
         $this->assertEquals(
-            [ 'custombgcolor' => '#5aa1e3' ],
+            [
+                'custombgcolor'     => '#5aa1e3',
+                'customtxtcolor'    => '#ffffff',
+                'add_text_shadow'   => 'true',
+                'text_shadow_color' => '#00000040',
+            ],
             $this->atts( 'vc_progress_bar', [ 'bgcolor' => 'sky' ] )
         );
+    }
+
+    public function test_a_light_progress_bar_takes_the_dark_label(): void {
+        $this->assertSame( '#666666', $this->atts( 'vc_progress_bar', [ 'bgcolor' => 'white' ] )['customtxtcolor'] );
     }
 
     public function test_a_classic_progress_bar_colour_becomes_a_custom_colour(): void {
         $result = AttributeNormaliser::normalise( 'vc_progress_bar', [ 'bgcolor' => 'bar_blue' ] );
 
-        $this->assertSame( [ 'custombgcolor' => '#0074cc' ], $result['atts'] );
-        $this->assertContains( 'vc_progress_bar: bgcolor → custombgcolor', $result['notes'] );
+        $this->assertSame(
+            [
+                'custombgcolor'     => '#0074cc',
+                'customtxtcolor'    => '#ffffff',
+                'add_text_shadow'   => 'true',
+                'text_shadow_color' => '#00000040',
+            ],
+            $result['atts']
+        );
+        $this->assertContains(
+            'vc_progress_bar: bgcolor → custombgcolor, customtxtcolor, add_text_shadow, text_shadow_color',
+            $result['notes']
+        );
     }
 
     public function test_the_default_grey_bar_is_consumed_without_a_colour(): void {
@@ -452,23 +608,69 @@ final class AttributeNormaliserTest extends TestCase {
         $values = rawurlencode( (string) json_encode( [
             [ 'label' => 'PHP', 'value' => '90', 'color' => 'green' ],
             [ 'label' => 'CSS', 'value' => '80', 'customcolor' => '#123456' ],
+            [ 'label' => 'JS', 'value' => '70', 'color' => 'bar_red' ],
         ] ) );
 
         $atts = $this->atts( 'vc_progress_bar', [ 'values' => $values ] );
         $bars = PackedParams::paramGroup( $atts['values'] );
 
         $this->assertSame( '#6dab3c', $bars[0]['customcolor'] );
+        $this->assertSame( '#ffffff', $bars[0]['customtxtcolor'] );
+        $this->assertSame( 'true', $bars[0]['add_text_shadow'] );
+        $this->assertSame( '#00000040', $bars[0]['text_shadow_color'] );
         $this->assertArrayNotHasKey( 'color', $bars[0] );
+
         $this->assertSame( '#123456', $bars[1]['customcolor'] );
+        $this->assertArrayNotHasKey( 'customtxtcolor', $bars[1], 'a bar that had its own colour is left alone' );
+
+        $this->assertSame( '#da4f49', $bars[2]['customcolor'] );
+    }
+
+    public function test_a_bar_that_already_has_a_custom_colour_keeps_it(): void {
+        $values = rawurlencode( (string) json_encode( [
+            [ 'label' => 'PHP', 'value' => '90', 'color' => 'green', 'customcolor' => '#123456' ],
+        ] ) );
+
+        $bars = PackedParams::paramGroup( $this->atts( 'vc_progress_bar', [ 'values' => $values ] )['values'] );
+
+        $this->assertSame( '#123456', $bars[0]['customcolor'] );
+        $this->assertArrayNotHasKey( 'color', $bars[0] );
     }
 
     public function test_chart_item_colours_become_custom_colours(): void {
-        $values = rawurlencode( (string) json_encode( [ [ 'title' => 'A', 'value' => '10', 'color' => 'pink' ] ] ) );
+        $values = rawurlencode( (string) json_encode( [
+            [ 'title' => 'A', 'value' => '10', 'color' => 'pink' ],
+            [ 'title' => 'B', 'value' => '20', 'color' => 'primary' ],
+        ] ) );
 
         foreach ( [ 'vc_round_chart', 'vc_line_chart' ] as $tag ) {
             $items = PackedParams::paramGroup( $this->atts( $tag, [ 'values' => $values ] )['values'] );
+
             $this->assertSame( '#fe6c61', $items[0]['custom_color'], $tag );
+            $this->assertArrayNotHasKey( 'color', $items[0], $tag );
+            $this->assertSame( '#0088cc', $items[1]['custom_color'], $tag . ': the wider dashed hash' );
         }
+    }
+
+    public function test_a_custom_styled_chart_backfills_grey_and_drops_the_slug(): void {
+        $values = rawurlencode( (string) json_encode( [
+            [ 'title' => 'A', 'value' => '10', 'color' => 'pink' ],
+            [ 'title' => 'B', 'value' => '20', 'color' => 'pink', 'custom_color' => '#123456' ],
+        ] ) );
+
+        $items = PackedParams::paramGroup( $this->atts( 'vc_round_chart', [ 'style' => 'custom', 'values' => $values ] )['values'] );
+
+        $this->assertSame( '#ebebeb', $items[0]['custom_color'] );
+        $this->assertSame( '#123456', $items[1]['custom_color'] );
+        $this->assertArrayNotHasKey( 'color', $items[0] );
+    }
+
+    public function test_a_chart_item_that_says_custom_only_loses_the_key(): void {
+        $values = rawurlencode( (string) json_encode( [ [ 'title' => 'A', 'value' => '10', 'color' => 'custom', 'custom_color' => '#123456' ] ] ) );
+
+        $items = PackedParams::paramGroup( $this->atts( 'vc_line_chart', [ 'values' => $values ] )['values'] );
+
+        $this->assertSame( [ 'title' => 'A', 'value' => '10', 'custom_color' => '#123456' ], $items[0] );
     }
 
     public function test_round_chart_stroke_and_legend_colours_become_custom_colours(): void {
@@ -530,6 +732,11 @@ final class AttributeNormaliserTest extends TestCase {
 
         $this->assertEquals( [ 'fill_content_area' => '', 'color' => 'juicy_pink' ], $result['atts'] );
         $this->assertContains( 'vc_tta_tabs: no_fill_content_area → fill_content_area', $result['notes'] );
+        $this->assertContains(
+            'vc_tta_tabs: color="juicy_pink" kept as a slug (9.0.1 resolves it at render)',
+            $result['notes'],
+            'the one rule this class defers to the handler says so'
+        );
     }
 
     public function test_an_accordion_no_fill_checkbox_becomes_an_inverted_fill_toggle(): void {
@@ -537,6 +744,25 @@ final class AttributeNormaliserTest extends TestCase {
             [ 'fill_content_area' => 'true' ],
             $this->atts( 'vc_tta_accordion', [ 'no_fill' => '' ] )
         );
+    }
+
+    public function test_a_tta_pagination_colour_becomes_a_custom_colour(): void {
+        $result = AttributeNormaliser::normalise( 'vc_tta_tabs', [ 'pagination_color' => 'juicy_pink' ] );
+
+        $this->assertSame( [ 'pagination_color' => '#f4524d' ], $result['atts'] );
+        $this->assertContains( 'vc_tta_tabs: pagination_color → colour', $result['notes'] );
+    }
+
+    public function test_a_tta_pagination_colour_that_is_already_a_colour_is_left_alone(): void {
+        $atts = $this->atts( 'vc_tta_pageable', [ 'pagination_color' => '#123456' ] );
+
+        $this->assertSame( '#123456', $atts['pagination_color'] );
+        $this->assertSame( '0', $atts['autoplay'], 'the pageable autoplay default still applies' );
+    }
+
+    public function test_a_posts_slider_count_becomes_a_number_and_a_toggle(): void {
+        $this->assertEquals( [ 'count' => '5', 'display_all' => '' ], $this->atts( 'vc_posts_slider', [ 'count' => '5' ] ) );
+        $this->assertEquals( [ 'display_all' => 'yes' ], $this->atts( 'vc_posts_slider', [ 'count' => 'all' ] ) );
     }
 
     public function test_a_tta_active_colour_passes_through(): void {

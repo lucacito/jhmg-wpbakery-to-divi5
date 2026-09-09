@@ -98,6 +98,25 @@ final class AttributeNormaliser {
         'square_outlined' => [ 'outline', 'square' ],
     ];
 
+    /**
+     * `VcSharedLibrary::get_color_arr()`
+     * (include/classes/core/class-vc-shared-library.php:828, js_composer
+     * 9.0.1; `vc_colors_arr()` before 8.6) — the seven Bootstrap-2 button
+     * classes the button-1 era stored in `color` — and the slug each one is
+     * in every colour table since. `$btn_solid_colors`' classic rows are keyed
+     * by the same Bootstrap names, and `wpb_button` is the plain grey button,
+     * which that table calls `default`.
+     */
+    private const BUTTON_1_CLASSES = [
+        'wpb_button'   => 'default',
+        'btn-primary'  => 'primary',
+        'btn-info'     => 'info',
+        'btn-success'  => 'success',
+        'btn-warning'  => 'warning',
+        'btn-danger'   => 'danger',
+        'btn-inverse'  => 'inverse',
+    ];
+
     /** The four grid elements the 9.0 migration hooks the grid rules onto. */
     private const GRID_TAGS = [ 'vc_basic_grid', 'vc_masonry_grid', 'vc_media_grid', 'vc_masonry_media_grid' ];
 
@@ -173,6 +192,12 @@ final class AttributeNormaliser {
         }
 
         if ( in_array( $tag, self::TTA_TAGS, true ) ) {
+            if ( $tag !== 'vc_tta_accordion' ) {
+                $atts = self::convert_tta_tabs_pagination_color_to_custom( $tag, $atts, $notes );
+            }
+
+            $atts = self::keep_tta_color_slug( $tag, $atts, $notes );
+
             $atts = self::convert_tta_no_fill_to_fill_content_area( $tag, $atts, $notes );
 
             if ( $tag === 'vc_tta_pageable' ) {
@@ -184,6 +209,8 @@ final class AttributeNormaliser {
 
         switch ( $tag ) {
             case 'vc_btn':
+                $atts = self::convert_btn_default_outline_dropdown_color_to_custom( $tag, $atts, '', $notes );
+                $atts = self::convert_btn_default_3d_dropdown_color_to_custom( $tag, $atts, '', $notes );
                 $atts = self::convert_btn_dropdown_color_to_custom( $tag, $atts, '', $notes );
                 $atts = self::convert_btn_outline_dropdown_color_to_custom( $tag, $atts, '', $notes );
                 $atts = self::convert_btn_3d_dropdown_color_to_custom( $tag, $atts, '', $notes );
@@ -191,6 +218,10 @@ final class AttributeNormaliser {
                 return self::convert_btn_gradient_style_to_gradient_custom( $tag, $atts, '', $notes );
 
             case 'vc_cta':
+                // The icon colour filters register at init():35-36, before the
+                // call-to-action ones at :108, so they run first here too.
+                $atts = self::convert_icon_dropdown_color_to_custom( $tag, $atts, $notes );
+                $atts = self::convert_icon_background_dropdown_color_to_custom( $tag, $atts, $notes );
                 $atts = self::convert_cta_classic_color_to_custom( $tag, $atts, $notes );
                 $atts = self::convert_cta_flat_color_to_custom( $tag, $atts, $notes );
                 $atts = self::convert_cta_3d_color_to_custom( $tag, $atts, $notes );
@@ -198,8 +229,6 @@ final class AttributeNormaliser {
                 $atts = self::convert_cta_el_width_dropdown_to_range( $tag, $atts, $notes );
                 $atts = self::convert_cta_add_button_dropdown_to_toggle( $tag, $atts, $notes );
                 $atts = self::convert_cta_add_icon_dropdown_to_toggle( $tag, $atts, $notes );
-                $atts = self::convert_icon_dropdown_color_to_custom( $tag, $atts, $notes );
-                $atts = self::convert_icon_background_dropdown_color_to_custom( $tag, $atts, $notes );
 
                 return self::convert_integrated_btn( $tag, $atts, 'btn_', $notes );
 
@@ -289,6 +318,8 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convertAttributesToButton3( array $atts ): array {
+        $atts = self::foldButtonClass( $atts, 'color' );
+
         if ( isset( $atts['size'], self::BUTTON_1_SIZES[ $atts['size'] ] ) ) {
             $atts['size'] = self::BUTTON_1_SIZES[ $atts['size'] ];
         }
@@ -338,16 +369,17 @@ final class AttributeNormaliser {
      * button, on the right (the dropdown's first value), so that is the
      * default.
      *
-     * `color` holds one of `vc_colors_arr()`'s Bootstrap-2 button classes
-     * (`wpb_button`, `btn-primary`, …, config/lean-map.php), not a palette
-     * slug, so it is carried through as `btn_color` for the handler to read;
-     * no colour table here is keyed by those class names.
+     * `color` holds one of `VcSharedLibrary::get_color_arr()`'s Bootstrap-2
+     * button classes rather than a palette slug, so it goes through
+     * `BUTTON_1_CLASSES` first and reaches `btn_color` as the slug every
+     * colour table is keyed by.
      *
      * @param array<string,string> $atts
      * @return array{0: array<string,string>, 1: ?string} Attributes, and the content to write.
      */
     private static function convertCtaButtonToCta( array $atts ): array {
         $content = null;
+        $atts    = self::foldButtonClass( $atts, 'color' );
 
         if ( isset( $atts['call_text'] ) ) {
             $content = $atts['call_text'];
@@ -399,12 +431,30 @@ final class AttributeNormaliser {
      * `VcSharedLibrary::$cta_styles`, the same five slugs button 1 used, so it
      * goes through the same style/shape split.
      *
+     * `btn_style` holds one of `VcSharedLibrary::$button_styles`
+     * (`rounded|square|round|outlined|3d|square_outlined`,
+     * include/classes/core/class-vc-shared-library.php:54 of js_composer 7.8)
+     * — the button-1 styles, not button 3's — so it takes the same split, into
+     * `btn_style` + `btn_shape`, before the button colour rules read it.
+     * `3d` is the one value the split table has no row for, and needs none:
+     * button 3 has a `3d` style of its own.
+     *
      * @param array<string,string> $atts
      * @return array<string,string>
      */
     private static function convertCtaButton2ToCta( array $atts ): array {
+        $atts = self::foldButtonClass( $atts, 'color' );
+
         if ( isset( $atts['size'], self::BUTTON_1_SIZES[ $atts['size'] ] ) ) {
             $atts['size'] = self::BUTTON_1_SIZES[ $atts['size'] ];
+        }
+
+        if ( isset( $atts['btn_style'], self::BUTTON_1_STYLES[ $atts['btn_style'] ] ) ) {
+            [ $btn_style, $btn_shape ] = self::BUTTON_1_STYLES[ $atts['btn_style'] ];
+            $atts['btn_style']         = $btn_style;
+            if ( $btn_shape !== '' ) {
+                $atts['btn_shape'] = $btn_shape;
+            }
         }
 
         $atts = self::prefixButtonAtts( $atts );
@@ -424,6 +474,24 @@ final class AttributeNormaliser {
             if ( $shape !== '' ) {
                 $atts['shape'] = $shape;
             }
+        }
+
+        return $atts;
+    }
+
+    /**
+     * A button-1 `color` — one of the seven Bootstrap-2 classes
+     * `VcSharedLibrary::get_color_arr()` offered — rewritten as the slug the
+     * colour tables use. A value that is not one of those classes (the palette
+     * slugs `vc_button2` and `vc_cta_button2` store, or a theme's own) is left
+     * exactly as it is.
+     *
+     * @param array<string,string> $atts
+     * @return array<string,string>
+     */
+    private static function foldButtonClass( array $atts, string $key ): array {
+        if ( isset( $atts[ $key ], self::BUTTON_1_CLASSES[ $atts[ $key ] ] ) ) {
+            $atts[ $key ] = self::BUTTON_1_CLASSES[ $atts[ $key ] ];
         }
 
         return $atts;
@@ -490,21 +558,26 @@ final class AttributeNormaliser {
     /**
      * `convert_btn_dropdown_color_to_custom()` + `apply_btn_solid_color()`.
      *
-     * WPBakery leaves `style` alone, because its own CSS still reads the style
-     * class. Divi has no such class, so the button becomes the `custom` style
-     * — the one 9.0.1 offers for a button whose colours are picked rather than
-     * named (config/content/vc-btn-element.php) — with the background and
-     * label `Color::BUTTON_MIGRATION` holds for its slug. The hover pair of
-     * the same row is not written: Divi's button hover is a separate state
-     * this normaliser has no shape for, and the handler reads the row itself
-     * when it builds one.
+     * The source writes the whole row — background, label and the hover pair,
+     * plus a border and hover border when the style is `modern` — and leaves
+     * `style` alone, because its own CSS still reads the style class. Divi has
+     * no such class, so the one departure here is that the button becomes the
+     * `custom` style, which 9.0.1 offers for a button whose colours are picked
+     * rather than named and which declares all six of those pickers
+     * (config/content/vc-btn-element.php). The note says so.
+     *
+     * Like the source, this overwrites: a `color` slug beside a hand-picked
+     * `custom_*` value is a pre-9.0 button that has been edited since, and
+     * WPBakery resolves that in favour of the slug.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
     private static function convert_btn_dropdown_color_to_custom( string $tag, array $atts, string $prefix, array &$notes ): array {
-        if ( ! in_array( $atts[ $prefix . 'style' ] ?? '', [ 'modern', 'classic', 'flat' ], true ) ) {
+        $style = $atts[ $prefix . 'style' ] ?? '';
+
+        if ( ! in_array( $style, [ 'modern', 'classic', 'flat' ], true ) ) {
             return $atts;
         }
 
@@ -513,13 +586,23 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        $atts = self::put( $atts, $prefix . 'custom_background', $colour['bg'] );
-        $atts = self::put( $atts, $prefix . 'custom_text', $colour['text'] );
+        $written = [ 'custom_background' => $colour['bg'], 'custom_text' => $colour['text'],
+            'custom_hover_background' => $colour['hover_bg'], 'custom_hover_text' => $colour['hover_text'] ];
+
+        if ( $style === 'modern' ) {
+            $written['custom_border']       = $colour['bg'];
+            $written['custom_hover_border'] = $colour['hover_bg'];
+        }
+
+        foreach ( $written as $key => $value ) {
+            $atts[ $prefix . $key ] = $value;
+        }
 
         $atts[ $prefix . 'style' ] = 'custom';
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'custom_background, ' . $prefix . 'custom_text';
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'style="custom", '
+            . self::keyList( $prefix, array_keys( $written ) );
 
         return $atts;
     }
@@ -527,10 +610,13 @@ final class AttributeNormaliser {
     /**
      * `convert_btn_outline_dropdown_color_to_custom()` + `apply_btn_outline_color()`.
      *
-     * `VcSharedLibrary::$btn_outline_colors` paints text, border and hover
-     * background with the same value, which is exactly what 9.0.1's
-     * `outline-custom` style and its single `outline_custom_color` picker
-     * express (config/content/vc-btn-element.php).
+     * `VcSharedLibrary::$btn_outline_colors` paints text and border with the
+     * accent colour, the hover background with the same value again, and the
+     * hover text with the row's label colour. 9.0.1's `outline-custom` style
+     * says exactly that in three pickers — `outline_custom_color`,
+     * `outline_custom_hover_background`, `outline_custom_hover_text`
+     * (config/content/vc-btn-element.php) — so the whole row is carried; the
+     * style rename is the only departure, and the note says so.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -546,22 +632,30 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        $atts                      = self::put( $atts, $prefix . 'outline_custom_color', $colour['bg'] );
+        $written = [
+            'outline_custom_color'            => $colour['bg'],
+            'outline_custom_hover_background' => $colour['bg'],
+            'outline_custom_hover_text'       => $colour['text'],
+        ];
+
+        foreach ( $written as $key => $value ) {
+            $atts[ $prefix . $key ] = $value;
+        }
+
         $atts[ $prefix . 'style' ] = 'outline-custom';
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'outline_custom_color';
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'style="outline-custom", '
+            . self::keyList( $prefix, array_keys( $written ) );
 
         return $atts;
     }
 
     /**
-     * `convert_btn_3d_dropdown_color_to_custom()` + `apply_btn_3d_color()`.
-     *
-     * The 3d style keeps its name — 9.0.1 declares `custom_background`,
-     * `custom_text` and `custom_border` for it as well — and the box shadow
-     * `$btn_3d_colors` stores as a `darken(@background, 11%)` value becomes
-     * `custom_border`, which is where `apply_btn_3d_color()` puts it.
+     * `convert_btn_3d_dropdown_color_to_custom()` + `apply_btn_3d_color()`,
+     * which writes background, label and the `darken(@background, 11%)` box
+     * shadow `$btn_3d_colors` carries. The 3d style keeps its name: 9.0.1
+     * declares `custom_background`, `custom_text` and `custom_border` for it.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -577,14 +671,71 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        $atts = self::put( $atts, $prefix . 'custom_background', $colour['bg'] );
-        $atts = self::put( $atts, $prefix . 'custom_text', $colour['text'] );
-        $atts = self::put( $atts, $prefix . 'custom_border', $colour['shadow'] );
+        $written = [
+            'custom_background' => $colour['bg'],
+            'custom_text'       => $colour['text'],
+            'custom_border'     => $colour['shadow'],
+        ];
+
+        foreach ( $written as $key => $value ) {
+            $atts[ $prefix . $key ] = $value;
+        }
 
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'custom_background, '
-            . $prefix . 'custom_text, ' . $prefix . 'custom_border';
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . self::keyList( $prefix, array_keys( $written ) );
+
+        return $atts;
+    }
+
+    /**
+     * `convert_btn_default_outline_dropdown_color_to_custom()`: an outline
+     * button saved with no colour at all rendered grey, and 9.0 back-fills
+     * that before the colour rules run — unless the button already carries a
+     * hand-picked `custom_*` value, which `is_custom_button_atts()` checks.
+     *
+     * @param array<string,string> $atts
+     * @param string[]             $notes
+     * @return array<string,string>
+     */
+    private static function convert_btn_default_outline_dropdown_color_to_custom( string $tag, array $atts, string $prefix, array &$notes ): array {
+        return self::defaultButtonColour( $tag, $atts, $prefix, 'outline', $notes );
+    }
+
+    /**
+     * `convert_btn_default_3d_dropdown_color_to_custom()`, the same back-fill
+     * for the 3d style.
+     *
+     * @param array<string,string> $atts
+     * @param string[]             $notes
+     * @return array<string,string>
+     */
+    private static function convert_btn_default_3d_dropdown_color_to_custom( string $tag, array $atts, string $prefix, array &$notes ): array {
+        return self::defaultButtonColour( $tag, $atts, $prefix, '3d', $notes );
+    }
+
+    /**
+     * The grey back-fill both default rules share, and
+     * `is_custom_button_atts()`: the six pickers whose presence means the
+     * author has chosen the colours themselves.
+     *
+     * @param array<string,string> $atts
+     * @param string[]             $notes
+     * @return array<string,string>
+     */
+    private static function defaultButtonColour( string $tag, array $atts, string $prefix, string $style, array &$notes ): array {
+        if ( ( $atts[ $prefix . 'style' ] ?? '' ) !== $style || ! empty( $atts[ $prefix . 'color' ] ) ) {
+            return $atts;
+        }
+
+        foreach ( [ 'custom_background', 'custom_text', 'custom_border', 'custom_hover_background', 'custom_hover_text', 'custom_hover_border' ] as $picked ) {
+            if ( array_key_exists( $prefix . $picked, $atts ) ) {
+                return $atts;
+            }
+        }
+
+        $atts[ $prefix . 'color' ] = 'grey';
+        $notes[]                   = $tag . ': ' . $prefix . 'style="' . $style . '" with no colour defaults to grey';
 
         return $atts;
     }
@@ -616,26 +767,35 @@ final class AttributeNormaliser {
                 continue;
             }
 
-            $atts = self::put( $atts, $prefix . 'gradient_custom_color_' . $index, $value );
+            $atts[ $prefix . 'gradient_custom_color_' . $index ] = $value;
             unset( $atts[ $prefix . 'gradient_color_' . $index ] );
         }
 
-        $atts    = self::put( $atts, $prefix . 'gradient_text_color', Color::BUTTON_GRADIENT_TEXT );
-        $notes[] = $tag . ': ' . $prefix . 'style="gradient" → gradient-custom';
+        $atts[ $prefix . 'gradient_text_color' ] = Color::BUTTON_GRADIENT_TEXT;
+        $notes[]                                 = $tag . ': ' . $prefix . 'style="gradient" → gradient-custom';
 
         return $atts;
     }
 
     /**
-     * `convert_integrated_btn()`: the same four button rules against the
-     * prefix an element that embeds a button uses — `btn_` for `vc_cta`, the
-     * grids and `vc_pricing_table`, `hover_btn_` for `vc_hoverbox`.
+     * `convert_integrated_btn()`: the same button rules against the prefix an
+     * element that embeds a button uses — `btn_` for `vc_cta`, the grids and
+     * `vc_pricing_table`, `hover_btn_` for `vc_hoverbox`.
+     *
+     * The two default back-fills run first here, as they do for a plain
+     * `vc_btn` (`init():43-44`, before the colour filters at `:46-48`), rather
+     * than last as `convert_integrated_btn()` itself calls them. The result is
+     * the same: the source's default methods apply the grey row directly,
+     * where this one writes `color = 'grey'` and lets the colour rule that
+     * follows resolve it.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
     private static function convert_integrated_btn( string $tag, array $atts, string $prefix, array &$notes ): array {
+        $atts = self::convert_btn_default_outline_dropdown_color_to_custom( $tag, $atts, $prefix, $notes );
+        $atts = self::convert_btn_default_3d_dropdown_color_to_custom( $tag, $atts, $prefix, $notes );
         $atts = self::convert_btn_dropdown_color_to_custom( $tag, $atts, $prefix, $notes );
         $atts = self::convert_btn_outline_dropdown_color_to_custom( $tag, $atts, $prefix, $notes );
         $atts = self::convert_btn_3d_dropdown_color_to_custom( $tag, $atts, $prefix, $notes );
@@ -669,6 +829,15 @@ final class AttributeNormaliser {
         return $row;
     }
 
+    /**
+     * The attribute names a rule wrote, prefixed, for its note.
+     *
+     * @param string[] $keys
+     */
+    private static function keyList( string $prefix, array $keys ): string {
+        return implode( ', ', array_map( static fn( string $key ): string => $prefix . $key, $keys ) );
+    }
+
     // --- 9.0: call to action -------------------------------------------------------
 
     /**
@@ -684,7 +853,7 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'color', 'custom_text', $notes );
+        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'color', 'custom_text', $notes, true );
     }
 
     /**
@@ -931,7 +1100,7 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convert_pie_chart_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'color', 'custom_color', $notes );
+        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'color', 'custom_color', $notes, true );
     }
 
     /**
@@ -975,7 +1144,7 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convert_round_chart_stroke_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'stroke_color', 'custom_stroke_color', $notes );
+        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'stroke_color', 'custom_stroke_color', $notes, true );
     }
 
     /**
@@ -986,7 +1155,7 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convert_round_chart_legend_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'legend_color', 'custom_legend_color', $notes );
+        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'legend_color', 'custom_legend_color', $notes, true );
     }
 
     // --- 9.0: checkboxes, dropdowns and renames ---------------------------------------
@@ -1028,10 +1197,14 @@ final class AttributeNormaliser {
      *
      * The dropdown offered the palette and seven classic `bar_*` colours; the
      * latter live in the migration itself, and `Color::PROGRESS_BAR_LEGACY`
-     * carries them. `bar_grey` resolves to no colour in the source too — it is
-     * the uncoloured default bar — so it is consumed with a note rather than
-     * written. The label colour and text shadow the original also writes are
-     * the bar's own text treatment, which the handler decides.
+     * carries them. A resolved bar takes the whole treatment the source
+     * writes: the colour, the label colour `resolve_progress_bar_txt_color()`
+     * picks for it, and the text shadow.
+     *
+     * Two departures, both noted: `bar_grey` and an unknown slug resolve to no
+     * colour, and where the source writes an empty `custombgcolor` this drops
+     * the attribute instead — an empty colour is not a colour, and a handler
+     * would have to special-case it.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -1060,35 +1233,144 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        $atts['custombgcolor'] = $value;
-        $notes[]               = $tag . ': bgcolor → custombgcolor';
+        $atts    = self::applyProgressBarColour( $atts, $slug, $value, 'custombgcolor', 'customtxtcolor' );
+        $notes[] = $tag . ': bgcolor → custombgcolor, customtxtcolor, add_text_shadow, text_shadow_color';
 
         return $atts;
     }
 
     /**
      * `migrate_progress_bar_values_color()`: the per-bar `color` dropdown
-     * inside the `values` param group.
+     * inside the `values` param group, through the same
+     * `apply_progress_bar_color()` — so a migrated bar carries its label
+     * colour and text shadow inside the group, exactly as the source writes
+     * them — and then unset, as the source unsets it, resolved or not.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
     private static function convert_progress_bar_values_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrateParamGroupColour( $tag, $atts, 'customcolor', $notes, true );
+        $items = self::paramGroupItems( $atts );
+
+        if ( $items === null ) {
+            return $atts;
+        }
+
+        $changed = false;
+
+        foreach ( $items as $index => $bar ) {
+            if ( ! is_array( $bar ) || ! isset( $bar['color'] ) ) {
+                continue;
+            }
+
+            $slug = (string) $bar['color'];
+            unset( $bar['color'] );
+            $changed = true;
+
+            if ( $slug !== '' && $slug !== 'custom' && empty( $bar['customcolor'] ) ) {
+                $value = self::barColour( $slug );
+
+                if ( $value === null ) {
+                    $notes[] = self::unresolved( $tag, 'values color', $slug );
+                } elseif ( $value !== '' ) {
+                    $bar = self::applyProgressBarColour( $bar, $slug, $value, 'customcolor', 'customtxtcolor' );
+                }
+            }
+
+            $items[ $index ] = $bar;
+        }
+
+        if ( ! $changed ) {
+            return $atts;
+        }
+
+        $notes[] = $tag . ': values color → customcolor, customtxtcolor, add_text_shadow, text_shadow_color';
+
+        return self::packParamGroup( $atts, $items );
     }
 
     /**
-     * `migrate_chart_values_color()` / `migrate_chart_item_color()`: the same
-     * rule for `vc_round_chart` and `vc_line_chart`, whose per-item picker is
-     * called `custom_color`.
+     * `apply_progress_bar_color()`'s write half, and
+     * `resolve_progress_bar_txt_color()`: a coloured bar gets a light label,
+     * the two light palette bars a dark one, and both get the text shadow.
+     *
+     * @param array<string,string> $data
+     * @return array<string,string>
+     */
+    private static function applyProgressBarColour( array $data, string $slug, string $value, string $bg_key, string $txt_key ): array {
+        $data[ $bg_key ]            = $value;
+        $data[ $txt_key ]           = in_array( str_replace( '_', '-', $slug ), [ 'grey', 'white' ], true )
+            ? Color::PROGRESS_BAR_TEXT_DARK
+            : Color::PROGRESS_BAR_TEXT;
+        $data['add_text_shadow']   = 'true';
+        $data['text_shadow_color'] = Color::PROGRESS_BAR_TEXT_SHADOW;
+
+        return $data;
+    }
+
+    /**
+     * `migrate_chart_values_color()` / `migrate_chart_item_color()`, for
+     * `vc_round_chart` and `vc_line_chart`.
+     *
+     * The rule reads the element's own `style` first: a chart already on the
+     * `custom` style keeps whatever `custom_color` each item carries and
+     * back-fills grey where there is none, discarding the item's dropdown
+     * slug; every other chart resolves that slug through the
+     * `dashed-colors-hash`. Either way the slug itself is unset, and an item
+     * that says `custom` only loses the key.
+     *
+     * One departure: where `resolve_dropdown_color()` copies a slug the hash
+     * does not know into `custom_color` verbatim, this reports it instead —
+     * `custom_color` is a colorpicker, and a slug in it is not a colour.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
     private static function convert_chart_values_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrateParamGroupColour( $tag, $atts, 'custom_color', $notes );
+        $items = self::paramGroupItems( $atts );
+
+        if ( $items === null ) {
+            return $atts;
+        }
+
+        $style_is_custom = ( $atts['style'] ?? '' ) === 'custom';
+        $changed         = false;
+
+        foreach ( $items as $index => $item ) {
+            if ( ! is_array( $item ) || ! isset( $item['color'] ) ) {
+                continue;
+            }
+
+            $slug = (string) $item['color'];
+
+            if ( $style_is_custom ) {
+                if ( empty( $item['custom_color'] ) ) {
+                    $item['custom_color'] = (string) Color::fromPalette( 'grey' );
+                }
+            } elseif ( $slug !== 'custom' ) {
+                $value = self::dashedColour( $slug );
+
+                if ( $value === null ) {
+                    $notes[] = self::unresolved( $tag, 'values color', $slug );
+                } else {
+                    $item['custom_color'] = $value;
+                }
+            }
+
+            unset( $item['color'] );
+            $items[ $index ] = $item;
+            $changed         = true;
+        }
+
+        if ( ! $changed ) {
+            return $atts;
+        }
+
+        $notes[] = $tag . ': values color → custom_color';
+
+        return self::packParamGroup( $atts, $items );
     }
 
     /**
@@ -1166,6 +1448,44 @@ final class AttributeNormaliser {
         }
 
         return $atts;
+    }
+
+    /**
+     * The one tta rule this class does not port:
+     * `convert_tta_tabs_color_to_custom()` resolves the `color` slug in place,
+     * and here it is left as a slug, because 9.0.1 still accepts one there and
+     * resolves it at render time — so the slug is the shape a handler is
+     * written against, and the handler is where the tta palette becomes
+     * Divi's. An element that carries one says so, since every other
+     * departure in this class is in `notes` too.
+     *
+     * @param array<string,string> $atts
+     * @param string[]             $notes
+     * @return array<string,string>
+     */
+    private static function keep_tta_color_slug( string $tag, array $atts, array &$notes ): array {
+        $slug = $atts['color'] ?? '';
+
+        if ( $slug !== '' && Color::fromPalette( $slug ) !== null ) {
+            $notes[] = $tag . ': color="' . $slug . '" kept as a slug (9.0.1 resolves it at render)';
+        }
+
+        return $atts;
+    }
+
+    /**
+     * `convert_tta_tabs_pagination_color_to_custom()`
+     * (`class-wpb-template-attributes-migration.php:78, :84, :97`): the
+     * `pagination_color` dropdown became a colorpicker in 9.0, so a stored
+     * slug is resolved in place. Registered for `vc_tta_tabs`, `vc_tta_tour`
+     * and `vc_tta_pageable` only — `vc_tta_accordion` has no pagination.
+     *
+     * @param array<string,string> $atts
+     * @param string[]             $notes
+     * @return array<string,string>
+     */
+    private static function convert_tta_tabs_pagination_color_to_custom( string $tag, array $atts, array &$notes ): array {
+        return self::migrate_inline_dropdown_color_to_custom( $tag, $atts, 'pagination_color', $notes );
     }
 
     /**
@@ -1312,7 +1632,15 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convert_posts_slider_count_textfield_to_number( string $tag, array $atts, array &$notes ): array {
-        if ( ! isset( $atts['count'] ) || is_numeric( $atts['count'] ) ) {
+        if ( ! isset( $atts['count'] ) ) {
+            return $atts;
+        }
+
+        if ( is_numeric( $atts['count'] ) ) {
+            // The source writes the empty toggle too, so a slider that counts
+            // its posts says out loud that it does not show them all.
+            $atts['display_all'] = '';
+
             return $atts;
         }
 
@@ -1346,19 +1674,22 @@ final class AttributeNormaliser {
     /**
      * `migrate_dropdown_color_to_custom()`: resolve the slug in $source_key
      * and write it to $target_key, leaving an already-picked colour alone.
+     * `$dashed` picks the wider `dashed-colors-hash` the source passes as
+     * `$hash_lib` for a few of these rules, instead of the default
+     * `colors-hash`.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
-    private static function migrate_dropdown_color_to_custom( string $tag, array $atts, string $source_key, string $target_key, array &$notes ): array {
+    private static function migrate_dropdown_color_to_custom( string $tag, array $atts, string $source_key, string $target_key, array &$notes, bool $dashed = false ): array {
         $slug = $atts[ $source_key ] ?? '';
 
         if ( $slug === '' || $slug === 'custom' || ! empty( $atts[ $target_key ] ) ) {
             return $atts;
         }
 
-        $value = self::colour( $slug );
+        $value = $dashed ? self::dashedColour( $slug ) : self::colour( $slug );
 
         if ( $value === null ) {
             $notes[] = self::unresolved( $tag, $source_key, $slug );
@@ -1403,61 +1734,32 @@ final class AttributeNormaliser {
     }
 
     /**
-     * The per-item colour of a `values` param group, for the progress bar and
-     * both charts. WPBakery re-encodes the group with
-     * `rawurlencode( wp_json_encode( … ) )`; so does this.
+     * The items of a `values` param group, or null when there is nothing to
+     * read. `vc_param_group_parse_atts()` is `json_decode( urldecode( … ) )`.
      *
      * @param array<string,string> $atts
-     * @param string[]             $notes
-     * @return array<string,string>
+     * @return array<int, mixed>|null
      */
-    private static function migrateParamGroupColour( string $tag, array $atts, string $target_key, array &$notes, bool $classic_bars = false ): array {
+    private static function paramGroupItems( array $atts ): ?array {
         if ( empty( $atts['values'] ) ) {
-            return $atts;
+            return null;
         }
 
         $items = json_decode( urldecode( $atts['values'] ), true );
 
-        if ( ! is_array( $items ) ) {
-            return $atts;
-        }
+        return is_array( $items ) ? $items : null;
+    }
 
-        $changed = false;
-
-        foreach ( $items as $index => $item ) {
-            if ( ! is_array( $item ) || ! isset( $item['color'] ) ) {
-                continue;
-            }
-
-            $slug = (string) $item['color'];
-
-            if ( $slug === '' || $slug === 'custom' ) {
-                continue;
-            }
-
-            $value = $classic_bars ? self::barColour( $slug ) : self::colour( $slug );
-
-            if ( $value === null ) {
-                $notes[] = self::unresolved( $tag, 'values color', $slug );
-
-                continue;
-            }
-
-            if ( $value !== '' && empty( $item[ $target_key ] ) ) {
-                $item[ $target_key ] = $value;
-            }
-
-            unset( $item['color'] );
-            $items[ $index ] = $item;
-            $changed         = true;
-        }
-
-        if ( ! $changed ) {
-            return $atts;
-        }
-
+    /**
+     * The group re-encoded the way the source does it,
+     * `rawurlencode( wp_json_encode( … ) )`.
+     *
+     * @param array<string,string> $atts
+     * @param array<int, mixed>    $items
+     * @return array<string,string>
+     */
+    private static function packParamGroup( array $atts, array $items ): array {
         $atts['values'] = rawurlencode( (string) json_encode( $items ) );
-        $notes[]        = $tag . ': values color → ' . $target_key;
 
         return $atts;
     }
@@ -1469,6 +1771,19 @@ final class AttributeNormaliser {
      */
     private static function colour( string $value ): ?string {
         return Color::fromPalette( $value ) ?? Color::normalize( $value );
+    }
+
+    /**
+     * The same against `vc_get_shared( 'dashed-colors-hash' )`, which a few of
+     * the rules pass as their `$hash_lib`: the 17 palette hexes plus the 7
+     * classic button colours. That is value for value the `bg` column of
+     * `Color::BUTTON_MIGRATION` — the same 24 rows, read from the same file —
+     * so no fourth table is kept for it.
+     */
+    private static function dashedColour( string $value ): ?string {
+        $row = Color::buttonMigration( $value );
+
+        return $row === null ? self::colour( $value ) : $row['bg'];
     }
 
     /**
@@ -1494,8 +1809,11 @@ final class AttributeNormaliser {
 
     /**
      * Writes $key only when it is not already carrying a value — the
-     * `if ( ! isset( $atts[…] ) )` guard every `apply_*_color()` uses, so a
-     * colour the author picked by hand is never overwritten by a migrated one.
+     * `if ( ! isset( $atts[…] ) )` guard `apply_cta_*_color()`,
+     * `apply_progress_bar_color()` and `should_migrate_dropdown_color()` use,
+     * so a colour the author picked by hand is not overwritten by a migrated
+     * one. The button rules deliberately do not use it: `apply_btn_*_color()`
+     * assigns unconditionally, and this follows them.
      *
      * @param array<string,string> $atts
      * @return array<string,string>

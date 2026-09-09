@@ -15,8 +15,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * demo, a search-and-replace, a hand-written page. What arrives is routinely
  * a row with no section around it (WPBakery only gained `vc_section` in 4.9,
  * and the editor still writes rows at the top level), an element sitting
- * outside any row, an inner row promoted to the top by a copy/paste, or a
- * paragraph of stray text between two shortcodes.
+ * outside any row or directly inside one — an inner row included — an inner
+ * row promoted to the top by a copy/paste, or a paragraph of stray text
+ * between two shortcodes.
  *
  * Divi 5 has no equivalent slack: a module has to live in a column, a column
  * in a row, a row in a section. So every departure is repaired here, once,
@@ -223,7 +224,7 @@ final class NodeTree {
             }
 
             if ( $node['kind'] === 'row' ) {
-                $rows             = self::flushRow( $rows, $pending );
+                $rows             = self::flushRow( $rows, $pending, $warnings );
                 $pending          = [];
                 $node['children'] = self::columns( $node['children'], $warnings, 'row child is not a column' );
                 $rows[]           = $node;
@@ -235,21 +236,25 @@ final class NodeTree {
             $pending[]  = $node;
         }
 
-        return self::flushRow( $rows, $pending );
+        return self::flushRow( $rows, $pending, $warnings );
     }
 
     /**
      * @param array<int, array<string, mixed>> $rows
      * @param array<int, array<string, mixed>> $pending
+     * @param string[]                         $warnings
      * @return array<int, array<string, mixed>>
      */
-    private static function flushRow( array $rows, array $pending ): array {
+    private static function flushRow( array $rows, array $pending, array &$warnings ): array {
         if ( $pending === [] ) {
             return $rows;
         }
 
-        $ignored = [];
-        $rows[]  = self::implicit( 'vc_row', [], self::columns( $pending, $ignored, '' ) );
+        // This run has already been reported as content outside a row, so the
+        // column repair around it stays quiet — but a repair deeper in, inside
+        // an inner row it holds, still has something of its own to say.
+        $quiet  = [];
+        $rows[] = self::implicit( 'vc_row', [], self::columns( $pending, $quiet, '', $warnings ) );
 
         return $rows;
     }
@@ -261,19 +266,28 @@ final class NodeTree {
      *
      * @param array<int, array<string, mixed>> $nodes
      * @param string[]                         $warnings
-     * @param string                           $warning Prefix for the warning, '' to stay quiet
-     *                                                  (the caller has already reported the run).
+     * @param string                           $warning       Prefix for the warning, '' to stay quiet
+     *                                                        (the caller has already reported the run).
+     * @param string[]|null                    $deep_warnings Where a repair inside a column goes, when
+     *                                                        this level itself is staying quiet.
+     * @param bool                             $inner         Whether this is an inner row, whose columns
+     *                                                        are `vc_column_inner`.
      * @return array<int, array<string, mixed>>
      */
-    private static function columns( array $nodes, array &$warnings, string $warning ): array {
+    private static function columns( array $nodes, array &$warnings, string $warning, ?array &$deep_warnings = null, bool $inner = false ): array {
+        if ( $deep_warnings === null ) {
+            $deep_warnings = &$warnings;
+        }
+
         $columns = [];
         $pending = [];
 
         foreach ( $nodes as $node ) {
             if ( in_array( $node['kind'], self::COLUMN_KINDS, true ) ) {
-                $columns = self::flushColumn( $columns, $pending );
-                $pending = [];
-                $columns[] = $node;
+                $columns          = self::flushColumn( $columns, $pending, $deep_warnings, $inner );
+                $pending          = [];
+                $node['children'] = self::innerRows( $node['children'], $deep_warnings );
+                $columns[]        = $node;
 
                 continue;
             }
@@ -284,20 +298,54 @@ final class NodeTree {
             $pending[] = $node;
         }
 
-        return self::flushColumn( $columns, $pending );
+        return self::flushColumn( $columns, $pending, $deep_warnings, $inner );
+    }
+
+    /**
+     * A column's children. Everything but a row is content and stays where it
+     * is; a row nested in a column — `vc_row_inner`, or a `vc_row` a theme put
+     * there — is a row like any other, and its own children have to be columns
+     * before Divi can nest them.
+     *
+     * @param array<int, array<string, mixed>> $nodes
+     * @param string[]                         $warnings
+     * @return array<int, array<string, mixed>>
+     */
+    private static function innerRows( array $nodes, array &$warnings ): array {
+        foreach ( $nodes as $index => $node ) {
+            if ( $node['kind'] !== 'row_inner' && $node['kind'] !== 'row' ) {
+                continue;
+            }
+
+            $node['children'] = self::columns(
+                $node['children'],
+                $warnings,
+                'row child is not a column',
+                $warnings,
+                $node['kind'] === 'row_inner'
+            );
+            $nodes[ $index ]  = $node;
+        }
+
+        return $nodes;
     }
 
     /**
      * @param array<int, array<string, mixed>> $columns
      * @param array<int, array<string, mixed>> $pending
+     * @param string[]                         $warnings
      * @return array<int, array<string, mixed>>
      */
-    private static function flushColumn( array $columns, array $pending ): array {
+    private static function flushColumn( array $columns, array $pending, array &$warnings, bool $inner = false ): array {
         if ( $pending === [] ) {
             return $columns;
         }
 
-        $columns[] = self::implicit( 'vc_column', [ 'width' => '1/1' ], $pending );
+        $columns[] = self::implicit(
+            $inner ? 'vc_column_inner' : 'vc_column',
+            [ 'width' => '1/1' ],
+            self::innerRows( $pending, $warnings )
+        );
 
         return $columns;
     }
