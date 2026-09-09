@@ -232,7 +232,7 @@ final class AttributeNormaliserTest extends TestCase {
                 'h2'                          => 'Grow',
                 'add_button'                  => 'true',
                 'btn_title'                   => 'Go',
-                'btn_style'                   => 'custom',
+                'btn_style'                   => 'flat',
                 'btn_shape'                   => 'rounded',
                 'btn_custom_background'       => '#5472d2',
                 'btn_custom_text'             => '#fff',
@@ -290,12 +290,12 @@ final class AttributeNormaliserTest extends TestCase {
 
     // --- 9.0 migrations: vc_btn colours --------------------------------------
 
-    public function test_a_flat_palette_button_becomes_a_custom_button(): void {
+    public function test_a_flat_palette_button_takes_the_flat_pickers(): void {
         $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'flat', 'color' => 'blue' ] );
 
         $this->assertEquals(
             [
-                'style'                   => 'custom',
+                'style'                   => 'flat',
                 'custom_background'       => '#5472d2',
                 'custom_text'             => '#fff',
                 'custom_hover_background' => '#3c5ecc',
@@ -304,7 +304,7 @@ final class AttributeNormaliserTest extends TestCase {
             $result['atts']
         );
         $this->assertContains(
-            'vc_btn: color → style="custom", custom_background, custom_text, custom_hover_background, custom_hover_text',
+            'vc_btn: color → custom_background, custom_text, custom_hover_background, custom_hover_text',
             $result['notes']
         );
     }
@@ -312,7 +312,7 @@ final class AttributeNormaliserTest extends TestCase {
     public function test_a_modern_button_also_takes_its_borders(): void {
         $this->assertEquals(
             [
-                'style'                   => 'custom',
+                'style'                   => 'modern',
                 'custom_background'       => '#6dab3c',
                 'custom_text'             => '#fff',
                 'custom_hover_background' => '#5f9434',
@@ -437,7 +437,7 @@ final class AttributeNormaliserTest extends TestCase {
         foreach ( $expected as $class => $background ) {
             $atts = $this->atts( 'vc_button', [ 'color' => $class, 'style' => 'rounded' ] );
 
-            $this->assertSame( 'custom', $atts['style'], $class );
+            $this->assertSame( 'flat', $atts['style'], $class );
             $this->assertSame( $background, $atts['custom_background'], $class );
         }
     }

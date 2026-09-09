@@ -38,12 +38,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   `shortcode_atts()` output, where the old key still has a registered
  *   default; here the result is the input to a converter, and a stale key
  *   would be reported as an unmapped setting.
- * - A solid button (`modern`, `classic`, `flat`) is left on the `custom`
- *   style rather than its own, because Divi has no WPBakery style class to
- *   inherit the rest of the look from and `custom` is 9.0.1's own name for a
- *   button whose colours are picked. That rename is the only one: an
- *   `outline` or `3d` button keeps its style, exactly as the migration leaves
- *   it, and every colour goes into the picker the migration puts it in.
+ * - No rule renames a `style`. Every colour goes into the picker the
+ *   migration puts it in, and a button keeps the style it was saved with —
+ *   `flat`, `classic`, `modern`, `outline` and `3d` all declare those pickers
+ *   themselves. The one style that does change is `gradient`, which the
+ *   migration itself rewrites to `gradient-custom`.
  * - A colour value is only ever resolved through `Color`, whose tables are
  *   read from `vc_convert_vc_color()`, `VcSharedLibrary` and the migration
  *   itself: `Color::BUTTON_MIGRATION` and `Color::CTA_MIGRATION` are the rows
@@ -565,12 +564,11 @@ final class AttributeNormaliser {
      * `convert_btn_dropdown_color_to_custom()` + `apply_btn_solid_color()`.
      *
      * The source writes the whole row — background, label and the hover pair,
-     * plus a border and hover border when the style is `modern` — and leaves
-     * `style` alone, because its own CSS still reads the style class. Divi has
-     * no such class, so the one departure here is that the button becomes the
-     * `custom` style, which 9.0.1 offers for a button whose colours are picked
-     * rather than named and which declares all six of those pickers
-     * (config/content/vc-btn-element.php). The note says so.
+     * plus a border and hover border when the style is `modern` — into the
+     * pickers each of those three styles declares for itself
+     * (config/content/vc-btn-element.php:165, :180, :191, :206, :217, :228),
+     * and leaves `style` alone. So does this: `custom` is a fourth state of
+     * the same dropdown, and renaming into it would swap one look for another.
      *
      * Like the source, this overwrites: a `color` slug beside a hand-picked
      * `custom_*` value is a pre-9.0 button that has been edited since, and
@@ -604,11 +602,9 @@ final class AttributeNormaliser {
             $atts[ $prefix . $key ] = $value;
         }
 
-        $atts[ $prefix . 'style' ] = 'custom';
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'style="custom", '
-            . self::keyList( $prefix, array_keys( $written ) );
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . self::keyList( $prefix, array_keys( $written ) );
 
         return $atts;
     }
