@@ -1,0 +1,5 @@
+[vc_row full_width="stretch_row" full_height="yes" css=".vc_custom_1436531990024{background-color: #32a363 !important;}"][vc_column][vc_empty_space height="300px"][vc_row_inner][vc_column_inner width="1/6"][vc_icon icon_fontawesome="fa fa-anchor" color="white" size="lg" align="center" css_animation="appear"][/vc_column_inner][vc_column_inner width="3/6"][vc_custom_heading text="CUSTOM HEADING FOR FULL HEIGHT HERO ROW" font_container="tag:h1|text_align:left|color:%23ffffff" use_theme_fonts="yes" css=".vc_custom_1436532193902{margin-top: 0px !important;}"][vc_column_text]
+
+This section looks good with color background, background image and even video background and can be used as a nice Hero type header for any type of site or introduction block because of full height row.
+
+[/vc_column_text][vc_separator color="sandy_brown" align="align_left" border_width="5" el_width="20"][/vc_column_inner][vc_column_inner width="2/6"][/vc_column_inner][/vc_row_inner][/vc_column][/vc_row]

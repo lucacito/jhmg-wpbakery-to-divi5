@@ -1,0 +1,13 @@
+[vc_row][vc_column][vc_tta_tabs spacing="" alignment="center" autoplay="5" active_section="1" no_fill_content_area="true"][vc_tta_section title="One" tab_id="1434542999695-a56fab9e-1f6710b4-996e"][vc_row_inner][vc_column_inner width="1/4"][/vc_column_inner][vc_column_inner width="1/4"][vc_single_image img_size="large"][/vc_column_inner][vc_column_inner width="1/4"][vc_custom_heading text="THIS IS CUSTOM HEADING ELEMENT" use_theme_fonts="yes" css=".vc_custom_1434542653233{margin-top: 0px !important;}"][vc_column_text css=".vc_custom_1434542828932{margin-bottom: 15px !important;}"]
+
+I am text block. Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.
+
+[/vc_column_text][/vc_column_inner][vc_column_inner width="1/4"][/vc_column_inner][/vc_row_inner][/vc_tta_section][vc_tta_section title="Two" tab_id="1434542999696-c5f7d755-fafc10b4-996e"][vc_row_inner][vc_column_inner width="1/4"][/vc_column_inner][vc_column_inner width="1/4"][vc_single_image img_size="large"][/vc_column_inner][vc_column_inner width="1/4"][vc_custom_heading text="THIS IS CUSTOM HEADING ELEMENT" use_theme_fonts="yes" css=".vc_custom_1434542653233{margin-top: 0px !important;}"][vc_column_text css=".vc_custom_1434542828932{margin-bottom: 15px !important;}"]
+
+I am text block. Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.
+
+[/vc_column_text][/vc_column_inner][vc_column_inner width="1/4"][/vc_column_inner][/vc_row_inner][/vc_tta_section][vc_tta_section title="Three" tab_id="1434543049270-c5988062-2c7810b4-996e"][vc_row_inner][vc_column_inner width="1/4"][/vc_column_inner][vc_column_inner width="1/4"][vc_single_image img_size="large"][/vc_column_inner][vc_column_inner width="1/4"][vc_custom_heading text="THIS IS CUSTOM HEADING ELEMENT" use_theme_fonts="yes" css=".vc_custom_1434542653233{margin-top: 0px !important;}"][vc_column_text css=".vc_custom_1434542828932{margin-bottom: 15px !important;}"]
+
+I am text block. Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.
+
+[/vc_column_text][/vc_column_inner][vc_column_inner width="1/4"][/vc_column_inner][/vc_row_inner][/vc_tta_section][/vc_tta_tabs][/vc_column][/vc_row]

@@ -1,0 +1,33 @@
+[vc_row][vc_column width="1/4"][vc_icon icon_fontawesome="fa fa-anchor" color="chino" size="lg" align="center"][vc_custom_heading text="Feature One" font_container="tag:h4|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+[/vc_column_text][/vc_column][vc_column width="1/4"][vc_icon icon_fontawesome="fa fa-car" color="chino" size="lg" align="center"][vc_custom_heading text="Feature Two" font_container="tag:h4|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+[/vc_column_text][/vc_column][vc_column width="1/4"][vc_icon icon_fontawesome="fa fa-cutlery" color="chino" size="lg" align="center"][vc_custom_heading text="Feature Three" font_container="tag:h4|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+[/vc_column_text][/vc_column][vc_column width="1/4"][vc_icon icon_fontawesome="fa fa-life-ring" color="chino" size="lg" align="center"][vc_custom_heading text="Feature Four" font_container="tag:h4|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Click edit button to change this text. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+
+[/vc_column_text][/vc_column][/vc_row][vc_row full_width="stretch_row" css=".vc_custom_1435233845530{padding-top: 50px !important;padding-bottom: 50px !important;background-color: #f7f7f7 !important;}"][vc_column width="1/2"][vc_single_image img_size="500x200" alignment="center"][/vc_column][vc_column width="1/2"][vc_custom_heading text="Custom Heading Title" use_theme_fonts="yes"][vc_column_text]
+
+Vivamus et risus in purus consequat interdum. Nam hendrerit euismod quam imperdiet maximus. Duis id eros eu lectus tempor interdum. Duis nec commodo enim. Proin lobortis sapien vitae eleifend tincidunt.
+
+[/vc_column_text][/vc_column][/vc_row][vc_row][vc_column width="1/4"][/vc_column][vc_column width="1/2"][vc_single_image img_size="500x200" alignment="center"][vc_custom_heading text="Article Title" font_container="tag:h3|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Vivamus et risus in purus consequat interdum. Nam hendrerit euismod quam imperdiet maximus. Duis id eros eu lectus tempor interdum. Duis nec commodo enim. Proin lobortis sapien vitae eleifend tincidunt.
+
+[/vc_column_text][vc_btn title="Read More" color="chino" align="center"][/vc_column][vc_column width="1/4"][/vc_column][/vc_row][vc_row][vc_column width="1/2"][vc_single_image img_size="500x200" alignment="center"][vc_custom_heading text="Article Title" font_container="tag:h3|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Vivamus et risus in purus consequat interdum. Nam hendrerit euismod quam imperdiet maximus. Duis id eros eu lectus tempor interdum. Duis nec commodo enim. Proin lobortis sapien vitae eleifend tincidunt.
+
+[/vc_column_text][vc_btn title="Read More" color="chino" align="center"][/vc_column][vc_column width="1/2"][vc_single_image img_size="500x200" alignment="center"][vc_custom_heading text="Article Title" font_container="tag:h3|text_align:center" use_theme_fonts="yes"][vc_column_text]
+
+Vivamus et risus in purus consequat interdum. Nam hendrerit euismod quam imperdiet maximus. Duis id eros eu lectus tempor interdum. Duis nec commodo enim. Proin lobortis sapien vitae eleifend tincidunt.
+
+[/vc_column_text][vc_btn title="Read More" color="chino" align="center"][/vc_column][/vc_row]
