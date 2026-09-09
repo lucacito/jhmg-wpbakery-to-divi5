@@ -67,6 +67,18 @@ final class CssRuleParserTest extends TestCase {
         );
     }
 
+    /**
+     * `vc_shortcode_custom_css_class()` matches `.name{...}` non-greedily and
+     * stops at the first closing brace; a `css` value that carries two rules
+     * (a hand-edited or theme-exported one) must not swallow the second.
+     */
+    public function test_parse_stops_at_the_first_closing_brace(): void {
+        $result = CssRuleParser::parse( '.a{color:red !important;}.b{color:blue !important;}' );
+
+        $this->assertSame( 'a', $result['class'] );
+        $this->assertSame( [ 'color' => 'red' ], $result['declarations'] );
+    }
+
     // --- imageRef -----------------------------------------------------------
 
     public function test_image_ref_splits_the_url_and_attachment_id(): void {

@@ -29,7 +29,10 @@ final class CssRuleParser {
     public static function parse( string $css ): array {
         $result = [ 'class' => '', 'declarations' => [] ];
 
-        if ( ! preg_match( '/^\s*\.([^{]+?)\s*\{(.*)\}\s*$/s', $css, $m ) ) {
+        // `([^}]*)` stops at the FIRST closing brace, exactly as
+        // `vc_shortcode_custom_css_class()` does; a greedy `(.*)` would run to
+        // the last one and swallow a second rule's selector as a declaration.
+        if ( ! preg_match( '/^\s*\.([^{]+?)\s*\{([^}]*)\}/s', $css, $m ) ) {
             return $result;
         }
 
