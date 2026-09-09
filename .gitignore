@@ -11,3 +11,6 @@ references/*
 
 # wp.org SVN working copy (recreated on demand)
 wporg-svn/
+
+# SDD scratch (per-plan workspace)
+.superpowers/
