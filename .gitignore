@@ -14,3 +14,10 @@ wporg-svn/
 
 # SDD scratch (per-plan workspace)
 .superpowers/
+
+# Ronneby demo exports (43 MB, re-extracted from references/ by scripts/extract-ronneby-corpus.sh);
+# three reviewed samples are committed as real-world fixtures
+wpbakery templates/ronneby/*
+!wpbakery templates/ronneby/04_pages_demo.xml
+!wpbakery templates/ronneby/15_tenth.xml
+!wpbakery templates/ronneby/23_eighteenth.xml

@@ -19,5 +19,11 @@ Not committed. The Docker environment and the schema documentation expect these 
   (`https://getbowtied.github.io/repository/plugins/the-retailer-extender/the-retailer-extender.zip`,
   10.0.6), which is the source for the "The Retailer" theme family in `Helpers\ThemeShortcodes`. The
   theme's demo-content WXR belongs in `wpbakery templates/` once obtained.
+- `themeforest-s0tt3MTV-ronneby-highperformance-wordpress-theme.zip` — DFD Ronneby 3.5.74 (full
+  ThemeForest package). `Mainfiles/import/<demo>/content.xml` holds one WordPress export per demo:
+  96 WPBakery demos with 398 WPBakery-built pages (the 14 `*_elementor_*` demos are skipped). Those
+  exports are the real-world corpus under `wpbakery templates/ronneby/`. The package bundles
+  `js_composer_9.0.1.zip` and Slider Revolution; the theme's own `dfd_*` elements live in the
+  separate "Ronneby Core" plugin, which the package does not include.
 
 `scripts/docker/setup_wp.sh` stops with instructions when `Divi.zip` or `js_composer.9.0.1.zip` is missing.
