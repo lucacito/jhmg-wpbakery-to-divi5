@@ -146,7 +146,7 @@ final class ColumnWidthsTest extends TestCase {
 
     public function test_an_empty_offset_yields_nothing(): void {
         $this->assertSame(
-            [ 'flex' => [], 'hidden' => [], 'margin_left' => [], 'notes' => [] ],
+            [ 'flex' => [], 'hidden' => [], 'margin_left' => [], 'inherit' => false, 'notes' => [] ],
             ColumnWidths::offsets( '' )
         );
     }
@@ -156,5 +156,16 @@ final class ColumnWidthsTest extends TestCase {
 
         $this->assertSame( '12_24', $result['flex']['desktop'] );
         $this->assertSame( [], $result['notes'] );
+    }
+
+    /**
+     * The marker is not a size, but its presence is load-bearing:
+     * `vc_column_offset_class_merge()` (column_offset.php:304-311) strips the
+     * markers and returns the offset classes without prepending the `width`
+     * attribute's own `vc_col-sm-N`, so the column takes no default width.
+     */
+    public function test_an_inherit_marker_is_reported(): void {
+        $this->assertTrue( ColumnWidths::offsets( 'vc_col-md-inherit vc_col-lg-6' )['inherit'] );
+        $this->assertFalse( ColumnWidths::offsets( 'vc_col-lg-6' )['inherit'] );
     }
 }

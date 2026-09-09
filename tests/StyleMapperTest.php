@@ -276,6 +276,20 @@ final class StyleMapperTest extends TestCase {
         $this->assertSame( 'top left', $gradient['directionRadial'] );
     }
 
+    /**
+     * A `css` value carrying two rules belongs to the first element only:
+     * `vc_shortcode_custom_css_class()` reads the first `.name{…}` and stops.
+     * The gradient pre-pass has to respect the same boundary.
+     */
+    public function test_only_the_first_rule_is_read(): void {
+        $result = $this->map( 'text', [
+            'css' => '.a{color:red !important;}.b{background:linear-gradient(45deg,#ff0000 0%,#0000ff 100%) !important;}',
+        ] );
+
+        $this->assertArrayNotHasKey( 'background', $result['divi_attrs']['module']['decoration'] ?? [] );
+        $this->assertSame( 'color: red;', $result['divi_attrs']['css']['desktop']['value']['mainElement'] );
+    }
+
     public function test_a_gradient_divi_cannot_express_is_carried_as_custom_css(): void {
         $result = $this->map( 'row', [ 'css' => '.c{background: linear-gradient(to right, #fff 0px, #000 40px);}' ] );
 
@@ -417,9 +431,26 @@ final class StyleMapperTest extends TestCase {
     public function test_every_common_key_is_acknowledged(): void {
         $result = $this->map( 'generic', [] );
 
-        foreach ( [ 'css', 'el_id', 'el_class', 'css_animation', 'css_animation_delay', 'disable_element' ] as $key ) {
-            $this->assertContains( $key, $result['handled_keys'], $key );
-        }
+        $this->assertSame(
+            [ 'css', 'el_id', 'el_class', 'css_animation', 'disable_element' ],
+            $result['handled_keys']
+        );
+    }
+
+    /**
+     * A row's `gap` is the row's business: it becomes the row's
+     * `layout.columnGap`/`rowGap` plus `gap/2` row padding, never `gap/2`
+     * column padding (docs/box-model.md, candidate C).
+     */
+    public function test_a_columns_gap_is_not_the_columns_business(): void {
+        $result = $this->map( 'column', [ 'gap' => '30' ] );
+
+        $this->assertSame( [], $result['divi_attrs'] );
+        $this->assertSame( [], $result['notes'] );
+        $this->assertSame(
+            [ 'css', 'el_id', 'el_class', 'css_animation', 'disable_element' ],
+            $result['handled_keys']
+        );
     }
 
     public function test_the_result_shape_is_stable(): void {

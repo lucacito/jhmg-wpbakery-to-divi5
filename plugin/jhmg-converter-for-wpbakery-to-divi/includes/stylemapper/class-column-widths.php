@@ -146,15 +146,26 @@ final class ColumnWidths {
      * has no separate band for, a desktop band hidden on its own — is named in
      * `notes` rather than silently flattened.
      *
+     * `inherit` reports whether the value carries a `vc_col-{size}-inherit`
+     * marker. The marker itself is not a size — it is how the editor records
+     * "leave this viewport alone" — but its *presence* changes what WPBakery
+     * renders: `vc_column_offset_class_merge()` (js_composer 9.0.1,
+     * include/params/column_offset/column_offset.php, lines 304-311) strips the
+     * markers and then returns the offset classes **without** prepending the
+     * `width` attribute's own `vc_col-sm-N` class, which it otherwise always
+     * does. So a column whose `offset` carries a marker takes no default width
+     * from `width` at all, and the column converter needs to know.
+     *
      * @return array{
      *     flex: array<string,string>,
      *     hidden: array<string,bool>,
      *     margin_left: array<string,string>,
+     *     inherit: bool,
      *     notes: string[]
      * }
      */
     public static function offsets( string $offset ): array {
-        $result = [ 'flex' => [], 'hidden' => [], 'margin_left' => [], 'notes' => [] ];
+        $result = [ 'flex' => [], 'hidden' => [], 'margin_left' => [], 'inherit' => false, 'notes' => [] ];
 
         $offset = trim( $offset );
         if ( $offset === '' ) {
@@ -183,8 +194,11 @@ final class ColumnWidths {
                 }
                 continue;
             }
-            // `vc_col-{size}-inherit` is the editor's "no value here" marker
-            // (`vc_column_offset_class_merge()` strips it before rendering).
+            if ( preg_match( '/^vc_col-(xs|sm|md|lg|xl)-inherit$/', $token ) ) {
+                // Not a size: the editor's "leave this viewport alone" marker.
+                // Its presence stops WPBakery prepending the `width` class.
+                $result['inherit'] = true;
+            }
         }
 
         self::applySizes( $sizes, $result );

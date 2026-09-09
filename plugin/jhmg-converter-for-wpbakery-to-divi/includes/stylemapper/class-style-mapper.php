@@ -56,21 +56,35 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class StyleMapper {
 
-    /** Divi font decoration path per node kind (the primary text). */
+    /**
+     * Divi font decoration path per node kind (the primary text). Sub-names for
+     * all of them come from `Module/Options/Font/FontPresetAttrsMap.php`
+     * (`size`, `lineHeight`, `textAlign`, `color`, `family`, `weight`, `style`,
+     * `headingLevel`) and are emitted by
+     * `StyleLibrary/Declarations/Font/Font.php`.
+     */
     const FONT_PATH = [
+        // `heading/module.json` → title.settings.decoration.font, with
+        // `fields.headingLevel.render` on.
         'heading' => 'title.decoration.font.font',
+        // `text/module.json` → content.settings.decoration.bodyFont
+        // (+ content.styleProps.bodyFont.important.body.font).
         'text'    => 'content.decoration.bodyFont.body.font',
+        // `button/module.json` → button.styleProps.font.important.font.
         'button'  => 'button.decoration.font.font',
+        // `blurb/module.json` → title.settings.decoration.font.
         'blurb'   => 'title.decoration.font.font',
+        // `cta/module.json` → title.settings.decoration.font.
         'cta'     => 'title.decoration.font.font',
-        // `divi/number-counter` and `divi/circle-counter`; the bar counter
-        // (`divi/counter`) has no `number` element and its handler passes
-        // `title.decoration.font.font` explicitly.
+        // `number-counter/module.json` and `circle-counter/module.json` →
+        // number.settings.decoration.font. The bar counter (`divi/counter`) has
+        // no `number` element at all and its handler passes
+        // `title.decoration.font.font` / `barProgress.decoration.font.font`.
         'counter' => 'number.decoration.font.font',
     ];
 
     /** Attributes every node can carry, acknowledged whether present or not. */
-    const COMMON_KEYS = [ 'css', 'el_id', 'el_class', 'css_animation', 'css_animation_delay', 'disable_element' ];
+    const COMMON_KEYS = [ 'css', 'el_id', 'el_class', 'css_animation', 'disable_element' ];
 
     const SIDES = [ 'top', 'right', 'bottom', 'left' ];
 
@@ -244,6 +258,17 @@ class StyleMapper {
             return;
         }
 
+        // Only the first rule belongs to this element. `CssRuleParser::parse()`
+        // stops at the first `}` exactly as `vc_shortcode_custom_css_class()`
+        // does, and the gradient pre-pass below has to see the same slice — a
+        // `css` value carrying two rules must not have the second one's
+        // background lifted onto this module.
+        $brace = strpos( $css, '}' );
+        if ( $brace === false ) {
+            return;
+        }
+        $css = substr( $css, 0, $brace + 1 );
+
         // Pull gradients out before parsing: `CssRuleParser` splits a
         // `background` shorthand into a colour and a `url()`, which would read
         // a gradient's first colour stop as the background colour.
@@ -262,6 +287,12 @@ class StyleMapper {
     }
 
     /**
+     * `margin-*` / `padding-*` → `{spacing path}.desktop.value.{margin,padding}`
+     * as `{top,right,bottom,left,syncVertical,syncHorizontal}`
+     * (`Module/Options/Spacing/SpacingPresetAttrsMap.php`, sub-names `margin`
+     * and `padding`). The sync flags are `off` because WPBakery's four inputs
+     * are independent.
+     *
      * @param array<string,string> $declarations
      */
     private function mapSpacing( string $kind, array &$declarations, array &$attrs ): void {
@@ -353,6 +384,14 @@ class StyleMapper {
     }
 
     /**
+     * `border-radius` and the four per-corner properties WPBakery's editor
+     * writes (`wpb_border_radius_controls()`, css_editor.php) →
+     * `{border path}.desktop.value.radius`.
+     * `StyleLibrary/Declarations/Border/Border.php` accepts exactly
+     * `topLeft`, `topRight`, `bottomRight`, `bottomLeft` and skips anything
+     * else, and emits only the corners present — so an unset corner has to be
+     * an explicit zero or the theme's own radius shows through.
+     *
      * @param array<string,string> $declarations
      */
     private function mapRadius( string $path, array &$declarations, array &$attrs ): void {
@@ -412,6 +451,18 @@ class StyleMapper {
     }
 
     /**
+     * `background-color` → `{background path}.desktop.value.color`, and
+     * `background-image` / `-position` / `-repeat` / `-size` →
+     * `…value.image.{url,position,repeat,size}`
+     * (`Module/Options/Background/BackgroundPresetAttrsMap.php`).
+     * The value vocabulary is Divi's own:
+     * `StyleLibrary/Declarations/Background/Utils/BackgroundStyleUtils.php`
+     * (`get_background_size_css()` knows cover/contain/stretch/custom/initial,
+     * `get_background_position_css()` an `x y` keyword pair) and the emit gate
+     * in `…/Background/Traits/StyleDeclarationTrait.php`, which only writes
+     * size/position/repeat when an image URL is set — hence the `$has_image`
+     * guard here, so an unusable one is carried as custom CSS instead.
+     *
      * @param array<string,string> $declarations
      */
     private function mapBackground( string $kind, array &$declarations, array $context, array &$attrs, array &$notes ): void {
@@ -739,6 +790,10 @@ class StyleMapper {
      * a `background` shorthand into a colour and a `url()` token and would read
      * a gradient's first colour stop as the background colour.
      *
+     * $css is always the first rule alone (mapCss() truncates at the first
+     * `}`), so a second rule in the same attribute can never contribute a
+     * gradient to this element.
+     *
      * @param array<int,array{prop: string, value: string}> $gradients
      */
     private function extractGradients( string $css, array &$gradients ): string {
@@ -789,6 +844,13 @@ class StyleMapper {
     // Flat attributes
     // -------------------------------------------------------------------------
 
+    /**
+     * `el_id` / `el_class` → `module.advanced.htmlAttributes.desktop.value.{id,class}`
+     * (`Module/Options/IdClasses/IdClassesPresetAttrsMap.php` sub-names `id`
+     * and `class`; the attribute name itself is read back in
+     * `IdClassesClassnames.php` and appears as `module.advanced.htmlAttributes`
+     * in every module's preset-attribute map).
+     */
     private function mapHtmlAttributes( array $atts, array &$attrs ): void {
         $id    = is_string( $atts['el_id'] ?? null ) ? trim( $atts['el_id'] ) : '';
         $class = is_string( $atts['el_class'] ?? null ) ? trim( $atts['el_class'] ) : '';
@@ -822,7 +884,10 @@ class StyleMapper {
 
     /**
      * `disable_element` renders nothing at all in WPBakery. The content is kept
-     * and hidden on every breakpoint so nothing is lost silently.
+     * and hidden on every breakpoint so nothing is lost silently:
+     * `module.decoration.disabledOn.{desktop,tablet,phone}.value = 'on'`
+     * (`Module/Options/DisabledOn/DisabledOnPresetAttrsMap.php`, a bare
+     * attribute with no sub-name; consumed by `DisabledOn/DisabledOnStyle.php`).
      */
     private function mapVisibility( array $atts, array &$attrs, array &$notes ): void {
         if ( ! PackedParams::isOn( $atts['disable_element'] ?? '' ) ) {
