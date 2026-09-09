@@ -142,6 +142,51 @@ final class ShortcodeParserTest extends TestCase {
         $this->assertSame( 'two[/vc_toggle]', $nodes[1]['text'] );
     }
 
+    public function test_a_container_nested_in_itself_closes_on_the_first_closing_tag(): void {
+        $nodes = ShortcodeParser::parse( '[vc_row][vc_row][/vc_row][/vc_row]' );
+
+        // WordPress does not count depth: the outer row closes on the first
+        // [/vc_row], so the second one is left over as text.
+        $this->assertSame( [ 'vc_row', '#text' ], $this->tags( $nodes ) );
+        $this->assertSame( '[vc_row]', $nodes[0]['content'] );
+
+        $this->assertSame( [ 'vc_row' ], $this->tags( $nodes[0]['children'] ) );
+        $this->assertTrue( $nodes[0]['children'][0]['self_closing'] );
+        $this->assertSame( 0, $nodes[0]['children'][0]['offset'] );
+
+        $this->assertSame( '[/vc_row]', $nodes[1]['text'] );
+        $this->assertSame( 25, $nodes[1]['offset'] );
+    }
+
+    // --- stray brackets -----------------------------------------------------
+
+    public function test_a_stray_closing_bracket_survives_as_text(): void {
+        $nodes = ShortcodeParser::parse( '[vc_row]]' );
+
+        $this->assertSame( [ 'vc_row', '#text' ], $this->tags( $nodes ) );
+        $this->assertSame( 0, $nodes[0]['offset'] );
+        $this->assertSame( ']', $nodes[1]['text'] );
+        $this->assertSame( 8, $nodes[1]['offset'] );
+    }
+
+    public function test_a_stray_opening_bracket_survives_as_text(): void {
+        $nodes = ShortcodeParser::parse( '[[vc_row]' );
+
+        $this->assertSame( [ '#text', 'vc_row' ], $this->tags( $nodes ) );
+        $this->assertSame( '[', $nodes[0]['text'] );
+        $this->assertSame( 0, $nodes[0]['offset'] );
+        $this->assertSame( 1, $nodes[1]['offset'], 'the shortcode proper starts at the second bracket' );
+    }
+
+    public function test_a_stray_bracket_merges_with_the_text_beside_it(): void {
+        $nodes = ShortcodeParser::parse( '[vc_single_image image="1"]] tail' );
+
+        $this->assertSame( [ 'vc_single_image', '#text' ], $this->tags( $nodes ) );
+        $this->assertTrue( $nodes[0]['self_closing'] );
+        $this->assertSame( '] tail', $nodes[1]['text'] );
+        $this->assertSame( 27, $nodes[1]['offset'] );
+    }
+
     // --- escaping and text --------------------------------------------------
 
     public function test_a_doubled_bracket_is_literal_text(): void {
@@ -167,13 +212,17 @@ final class ShortcodeParserTest extends TestCase {
         $this->assertSame( [ 'vc_row', 'vc_row' ], $this->tags( $nodes ) );
     }
 
-    public function test_a_document_without_shortcodes_is_one_text_node(): void {
-        $this->assertSame( [], ShortcodeParser::parse( "   \n\t " ) );
+    public function test_an_empty_or_whitespace_only_document_has_no_nodes(): void {
         $this->assertSame( [], ShortcodeParser::parse( '' ) );
+        $this->assertSame( [], ShortcodeParser::parse( "   \n\t " ) );
+    }
 
+    public function test_a_document_without_shortcodes_is_one_text_node(): void {
         $nodes = ShortcodeParser::parse( 'Just words.' );
+
         $this->assertSame( [ '#text' ], $this->tags( $nodes ) );
         $this->assertSame( 'Just words.', $nodes[0]['text'] );
+        $this->assertSame( 0, $nodes[0]['offset'] );
     }
 
     // --- attributes ---------------------------------------------------------
@@ -185,6 +234,19 @@ final class ShortcodeParserTest extends TestCase {
 
         $nodes = ShortcodeParser::parse( '[vc_custom_heading text=&#8220;Hi there&#8221; el_class=&#8220;lead&#8221;]' );
         $this->assertSame( [ 'text' => 'Hi there', 'el_class' => 'lead' ], $nodes[0]['atts'] );
+    }
+
+    public function test_entity_quotes_inside_a_value_are_left_alone(): void {
+        // Only a delimiter is folded, so a quoted value keeps its entities and
+        // does not get chopped in half by the fold.
+        $this->assertSame(
+            [ 'text' => 'He said &#8220;hi&#8221;' ],
+            ShortcodeParser::parseAtts( 'text="He said &#8220;hi&#8221;"' )
+        );
+        $this->assertSame(
+            [ 'text' => 'He said &#8220;hi&#8221;', 'size' => 'lg' ],
+            ShortcodeParser::parseAtts( 'text="He said &#8220;hi&#8221;" size=lg' )
+        );
     }
 
     public function test_single_quoted_and_unquoted_values(): void {
@@ -225,6 +287,38 @@ final class ShortcodeParserTest extends TestCase {
     public function test_an_unparseable_attribute_string_is_an_empty_array(): void {
         $this->assertSame( [], ShortcodeParser::parseAtts( '' ) );
         $this->assertSame( [], ShortcodeParser::parseAtts( '   ' ) );
+    }
+
+    // --- PCRE failures ------------------------------------------------------
+
+    /**
+     * A PCRE failure must not look like "this page has no shortcodes": that
+     * would convert a whole page to nothing without a word.
+     */
+    public function test_parse_throws_when_pcre_gives_up(): void {
+        $limit = ini_get( 'pcre.backtrack_limit' );
+        ini_set( 'pcre.backtrack_limit', '1' );
+
+        try {
+            $this->expectException( \RuntimeException::class );
+            $this->expectExceptionMessage( 'Backtrack limit exhausted' );
+            ShortcodeParser::parse( '[vc_row a="b/c"][/vc_row]' );
+        } finally {
+            ini_set( 'pcre.backtrack_limit', (string) $limit );
+        }
+    }
+
+    public function test_parse_atts_throws_when_pcre_gives_up(): void {
+        $limit = ini_get( 'pcre.backtrack_limit' );
+        ini_set( 'pcre.backtrack_limit', '1' );
+
+        try {
+            $this->expectException( \RuntimeException::class );
+            $this->expectExceptionMessage( 'Backtrack limit exhausted' );
+            ShortcodeParser::parseAtts( 'title="A" color=blue' );
+        } finally {
+            ini_set( 'pcre.backtrack_limit', (string) $limit );
+        }
     }
 
     // --- unicode ------------------------------------------------------------

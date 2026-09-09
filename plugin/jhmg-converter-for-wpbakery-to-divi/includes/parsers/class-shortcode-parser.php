@@ -23,6 +23,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  * - `[tag …]…[/tag]` takes the content up to the **first** `[/tag]`. There is
  *   no depth counting, so a tag nested inside itself closes the outer one — the
  *   same way WordPress renders it, which is what the source page looked like.
+ *
+ * Both `parse()` and `parseAtts()` throw `\RuntimeException` when PCRE itself
+ * fails — a backtrack or recursion limit hit on a pathological document. The
+ * alternative, treating a failed match as "no matches", would quietly turn a
+ * whole page into one text node and convert it to nothing; a converter has to
+ * say so instead.
  */
 final class ShortcodeParser {
 
@@ -74,7 +80,8 @@ final class ShortcodeParser {
      *
      * 1 optional second opening bracket, 2 tag, 3 attribute string,
      * 4 the self-closing slash, 5 the content, 6 optional second closing
-     * bracket. `/s` so a `.`-free pattern still spans newlines in the content.
+     * bracket. `/s` is inert here — the pattern contains no `.` for it to
+     * widen — and is kept only for parity with the pattern the brief specifies.
      */
     private const SHORTCODE_REGEX = '/\[(\[?)([a-zA-Z0-9_-]+)(?![\w-])([^\]\/]*(?:\/(?!\])[^\]\/]*)*?)(?:(\/)\]|\](?:([^\[]*+(?:\[(?!\/\2\])[^\[]*+)*+)\[\/\2\])?)(\]?)/s';
 
@@ -97,6 +104,15 @@ final class ShortcodeParser {
     ];
 
     /**
+     * An entity quote in **delimiter position** only: opening, immediately
+     * after the `=` of a `key=` pair (core tolerates whitespace around the
+     * `=`, so this does too), or closing, immediately before whitespace or the
+     * end of the attribute string. An entity quote anywhere else is part of a
+     * value — `text="He said &#8220;hi&#8221;"` — and is left verbatim.
+     */
+    private const CURLY_QUOTE_DELIMITER_REGEX = '/(?<==)(\s*)(&#8220;|&#8221;|&#8243;|&#8216;|&#8217;)|(&#8220;|&#8221;|&#8243;|&#8216;|&#8217;)(?=\s|$)/';
+
+    /**
      * Parses a shortcode string into a list of nodes, in document order.
      *
      * An element node is
@@ -117,9 +133,14 @@ final class ShortcodeParser {
      * this call** — for a child that means an offset into its parent's content
      * string, not into the whole document.
      *
+     * A stray bracket beside a shortcode — `[vc_row]]`, `[[vc_row]` — is not an
+     * escape, and core hands it back as literal text; it becomes part of the
+     * neighbouring `#text` node rather than being swallowed by the element.
+     *
      * @param string   $content          Shortcode string, e.g. a post_content.
      * @param string[] $raw_content_tags Tags whose content is not parsed.
      * @return array<int, array<string, mixed>>
+     * @throws \RuntimeException When PCRE fails (backtrack/recursion limit).
      */
     public static function parse( string $content, array $raw_content_tags = self::RAW_CONTENT_TAGS ): array {
         if ( $content === '' ) {
@@ -134,7 +155,11 @@ final class ShortcodeParser {
             PREG_SET_ORDER | PREG_OFFSET_CAPTURE | PREG_UNMATCHED_AS_NULL
         );
 
-        if ( ! $found ) {
+        if ( $found === false ) {
+            throw new \RuntimeException( 'Shortcode parsing failed: ' . preg_last_error_msg() );
+        }
+
+        if ( $found === 0 ) {
             return self::textNodes( $content, 0 );
         }
 
@@ -142,17 +167,37 @@ final class ShortcodeParser {
         $cursor = 0;
 
         foreach ( $matches as $match ) {
-            $whole  = (string) $match[0][0];
-            $offset = (int) $match[0][1];
+            $whole   = (string) $match[0][0];
+            $offset  = (int) $match[0][1];
+            $end     = $offset + strlen( $whole );
+            $escaped = $match[1][0] === '[' && $match[6][0] === ']';
+
+            if ( ! $escaped ) {
+                /*
+                 * Groups 1 and 6 are the doubled brackets of `[[tag]]`. When
+                 * only one of them is there it is not an escape, and
+                 * do_shortcode_tag() hands it straight back around the
+                 * element's output (`$m[1] . $output . $m[6]`) — a stray
+                 * bracket is literal text, not part of the shortcode. Leaving
+                 * it outside the consumed span lets the gap logic below pick it
+                 * up, merged with whatever text sits beside it.
+                 */
+                if ( $match[1][0] === '[' ) {
+                    $offset++;
+                }
+                if ( $match[6][0] === ']' ) {
+                    $end--;
+                }
+            }
 
             foreach ( self::textNodes( substr( $content, $cursor, $offset - $cursor ), $cursor ) as $node ) {
                 $nodes[] = $node;
             }
-            $cursor = $offset + strlen( $whole );
+            $cursor = $end;
 
             // [[tag]] escapes the shortcode: strip one bracket from each side
             // and keep the rest as text, exactly as do_shortcode_tag() does.
-            if ( $match[1][0] === '[' && $match[6][0] === ']' ) {
+            if ( $escaped ) {
                 foreach ( self::textNodes( substr( $whole, 1, -1 ), $offset ) as $node ) {
                     $nodes[] = $node;
                 }
@@ -196,10 +241,12 @@ final class ShortcodeParser {
      * entities above. WordPress does not fold quotes itself — it never sees
      * texturised shortcodes — but WPBakery content that has been through an
      * export/import round trip does carry them, and without the fold the whole
-     * attribute reads as one positional value.
+     * attribute reads as one positional value. The fold only applies in
+     * delimiter position, so an entity quote inside a value survives intact.
      *
      * @return array<string|int, string> Named attributes keyed by name,
      *                                   positional ones appended by index.
+     * @throws \RuntimeException When PCRE fails (backtrack/recursion limit).
      */
     public static function parseAtts( string $text ): array {
         $folded = preg_replace( '/[\x{00a0}\x{200b}]+/u', ' ', $text );
@@ -208,12 +255,27 @@ final class ShortcodeParser {
             $text = $folded;
         }
 
-        $text = strtr( $text, self::CURLY_QUOTE_ENTITIES );
+        $unfolded = preg_replace_callback(
+            self::CURLY_QUOTE_DELIMITER_REGEX,
+            static function ( array $m ): string {
+                $entity = $m[2] !== '' ? $m[2] : ( $m[3] ?? '' );
+                return $m[1] . self::CURLY_QUOTE_ENTITIES[ $entity ];
+            },
+            $text
+        );
+        if ( $unfolded !== null ) {
+            $text = $unfolded;
+        }
 
         $atts    = [];
         $matches = [];
+        $matched = preg_match_all( self::ATTS_REGEX, $text, $matches, PREG_SET_ORDER );
 
-        if ( ! preg_match_all( self::ATTS_REGEX, $text, $matches, PREG_SET_ORDER ) ) {
+        if ( $matched === false ) {
+            throw new \RuntimeException( 'Shortcode attribute parsing failed: ' . preg_last_error_msg() );
+        }
+
+        if ( $matched === 0 ) {
             return $atts;
         }
 

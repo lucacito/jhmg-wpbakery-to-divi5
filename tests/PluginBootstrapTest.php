@@ -1,5 +1,7 @@
 <?php
 
+namespace WPBakeryDivi5Converter\Tests;
+
 use PHPUnit\Framework\TestCase;
 use WPBakeryDivi5Converter\Plugin;
 
