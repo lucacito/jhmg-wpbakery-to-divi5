@@ -19,6 +19,14 @@ use WPBakeryDivi5Converter\Helpers\Color;
  * triples (the 17 palette names, kept for pre-9.0 `message_box_color` values,
  * plus the 8 dropdown presets `info`/`success`/`warning`/`danger` and their
  * `alert-*` classic variants) — Color::MESSAGE_BOX carries all 25.
+ *
+ * The migration tables are read the same way: BUTTON_MIGRATION from
+ * `$btn_solid_colors` + `$btn_3d_colors`, CTA_MIGRATION from `$cta_colors`
+ * (all three in class-vc-shared-library.php) and PROGRESS_BAR_LEGACY from
+ * `Wpb_Attributes_Migration_Abstract::resolve_progress_bar_color()`. The
+ * cross-checks below — every button and CTA background equal to the palette
+ * hex of the same name, every classic pair equal to BUTTON_LEGACY's — are
+ * what would catch a transcription slip.
  */
 final class ColorTest extends TestCase {
 
@@ -70,6 +78,104 @@ final class ColorTest extends TestCase {
             [ 'text' => '#31708f', 'border' => '#bce8f1', 'bg' => '#d9edf7' ],
             Color::MESSAGE_BOX['alert-info']
         );
+    }
+
+    // --- the 9.0 migration tables ------------------------------------------
+
+    public function test_button_migration_covers_the_palette_and_the_classic_slugs(): void {
+        $this->assertCount( 24, Color::BUTTON_MIGRATION );
+
+        foreach ( array_keys( Color::PALETTE ) as $palette_name ) {
+            $this->assertArrayHasKey( $palette_name, Color::BUTTON_MIGRATION );
+        }
+        foreach ( array_keys( Color::BUTTON_LEGACY ) as $classic ) {
+            $this->assertArrayHasKey( $classic, Color::BUTTON_MIGRATION );
+        }
+    }
+
+    public function test_every_button_migration_row_has_the_five_values(): void {
+        foreach ( Color::BUTTON_MIGRATION as $slug => $row ) {
+            $this->assertSame( [ 'bg', 'text', 'hover_bg', 'hover_text', 'shadow' ], array_keys( $row ), $slug );
+
+            foreach ( $row as $key => $hex ) {
+                $this->assertMatchesRegularExpression( '/^#[0-9a-f]{3,6}$/', $hex, $slug . '.' . $key );
+            }
+        }
+    }
+
+    public function test_button_migration_backgrounds_agree_with_the_palette(): void {
+        foreach ( Color::PALETTE as $name => $hex ) {
+            $this->assertSame( $hex, Color::BUTTON_MIGRATION[ $name ]['bg'], $name );
+        }
+    }
+
+    public function test_button_migration_agrees_with_the_classic_pair(): void {
+        foreach ( Color::BUTTON_LEGACY as $slug => $pair ) {
+            $this->assertSame( $pair['bg'], Color::BUTTON_MIGRATION[ $slug ]['bg'], $slug );
+            $this->assertSame( $pair['text'], Color::BUTTON_MIGRATION[ $slug ]['text'], $slug );
+        }
+    }
+
+    public function test_only_the_light_buttons_take_a_dark_label(): void {
+        foreach ( Color::BUTTON_MIGRATION as $slug => $row ) {
+            $expected = in_array( $slug, [ 'grey', 'white' ], true ) ? '#666'
+                : ( $slug === 'default' ? '#333' : '#fff' );
+
+            $this->assertSame( $expected, $row['text'], $slug );
+        }
+    }
+
+    public function test_button_migration_row_for_blue(): void {
+        $this->assertSame(
+            [ 'bg' => '#5472d2', 'text' => '#fff', 'hover_bg' => '#3c5ecc', 'hover_text' => '#f7f7f7', 'shadow' => '#3253bc' ],
+            Color::buttonMigration( 'blue' )
+        );
+    }
+
+    public function test_button_migration_accepts_both_spellings(): void {
+        $this->assertSame( Color::buttonMigration( 'mulled_wine' ), Color::buttonMigration( 'mulled-wine' ) );
+        $this->assertSame( '#342f3c', Color::buttonMigration( 'MULLED-WINE' )['shadow'] );
+        $this->assertNull( Color::buttonMigration( 'theme-accent' ) );
+    }
+
+    public function test_cta_migration_has_the_palette_plus_classic(): void {
+        $this->assertCount( 18, Color::CTA_MIGRATION );
+        $this->assertArrayHasKey( 'classic', Color::CTA_MIGRATION );
+
+        foreach ( Color::PALETTE as $name => $hex ) {
+            $this->assertSame( $hex, Color::CTA_MIGRATION[ $name ]['bg'], $name );
+        }
+    }
+
+    public function test_cta_migration_row_for_blue(): void {
+        $this->assertSame(
+            [ 'text' => '#c9d2f0', 'bg' => '#5472d2', 'heading' => '#fff', 'shadow' => '#3253bc' ],
+            Color::ctaMigration( 'blue' )
+        );
+    }
+
+    public function test_the_light_cta_boxes_take_a_dark_heading(): void {
+        foreach ( Color::CTA_MIGRATION as $slug => $row ) {
+            $expected = in_array( $slug, [ 'classic', 'grey', 'white' ], true ) ? '#666' : '#fff';
+
+            $this->assertSame( $expected, $row['heading'], $slug );
+        }
+        $this->assertNull( Color::ctaMigration( 'theme-accent' ) );
+    }
+
+    public function test_progress_bar_legacy_has_the_seven_classic_bars(): void {
+        $this->assertCount( 7, Color::PROGRESS_BAR_LEGACY );
+        $this->assertSame( '#0074cc', Color::progressBarLegacy( 'bar_blue' ) );
+        $this->assertSame( '#414141', Color::progressBarLegacy( 'BAR_BLACK' ) );
+    }
+
+    public function test_the_default_bar_has_no_colour_and_an_unknown_bar_is_null(): void {
+        $this->assertSame( '', Color::progressBarLegacy( 'bar_grey' ) );
+        $this->assertNull( Color::progressBarLegacy( 'blue' ) );
+    }
+
+    public function test_the_gradient_label_is_wpbakerys_own_white(): void {
+        $this->assertSame( '#fff', Color::BUTTON_GRADIENT_TEXT );
     }
 
     public function test_normalize_lower_cases_hex(): void {

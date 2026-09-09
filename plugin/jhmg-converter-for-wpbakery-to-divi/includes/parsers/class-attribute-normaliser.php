@@ -38,14 +38,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   `shortcode_atts()` output, where the old key still has a registered
  *   default; here the result is the input to a converter, and a stale key
  *   would be reported as an unmapped setting.
- * - A colour value is only ever resolved through `Color` (whose tables are
- *   read from `vc_convert_vc_color()` and `VcSharedLibrary`). A slug none of
+ * - A colour value is only ever resolved through `Color`, whose tables are
+ *   read from `vc_convert_vc_color()`, `VcSharedLibrary` and the migration
+ *   itself: `Color::BUTTON_MIGRATION` and `Color::CTA_MIGRATION` are the rows
+ *   `apply_btn_*_color()` and `apply_cta_*_color()` write, and
+ *   `Color::PROGRESS_BAR_LEGACY` is `resolve_progress_bar_color()`'s classic
+ *   `bar_*` map. There is not one hex literal in this file. A slug none of
  *   those tables knows is left exactly as it was and recorded in `notes`;
- *   colours are never invented. That also means the handful of hex values
- *   WPBakery's migration hard-codes and `Color` does not carry — the `#666`
- *   label colour of a grey or white solid button, the `darken(…, 11%)` box
- *   shadow of a 3d button, the per-bar text shadow of a progress bar — are
- *   not written here; the note says the colour was not carried.
+ *   colours are never invented.
  */
 final class AttributeNormaliser {
 
@@ -56,13 +56,18 @@ final class AttributeNormaliser {
      * created in the editor any more, and Divi has no counterpart for the old
      * shape, so each is folded onto its modern equivalent.
      *
+     * `vc_cta_button` goes to `vc_cta` rather than to `vc_btn`: it is a box of
+     * text with a button in it (`call_text` is the box), which is exactly what
+     * `vc_cta` is, and the button half maps onto that element's integrated
+     * `btn_` params.
+     *
      * `vc_gmaps` is deliberately absent: it is deprecated in 9.0.1 but has no
      * replacement tag, so it keeps its own.
      */
     private const DEPRECATED_TAGS = [
         'vc_button'        => 'vc_btn',
         'vc_button2'       => 'vc_btn',
-        'vc_cta_button'    => 'vc_btn',
+        'vc_cta_button'    => 'vc_cta',
         'vc_cta_button2'   => 'vc_cta',
         'vc_tabs'          => 'vc_tta_tabs',
         'vc_tour'          => 'vc_tta_tour',
@@ -96,21 +101,27 @@ final class AttributeNormaliser {
     /** The four grid elements the 9.0 migration hooks the grid rules onto. */
     private const GRID_TAGS = [ 'vc_basic_grid', 'vc_masonry_grid', 'vc_media_grid', 'vc_masonry_media_grid' ];
 
+    /** `is_cta_legacy_position()`: the four values the old `add_button` dropdown held. */
+    private const CTA_POSITIONS = [ 'top', 'bottom', 'left', 'right' ];
+
     /** The tta containers that carried the `no_fill` / `no_fill_content_area` checkbox. */
     private const TTA_TAGS = [ 'vc_tta_tabs', 'vc_tta_tour', 'vc_tta_accordion', 'vc_tta_pageable' ];
-
-    /** The palette slugs whose solid button used WPBakery's dark label colour. */
-    private const DARK_LABEL_PALETTE = [ 'grey', 'white' ];
 
     /**
      * Normalises one element's tag and attributes.
      *
+     * `content` is null for every rule but one: `vc_cta_button` keeps its text
+     * in an attribute (`call_text`) where `vc_cta` keeps it in the element's
+     * content, so that rule hands the caller a content string to write. A
+     * caller that only wants attributes can ignore it.
+     *
      * @param string               $tag  Shortcode tag as it appears in the content.
      * @param array<string,string> $atts Attributes as `ShortcodeParser` read them.
-     * @return array{tag: string, atts: array<string,string>, notes: string[]}
+     * @return array{tag: string, atts: array<string,string>, content: ?string, notes: string[]}
      */
     public static function normalise( string $tag, array $atts ): array {
-        $notes = [];
+        $notes   = [];
+        $content = null;
 
         if ( isset( self::DEPRECATED_TAGS[ $tag ] ) ) {
             $new_tag = self::DEPRECATED_TAGS[ $tag ];
@@ -118,6 +129,8 @@ final class AttributeNormaliser {
 
             if ( $new_tag === 'vc_btn' ) {
                 $atts = self::convertAttributesToButton3( $atts );
+            } elseif ( $tag === 'vc_cta_button' ) {
+                [ $atts, $content ] = self::convertCtaButtonToCta( $atts );
             } elseif ( $tag === 'vc_cta_button2' ) {
                 $atts = self::convertCtaButton2ToCta( $atts );
             } elseif ( isset( $atts['interval'] ) ) {
@@ -130,9 +143,10 @@ final class AttributeNormaliser {
         $atts = self::migrate( $tag, $atts, $notes );
 
         return [
-            'tag'   => $tag,
-            'atts'  => $atts,
-            'notes' => $notes,
+            'tag'     => $tag,
+            'atts'    => $atts,
+            'content' => $content,
+            'notes'   => $notes,
         ];
     }
 
@@ -280,20 +294,12 @@ final class AttributeNormaliser {
         }
 
         if ( ! isset( $atts['link'] ) && isset( $atts['href'] ) && $atts['href'] !== '' ) {
-            $link           = $atts['href'];
-            $target         = $atts['target'] ?? '';
-            $title          = $atts['title'] ?? $link;
-            $atts['link']   = 'url:' . rawurlencode( $link ) . '|title:' . $title
-                . ( $target !== '' ? '|target:' . rawurlencode( $target ) : '' );
+            $atts['link'] = self::packLink( $atts['href'], $atts['title'] ?? $atts['href'], $atts['target'] ?? '' );
         }
         unset( $atts['href'], $atts['target'] );
 
-        if ( ( ! isset( $atts['add_icon'] ) || $atts['add_icon'] !== 'true' )
-            && isset( $atts['icon'] ) && $atts['icon'] !== '' && $atts['icon'] !== 'none' ) {
-            $atts['add_icon']          = 'true';
-            $atts['i_type']            = 'pixelicons';
-            $atts['i_align']           = 'right';
-            $atts['i_icon_pixelicons'] = 'vc_pixel_icon vc_pixel_icon-' . str_replace( 'wpb_', '', $atts['icon'] );
+        if ( ( ! isset( $atts['add_icon'] ) || $atts['add_icon'] !== 'true' ) && isset( $atts['icon'] ) ) {
+            $atts = self::pixelIcon( $atts, $atts['icon'], '' );
         }
         unset( $atts['icon'] );
 
@@ -306,6 +312,77 @@ final class AttributeNormaliser {
         }
 
         return $atts;
+    }
+
+    /**
+     * `vc_cta_button` onto `vc_cta`.
+     *
+     * The 4.5-deprecated element (config/deprecated/shortcode-vc-cta-button.php)
+     * is a block of text with a button beside it: `call_text` is the text —
+     * which `vc_cta` keeps as the element's content, so it is handed back to
+     * the caller rather than left in an attribute — and `title`, `href`,
+     * `target`, `color`, `size`, `icon` and `position` are the button.
+     *
+     * 9.0.1's `vc_cta` carries a whole `vc_btn` under a `btn_` prefix
+     * (`vc_map_integrate_shortcode( 'vc_btn', 'btn_', … )`,
+     * config/buttons/shortcode-vc-cta.php — there is no
+     * config/content/shortcode-vc-cta.php in 9.0.1), so every button
+     * attribute moves under that prefix: `btn_title`, `btn_link`, `btn_color`,
+     * `btn_size`, `btn_style`, `btn_add_icon`, `btn_i_type`,
+     * `btn_i_icon_pixelicons`, `btn_i_align`.
+     *
+     * `position` holds `cta_align_right|cta_align_left|cta_align_bottom`; the
+     * bare direction goes into `add_button`, the legacy dropdown that
+     * `convert_cta_add_button_dropdown_to_toggle()` then splits into the
+     * toggle and `btn_position`. An element saved without one still had a
+     * button, on the right (the dropdown's first value), so that is the
+     * default.
+     *
+     * `color` holds one of `vc_colors_arr()`'s Bootstrap-2 button classes
+     * (`wpb_button`, `btn-primary`, …, config/lean-map.php), not a palette
+     * slug, so it is carried through as `btn_color` for the handler to read;
+     * no colour table here is keyed by those class names.
+     *
+     * @param array<string,string> $atts
+     * @return array{0: array<string,string>, 1: ?string} Attributes, and the content to write.
+     */
+    private static function convertCtaButtonToCta( array $atts ): array {
+        $content = null;
+
+        if ( isset( $atts['call_text'] ) ) {
+            $content = $atts['call_text'];
+            unset( $atts['call_text'] );
+        }
+
+        if ( isset( $atts['size'], self::BUTTON_1_SIZES[ $atts['size'] ] ) ) {
+            $atts['size'] = self::BUTTON_1_SIZES[ $atts['size'] ];
+        }
+
+        if ( isset( $atts['href'] ) && $atts['href'] !== '' ) {
+            $atts['link'] = self::packLink( $atts['href'], $atts['title'] ?? $atts['href'], $atts['target'] ?? '' );
+        }
+        unset( $atts['href'], $atts['target'] );
+
+        if ( isset( $atts['icon'] ) ) {
+            $atts = self::pixelIcon( $atts, $atts['icon'], 'btn_' );
+        }
+        unset( $atts['icon'] );
+
+        if ( isset( $atts['style'], self::BUTTON_1_STYLES[ $atts['style'] ] ) ) {
+            [ $style, $shape ] = self::BUTTON_1_STYLES[ $atts['style'] ];
+            $atts['btn_style'] = $style;
+            if ( $shape !== '' ) {
+                $atts['btn_shape'] = $shape;
+            }
+        }
+        unset( $atts['style'] );
+
+        $position = str_replace( 'cta_align_', '', $atts['position'] ?? '' );
+        unset( $atts['position'] );
+
+        $atts['add_button'] = in_array( $position, self::CTA_POSITIONS, true ) ? $position : 'right';
+
+        return [ self::prefixButtonAtts( $atts ), $content ];
     }
 
     /**
@@ -330,11 +407,11 @@ final class AttributeNormaliser {
             $atts['size'] = self::BUTTON_1_SIZES[ $atts['size'] ];
         }
 
-        foreach ( [ 'title' => 'btn_title', 'link' => 'btn_link', 'size' => 'btn_size', 'color' => 'btn_color', 'position' => 'btn_position' ] as $old => $new ) {
-            if ( isset( $atts[ $old ] ) && ! isset( $atts[ $new ] ) ) {
-                $atts[ $new ] = $atts[ $old ];
-            }
-            unset( $atts[ $old ] );
+        $atts = self::prefixButtonAtts( $atts );
+
+        if ( isset( $atts['position'] ) ) {
+            $atts['btn_position'] = $atts['position'];
+            unset( $atts['position'] );
         }
 
         if ( isset( $atts['btn_title'] ) || isset( $atts['btn_link'] ) ) {
@@ -352,19 +429,75 @@ final class AttributeNormaliser {
         return $atts;
     }
 
+    /**
+     * `convertAttributesToButton3()`'s `link` string:
+     * `url:<rawurlencoded>|title:<title>|target:<rawurlencoded>`, the title
+     * left unencoded exactly as the original writes it, and the target only
+     * there when the element had one.
+     */
+    private static function packLink( string $href, string $title, string $target ): string {
+        return 'url:' . rawurlencode( $href ) . '|title:' . $title
+            . ( $target !== '' ? '|target:' . rawurlencode( $target ) : '' );
+    }
+
+    /**
+     * `convertAttributesToButton3()`'s icon branch: a button-1 `icon`
+     * (`vc_icons_arr()`'s `wpb_*` slugs, config/lean-map.php) is a pixel icon,
+     * which 9.0.1 addresses through `vc_icon`'s params integrated under an
+     * `i_` prefix — `i_type`, `i_icon_pixelicons`, `i_align` — themselves
+     * prefixed again when the button is integrated into another element.
+     *
+     * @param array<string,string> $atts
+     * @return array<string,string>
+     */
+    private static function pixelIcon( array $atts, string $icon, string $prefix ): array {
+        if ( $icon === '' || $icon === 'none' ) {
+            return $atts;
+        }
+
+        $atts[ $prefix . 'add_icon' ]          = 'true';
+        $atts[ $prefix . 'i_type' ]            = 'pixelicons';
+        $atts[ $prefix . 'i_align' ]           = 'right';
+        $atts[ $prefix . 'i_icon_pixelicons' ] = 'vc_pixel_icon vc_pixel_icon-' . str_replace( 'wpb_', '', $icon );
+
+        return $atts;
+    }
+
+    /**
+     * Moves the button half of a deprecated call-to-action element under the
+     * `btn_` prefix `vc_cta` integrates `vc_btn` with, leaving everything else
+     * (the box: `h2`, `h4`, `el_width`, `accent_color`, `el_class`, …) alone.
+     *
+     * @param array<string,string> $atts
+     * @return array<string,string>
+     */
+    private static function prefixButtonAtts( array $atts ): array {
+        foreach ( [ 'title', 'link', 'size', 'color', 'align' ] as $key ) {
+            if ( ! isset( $atts[ $key ] ) ) {
+                continue;
+            }
+            if ( ! isset( $atts[ 'btn_' . $key ] ) ) {
+                $atts[ 'btn_' . $key ] = $atts[ $key ];
+            }
+            unset( $atts[ $key ] );
+        }
+
+        return $atts;
+    }
+
     // --- 9.0: buttons -----------------------------------------------------------
 
     /**
      * `convert_btn_dropdown_color_to_custom()` + `apply_btn_solid_color()`.
      *
-     * WPBakery writes the four (six for `modern`) hover and border values of
-     * `VcSharedLibrary::$btn_solid_colors` and leaves `style` alone, because
-     * its own CSS still reads the style class. Divi has no such class, so the
-     * button becomes the `custom` style — the one 9.0.1 offers for a button
-     * whose colours are picked rather than named
-     * (config/content/vc-btn-element.php) — with the background and label it
-     * had. The hover pair is a `darken()` of the background that no table in
-     * `Color` carries; it is not written and the note says so.
+     * WPBakery leaves `style` alone, because its own CSS still reads the style
+     * class. Divi has no such class, so the button becomes the `custom` style
+     * — the one 9.0.1 offers for a button whose colours are picked rather than
+     * named (config/content/vc-btn-element.php) — with the background and
+     * label `Color::BUTTON_MIGRATION` holds for its slug. The hover pair of
+     * the same row is not written: Divi's button hover is a separate state
+     * this normaliser has no shape for, and the handler reads the row itself
+     * when it builds one.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -380,20 +513,13 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        [ $background, $label ] = $colour;
-
-        $atts = self::put( $atts, $prefix . 'custom_background', $background );
-        $written = [ $prefix . 'custom_background' ];
-
-        if ( $label !== null ) {
-            $atts      = self::put( $atts, $prefix . 'custom_text', $label );
-            $written[] = $prefix . 'custom_text';
-        }
+        $atts = self::put( $atts, $prefix . 'custom_background', $colour['bg'] );
+        $atts = self::put( $atts, $prefix . 'custom_text', $colour['text'] );
 
         $atts[ $prefix . 'style' ] = 'custom';
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . implode( ', ', $written );
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'custom_background, ' . $prefix . 'custom_text';
 
         return $atts;
     }
@@ -420,7 +546,7 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        $atts                      = self::put( $atts, $prefix . 'outline_custom_color', $colour[0] );
+        $atts                      = self::put( $atts, $prefix . 'outline_custom_color', $colour['bg'] );
         $atts[ $prefix . 'style' ] = 'outline-custom';
         unset( $atts[ $prefix . 'color' ] );
 
@@ -432,10 +558,10 @@ final class AttributeNormaliser {
     /**
      * `convert_btn_3d_dropdown_color_to_custom()` + `apply_btn_3d_color()`.
      *
-     * The 3d style keeps its name — 9.0.1's `custom_background` and
-     * `custom_text` are declared for it as well — and loses only the shadow,
-     * which `$btn_3d_colors` stores as a `darken(@background, 11%)` value no
-     * `Color` table carries.
+     * The 3d style keeps its name — 9.0.1 declares `custom_background`,
+     * `custom_text` and `custom_border` for it as well — and the box shadow
+     * `$btn_3d_colors` stores as a `darken(@background, 11%)` value becomes
+     * `custom_border`, which is where `apply_btn_3d_color()` puts it.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -451,20 +577,14 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        [ $background, $label ] = $colour;
-
-        $atts    = self::put( $atts, $prefix . 'custom_background', $background );
-        $written = [ $prefix . 'custom_background' ];
-
-        if ( $label !== null ) {
-            $atts      = self::put( $atts, $prefix . 'custom_text', $label );
-            $written[] = $prefix . 'custom_text';
-        }
+        $atts = self::put( $atts, $prefix . 'custom_background', $colour['bg'] );
+        $atts = self::put( $atts, $prefix . 'custom_text', $colour['text'] );
+        $atts = self::put( $atts, $prefix . 'custom_border', $colour['shadow'] );
 
         unset( $atts[ $prefix . 'color' ] );
 
-        $notes[] = $tag . ': ' . $prefix . 'color → ' . implode( ', ', $written );
-        $notes[] = $tag . ': the 3d button shadow colour was not carried';
+        $notes[] = $tag . ': ' . $prefix . 'color → ' . $prefix . 'custom_background, '
+            . $prefix . 'custom_text, ' . $prefix . 'custom_border';
 
         return $atts;
     }
@@ -472,9 +592,9 @@ final class AttributeNormaliser {
     /**
      * `convert_btn_gradient_style_to_gradient_custom()`.
      *
-     * Same defaults as the original — turquoise and blue when the button
-     * carried no gradient colours — and the same white label, taken from the
-     * palette rather than written as a literal.
+     * Same defaults as the original: turquoise and blue when the button
+     * carried no gradient colours, and `Color::BUTTON_GRADIENT_TEXT` for the
+     * label the original writes as `#fff`.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -500,7 +620,7 @@ final class AttributeNormaliser {
             unset( $atts[ $prefix . 'gradient_color_' . $index ] );
         }
 
-        $atts    = self::put( $atts, $prefix . 'gradient_text_color', (string) Color::fromPalette( 'white' ) );
+        $atts    = self::put( $atts, $prefix . 'gradient_text_color', Color::BUTTON_GRADIENT_TEXT );
         $notes[] = $tag . ': ' . $prefix . 'style="gradient" → gradient-custom';
 
         return $atts;
@@ -524,19 +644,14 @@ final class AttributeNormaliser {
     }
 
     /**
-     * The background/label pair for a button `color` slug, or null when the
-     * button has no colour to migrate or the slug is not one WPBakery ships.
-     *
-     * `Color::BUTTON_LEGACY` is `VcSharedLibrary::$btn_solid_colors`' seven
-     * classic slugs, which carry their own label colour. The 17 palette names
-     * take a white label, except grey and white: WPBakery labels those `#666`,
-     * a value no `Color` table carries, so no label is written at all and the
-     * module's own default applies — a dark label on a light button, which is
-     * what the original looked like.
+     * The `Color::BUTTON_MIGRATION` row for a button `color` slug — the 17
+     * palette names and the 7 classic Bootstrap-2 ones, in either spelling —
+     * or null when the button has no colour to migrate or the slug is not one
+     * of them.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
-     * @return array{0: string, 1: ?string}|null
+     * @return array{bg: string, text: string, hover_bg: string, hover_text: string, shadow: string}|null
      */
     private static function buttonColour( string $tag, array $atts, string $prefix, array &$notes ): ?array {
         $slug = $atts[ $prefix . 'color' ] ?? '';
@@ -545,24 +660,13 @@ final class AttributeNormaliser {
             return null;
         }
 
-        $key = str_replace( '-', '_', strtolower( trim( $slug ) ) );
+        $row = Color::buttonMigration( $slug );
 
-        if ( isset( Color::BUTTON_LEGACY[ $key ] ) ) {
-            return [ Color::BUTTON_LEGACY[ $key ]['bg'], Color::BUTTON_LEGACY[ $key ]['text'] ];
-        }
-
-        $background = self::colour( $slug );
-
-        if ( $background === null ) {
+        if ( $row === null ) {
             $notes[] = self::unresolved( $tag, $prefix . 'color', $slug );
-
-            return null;
         }
 
-        return [
-            $background,
-            in_array( $key, self::DARK_LABEL_PALETTE, true ) ? null : Color::fromPalette( 'white' ),
-        ];
+        return $row;
     }
 
     // --- 9.0: call to action -------------------------------------------------------
@@ -585,8 +689,6 @@ final class AttributeNormaliser {
 
     /**
      * `convert_cta_flat_color_to_custom()` + `apply_cta_flat_color()`.
-     * `VcSharedLibrary::$cta_colors` gives background and heading colour; the
-     * heading is white for every palette slug but grey and white.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -597,13 +699,13 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        return self::applyCtaColour( $tag, $atts, 'custom_background', $notes );
+        return self::applyCtaColour( $tag, $atts, false, $notes );
     }
 
     /**
-     * `convert_cta_3d_color_to_custom()` + `apply_cta_3d_color()`. The box
-     * shadow `$cta_colors` carries as a fourth value is a `darken()` result
-     * no `Color` table has, so it is not written.
+     * `convert_cta_3d_color_to_custom()` + `apply_cta_3d_color()`, which is
+     * the flat rule plus the box shadow `$cta_colors` carries as its fourth
+     * value, written to `custom_border` as the original writes it.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
@@ -614,13 +716,7 @@ final class AttributeNormaliser {
             return $atts;
         }
 
-        $atts = self::applyCtaColour( $tag, $atts, 'custom_background', $notes );
-
-        if ( isset( $atts['custom_background'] ) ) {
-            $notes[] = $tag . ': the 3d box shadow colour was not carried';
-        }
-
-        return $atts;
+        return self::applyCtaColour( $tag, $atts, true, $notes );
     }
 
     /**
@@ -632,25 +728,20 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convert_cta_outline_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        if ( ( $atts['style'] ?? '' ) !== 'outline' ) {
+        if ( ( $atts['style'] ?? '' ) !== 'outline' || ( $atts['color'] ?? '' ) === '' ) {
             return $atts;
         }
 
-        $slug  = $atts['color'] ?? '';
-        $value = $slug === '' ? null : self::colour( $slug );
+        $row = Color::ctaMigration( $atts['color'] );
 
-        if ( $slug === '' ) {
-            return $atts;
-        }
-
-        if ( $value === null ) {
-            $notes[] = self::unresolved( $tag, 'color', $slug );
+        if ( $row === null ) {
+            $notes[] = self::unresolved( $tag, 'color', $atts['color'] );
 
             return $atts;
         }
 
-        $atts = self::put( $atts, 'custom_text', $value );
-        $atts = self::put( $atts, 'custom_border', $value );
+        $atts = self::put( $atts, 'custom_text', $row['bg'] );
+        $atts = self::put( $atts, 'custom_border', $row['bg'] );
         unset( $atts['color'] );
 
         $notes[] = $tag . ': color → custom_text, custom_border';
@@ -659,34 +750,45 @@ final class AttributeNormaliser {
     }
 
     /**
-     * The background/heading half of `apply_cta_flat_color()` and
-     * `apply_cta_3d_color()`, which differ only in the border they add.
+     * `apply_cta_flat_color()` and `apply_cta_3d_color()`, which differ only in
+     * the box shadow the second one adds. Both run in the template context
+     * (`$is_template = true`), where the row's body-text colour is written to
+     * `text_color` as well — an attribute `WPBakeryShortCode_Vc_Cta` still
+     * reads (include/classes/shortcodes/vc-cta.php) though 9.0.1 no longer
+     * maps it — and both leave a hand-picked `custom_text` alone.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
-    private static function applyCtaColour( string $tag, array $atts, string $background_key, array &$notes ): array {
+    private static function applyCtaColour( string $tag, array $atts, bool $with_shadow, array &$notes ): array {
         $slug = $atts['color'] ?? '';
 
         if ( $slug === '' ) {
             return $atts;
         }
 
-        $background = self::colour( $slug );
+        $row = Color::ctaMigration( $slug );
 
-        if ( $background === null ) {
+        if ( $row === null ) {
             $notes[] = self::unresolved( $tag, 'color', $slug );
 
             return $atts;
         }
 
-        $atts    = self::put( $atts, $background_key, $background );
-        $written = [ $background_key ];
+        $written = [ 'custom_background' ];
+        $atts    = self::put( $atts, 'custom_background', $row['bg'] );
 
-        if ( ! in_array( str_replace( '-', '_', strtolower( $slug ) ), self::DARK_LABEL_PALETTE, true ) ) {
-            $atts      = self::put( $atts, 'custom_text', (string) Color::fromPalette( 'white' ) );
-            $written[] = 'custom_text';
+        if ( empty( $atts['custom_text'] ) ) {
+            $atts['custom_text'] = $row['heading'];
+            $atts['text_color']  = $row['text'];
+            $written[]           = 'custom_text';
+            $written[]           = 'text_color';
+        }
+
+        if ( $with_shadow ) {
+            $atts      = self::put( $atts, 'custom_border', $row['shadow'] );
+            $written[] = 'custom_border';
         }
 
         unset( $atts['color'] );
@@ -753,7 +855,7 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function ctaPositionToggle( string $tag, array $atts, string $toggle, string $position, array &$notes ): array {
-        if ( ! isset( $atts[ $toggle ] ) || ! in_array( $atts[ $toggle ], [ 'top', 'bottom', 'left', 'right' ], true ) ) {
+        if ( ! isset( $atts[ $toggle ] ) || ! in_array( $atts[ $toggle ], self::CTA_POSITIONS, true ) ) {
             return $atts;
         }
 
@@ -921,20 +1023,47 @@ final class AttributeNormaliser {
     }
 
     /**
-     * `convert_progress_bar_bgcolor_to_custom()` + `apply_progress_bar_color()`.
+     * `convert_progress_bar_bgcolor_to_custom()` + `apply_progress_bar_color()`
+     * + `resolve_progress_bar_color()`.
      *
-     * The classic `bar_*` slugs are Bootstrap-2 values WPBakery keeps in the
-     * migration itself rather than in a shared table, so they resolve to
-     * nothing here and are reported; the palette slugs resolve normally. The
-     * label colour and text shadow the original also writes are literals of
-     * the same kind and are left out.
+     * The dropdown offered the palette and seven classic `bar_*` colours; the
+     * latter live in the migration itself, and `Color::PROGRESS_BAR_LEGACY`
+     * carries them. `bar_grey` resolves to no colour in the source too — it is
+     * the uncoloured default bar — so it is consumed with a note rather than
+     * written. The label colour and text shadow the original also writes are
+     * the bar's own text treatment, which the handler decides.
      *
      * @param array<string,string> $atts
      * @param string[]             $notes
      * @return array<string,string>
      */
     private static function convert_progress_bar_bgcolor_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrate_dropdown_color_to_custom( $tag, $atts, 'bgcolor', 'custombgcolor', $notes );
+        $slug = $atts['bgcolor'] ?? '';
+
+        if ( $slug === '' || $slug === 'custom' || ! empty( $atts['custombgcolor'] ) ) {
+            return $atts;
+        }
+
+        $value = self::barColour( $slug );
+
+        if ( $value === null ) {
+            $notes[] = self::unresolved( $tag, 'bgcolor', $slug );
+
+            return $atts;
+        }
+
+        unset( $atts['bgcolor'] );
+
+        if ( $value === '' ) {
+            $notes[] = $tag . ': bgcolor="' . $slug . '" is the default bar colour';
+
+            return $atts;
+        }
+
+        $atts['custombgcolor'] = $value;
+        $notes[]               = $tag . ': bgcolor → custombgcolor';
+
+        return $atts;
     }
 
     /**
@@ -946,7 +1075,7 @@ final class AttributeNormaliser {
      * @return array<string,string>
      */
     private static function convert_progress_bar_values_color_to_custom( string $tag, array $atts, array &$notes ): array {
-        return self::migrateParamGroupColour( $tag, $atts, 'customcolor', $notes );
+        return self::migrateParamGroupColour( $tag, $atts, 'customcolor', $notes, true );
     }
 
     /**
@@ -1282,7 +1411,7 @@ final class AttributeNormaliser {
      * @param string[]             $notes
      * @return array<string,string>
      */
-    private static function migrateParamGroupColour( string $tag, array $atts, string $target_key, array &$notes ): array {
+    private static function migrateParamGroupColour( string $tag, array $atts, string $target_key, array &$notes, bool $classic_bars = false ): array {
         if ( empty( $atts['values'] ) ) {
             return $atts;
         }
@@ -1300,17 +1429,21 @@ final class AttributeNormaliser {
                 continue;
             }
 
-            $slug  = (string) $item['color'];
-            $value = $slug === '' || $slug === 'custom' ? null : self::colour( $slug );
+            $slug = (string) $item['color'];
 
-            if ( $value === null ) {
-                if ( $slug !== '' && $slug !== 'custom' ) {
-                    $notes[] = self::unresolved( $tag, 'values color', $slug );
-                }
+            if ( $slug === '' || $slug === 'custom' ) {
                 continue;
             }
 
-            if ( empty( $item[ $target_key ] ) ) {
+            $value = $classic_bars ? self::barColour( $slug ) : self::colour( $slug );
+
+            if ( $value === null ) {
+                $notes[] = self::unresolved( $tag, 'values color', $slug );
+
+                continue;
+            }
+
+            if ( $value !== '' && empty( $item[ $target_key ] ) ) {
                 $item[ $target_key ] = $value;
             }
 
@@ -1336,6 +1469,16 @@ final class AttributeNormaliser {
      */
     private static function colour( string $value ): ?string {
         return Color::fromPalette( $value ) ?? Color::normalize( $value );
+    }
+
+    /**
+     * The same, for a progress bar, whose dropdown also held the seven classic
+     * `bar_*` slugs. `''` is a real answer there — `bar_grey` is the
+     * uncoloured default — and is not the same as null, which still means
+     * "not a colour this plugin knows".
+     */
+    private static function barColour( string $slug ): ?string {
+        return Color::progressBarLegacy( $slug ) ?? self::colour( $slug );
     }
 
     /**

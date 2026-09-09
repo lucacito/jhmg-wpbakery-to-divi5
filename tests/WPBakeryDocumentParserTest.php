@@ -69,6 +69,25 @@ final class WPBakeryDocumentParserTest extends TestCase {
         $this->assertContains( 'vc_button → vc_btn', $button['notes'] );
     }
 
+    public function test_a_legacy_call_to_action_button_becomes_a_cta_whose_content_is_its_text(): void {
+        $document = WPBakeryDocumentParser::parse(
+            '[vc_row][vc_column][vc_cta_button call_text="Ready to start?" title="Sign up" href="https://x"][/vc_column][/vc_row]'
+        );
+
+        $cta = $document['nodes'][0]['children'][0]['children'][0];
+        $this->assertSame( 'vc_cta', $cta['tag'] );
+        $this->assertSame( 'Ready to start?', $cta['content'] );
+        $this->assertSame( 'Sign up', $cta['atts']['btn_title'] );
+        $this->assertArrayNotHasKey( 'call_text', $cta['atts'] );
+    }
+
+    public function test_content_is_left_alone_when_no_rule_rewrites_it(): void {
+        $document = WPBakeryDocumentParser::parse( '[vc_row][vc_column][vc_column_text]<p>Hello</p>[/vc_column_text][/vc_column][/vc_row]' );
+
+        $text = $document['nodes'][0]['children'][0]['children'][0];
+        $this->assertSame( '<p>Hello</p>', $text['content'] );
+    }
+
     public function test_text_between_elements_survives_as_a_text_node(): void {
         $document = WPBakeryDocumentParser::parse( 'Loose words[vc_row][/vc_row]' );
 

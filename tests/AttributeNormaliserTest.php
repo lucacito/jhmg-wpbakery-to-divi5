@@ -10,9 +10,13 @@ use WPBakeryDivi5Converter\Parsers\AttributeNormaliser;
  * Both WPBakery attribute eras folded into 9.0.1's shapes.
  *
  * The expected hex values are quoted as literals here on purpose: they are the
- * documentation of WPBakery's 17-name palette (`vc_convert_vc_color()`), and a
- * test that computed them the way the implementation does would assert nothing.
- * The normaliser itself always goes through `Color::fromPalette()`.
+ * documentation of WPBakery's own tables — the 17-name palette
+ * (`vc_convert_vc_color()`), `VcSharedLibrary::$btn_solid_colors`,
+ * `$btn_3d_colors` and `$cta_colors`, and the migration's classic `bar_*`
+ * colours — and a test that computed them the way the implementation does
+ * would assert nothing. The normaliser itself holds no hex at all: it reads
+ * `Color::fromPalette()`, `Color::BUTTON_MIGRATION`, `Color::CTA_MIGRATION`
+ * and `Color::PROGRESS_BAR_LEGACY`.
  */
 final class AttributeNormaliserTest extends TestCase {
 
@@ -42,10 +46,10 @@ final class AttributeNormaliserTest extends TestCase {
     }
 
     public function test_the_result_always_carries_the_full_shape(): void {
-        $this->assertSame(
-            [ 'tag', 'atts', 'notes' ],
-            array_keys( AttributeNormaliser::normalise( 'vc_row', [] ) )
-        );
+        $result = AttributeNormaliser::normalise( 'vc_row', [] );
+
+        $this->assertSame( [ 'tag', 'atts', 'content', 'notes' ], array_keys( $result ) );
+        $this->assertNull( $result['content'], 'only a rule that moves text into the element rewrites content' );
     }
 
     // --- deprecated elements: buttons ---------------------------------------
@@ -124,16 +128,56 @@ final class AttributeNormaliserTest extends TestCase {
         $this->assertArrayNotHasKey( 'add_icon', $atts );
     }
 
-    public function test_vc_cta_button_becomes_a_vc_btn_and_keeps_its_call_text(): void {
+    /**
+     * Every attribute `vc_cta_button` registers
+     * (config/deprecated/shortcode-vc-cta-button.php), at once.
+     */
+    public function test_vc_cta_button_becomes_a_vc_cta_whose_text_is_the_content(): void {
         $result = AttributeNormaliser::normalise( 'vc_cta_button', [
             'call_text' => 'Ready to start?',
-            'title'     => 'Go',
-            'href'      => 'https://x',
+            'title'     => 'Sign up',
+            'href'      => 'https://example.com/go',
+            'target'    => '_blank',
+            'color'     => 'btn-primary',
+            'icon'      => 'wpb_book',
+            'size'      => 'btn-large',
+            'position'  => 'cta_align_bottom',
+            'el_class'  => 'promo',
         ] );
 
-        $this->assertSame( 'vc_btn', $result['tag'] );
-        $this->assertSame( 'Ready to start?', $result['atts']['call_text'] );
-        $this->assertContains( 'vc_cta_button → vc_btn', $result['notes'] );
+        $this->assertSame( 'vc_cta', $result['tag'] );
+        $this->assertSame( 'Ready to start?', $result['content'] );
+        $this->assertEquals(
+            [
+                'el_class'              => 'promo',
+                'btn_title'             => 'Sign up',
+                'btn_link'              => 'url:https%3A%2F%2Fexample.com%2Fgo|title:Sign up|target:_blank',
+                'btn_color'             => 'btn-primary',
+                'btn_size'              => 'lg',
+                'btn_add_icon'          => 'true',
+                'btn_i_type'            => 'pixelicons',
+                'btn_i_align'           => 'right',
+                'btn_i_icon_pixelicons' => 'vc_pixel_icon vc_pixel_icon-book',
+                'add_button'            => 'true',
+                'btn_position'          => 'bottom',
+            ],
+            $result['atts']
+        );
+        $this->assertContains( 'vc_cta_button → vc_cta', $result['notes'] );
+    }
+
+    public function test_a_cta_button_without_a_position_puts_the_button_on_the_right(): void {
+        $atts = $this->atts( 'vc_cta_button', [ 'call_text' => 'Hi', 'title' => 'Go' ] );
+
+        $this->assertSame( 'true', $atts['add_button'] );
+        $this->assertSame( 'right', $atts['btn_position'] );
+    }
+
+    public function test_a_cta_buttons_text_is_taken_out_of_the_attributes(): void {
+        $result = AttributeNormaliser::normalise( 'vc_cta_button', [ 'call_text' => 'Ready?' ] );
+
+        $this->assertArrayNotHasKey( 'call_text', $result['atts'] );
+        $this->assertSame( 'Ready?', $result['content'] );
     }
 
     public function test_vc_cta_button2_becomes_a_vc_cta_with_an_integrated_button(): void {
@@ -170,7 +214,7 @@ final class AttributeNormaliserTest extends TestCase {
 
         $this->assertSame( 'custom', $atts['btn_style'] );
         $this->assertSame( '#5472d2', $atts['btn_custom_background'] );
-        $this->assertSame( '#ffffff', $atts['btn_custom_text'] );
+        $this->assertSame( '#fff', $atts['btn_custom_text'] );
         $this->assertArrayNotHasKey( 'color', $atts );
     }
 
@@ -206,7 +250,7 @@ final class AttributeNormaliserTest extends TestCase {
         $result = AttributeNormaliser::normalise( 'vc_btn', [ 'style' => 'flat', 'color' => 'blue' ] );
 
         $this->assertEquals(
-            [ 'style' => 'custom', 'custom_background' => '#5472d2', 'custom_text' => '#ffffff' ],
+            [ 'style' => 'custom', 'custom_background' => '#5472d2', 'custom_text' => '#fff' ],
             $result['atts']
         );
         $this->assertContains( 'vc_btn: color → custom_background, custom_text', $result['notes'] );
@@ -219,11 +263,18 @@ final class AttributeNormaliserTest extends TestCase {
         );
     }
 
-    public function test_a_light_palette_button_keeps_wpbakerys_default_text_colour(): void {
-        $atts = $this->atts( 'vc_btn', [ 'style' => 'flat', 'color' => 'grey' ] );
+    public function test_a_light_palette_button_takes_wpbakerys_dark_label(): void {
+        $this->assertEquals(
+            [ 'style' => 'custom', 'custom_background' => '#ebebeb', 'custom_text' => '#666' ],
+            $this->atts( 'vc_btn', [ 'style' => 'flat', 'color' => 'grey' ] )
+        );
+    }
 
-        $this->assertSame( '#ebebeb', $atts['custom_background'] );
-        $this->assertArrayNotHasKey( 'custom_text', $atts );
+    public function test_a_hand_picked_colour_is_never_overwritten_by_a_migrated_one(): void {
+        $atts = $this->atts( 'vc_btn', [ 'style' => 'flat', 'color' => 'blue', 'custom_text' => '#101010' ] );
+
+        $this->assertSame( '#101010', $atts['custom_text'] );
+        $this->assertSame( '#5472d2', $atts['custom_background'] );
     }
 
     public function test_an_outline_palette_button_becomes_an_outline_custom_button(): void {
@@ -238,7 +289,7 @@ final class AttributeNormaliserTest extends TestCase {
 
     public function test_a_3d_palette_button_keeps_its_style_and_gains_custom_colours(): void {
         $this->assertEquals(
-            [ 'style' => '3d', 'custom_background' => '#2a2a2a', 'custom_text' => '#ffffff' ],
+            [ 'style' => '3d', 'custom_background' => '#2a2a2a', 'custom_text' => '#fff', 'custom_border' => '#0e0e0e' ],
             $this->atts( 'vc_btn', [ 'style' => '3d', 'color' => 'black' ] )
         );
     }
@@ -249,7 +300,7 @@ final class AttributeNormaliserTest extends TestCase {
                 'style'                   => 'gradient-custom',
                 'gradient_custom_color_1' => '#f4524d',
                 'gradient_custom_color_2' => '#5aa1e3',
-                'gradient_text_color'     => '#ffffff',
+                'gradient_text_color'     => '#fff',
             ],
             $this->atts( 'vc_btn', [ 'style' => 'gradient', 'gradient_color_1' => 'juicy_pink', 'gradient_color_2' => 'sky' ] )
         );
@@ -273,8 +324,21 @@ final class AttributeNormaliserTest extends TestCase {
 
     public function test_a_flat_cta_colour_becomes_a_custom_background(): void {
         $this->assertEquals(
-            [ 'style' => 'flat', 'custom_background' => '#6dab3c', 'custom_text' => '#ffffff' ],
+            [ 'style' => 'flat', 'custom_background' => '#6dab3c', 'custom_text' => '#fff', 'text_color' => '#e5f2da' ],
             $this->atts( 'vc_cta', [ 'style' => 'flat', 'color' => 'green' ] )
+        );
+    }
+
+    public function test_a_3d_cta_colour_also_carries_the_box_shadow(): void {
+        $this->assertEquals(
+            [
+                'style'             => '3d',
+                'custom_background' => '#5472d2',
+                'custom_text'       => '#fff',
+                'text_color'        => '#c9d2f0',
+                'custom_border'     => '#3253bc',
+            ],
+            $this->atts( 'vc_cta', [ 'style' => '3d', 'color' => 'blue' ] )
         );
     }
 
@@ -363,11 +427,25 @@ final class AttributeNormaliserTest extends TestCase {
         );
     }
 
-    public function test_a_classic_progress_bar_colour_is_left_alone_and_reported(): void {
+    public function test_a_classic_progress_bar_colour_becomes_a_custom_colour(): void {
         $result = AttributeNormaliser::normalise( 'vc_progress_bar', [ 'bgcolor' => 'bar_blue' ] );
 
-        $this->assertSame( [ 'bgcolor' => 'bar_blue' ], $result['atts'] );
-        $this->assertContains( 'vc_progress_bar: bgcolor="bar_blue" is not a WPBakery palette name', $result['notes'] );
+        $this->assertSame( [ 'custombgcolor' => '#0074cc' ], $result['atts'] );
+        $this->assertContains( 'vc_progress_bar: bgcolor → custombgcolor', $result['notes'] );
+    }
+
+    public function test_the_default_grey_bar_is_consumed_without_a_colour(): void {
+        $result = AttributeNormaliser::normalise( 'vc_progress_bar', [ 'bgcolor' => 'bar_grey' ] );
+
+        $this->assertSame( [], $result['atts'] );
+        $this->assertContains( 'vc_progress_bar: bgcolor="bar_grey" is the default bar colour', $result['notes'] );
+    }
+
+    public function test_an_unknown_progress_bar_colour_is_left_alone_and_reported(): void {
+        $result = AttributeNormaliser::normalise( 'vc_progress_bar', [ 'bgcolor' => 'theme-bar' ] );
+
+        $this->assertSame( [ 'bgcolor' => 'theme-bar' ], $result['atts'] );
+        $this->assertContains( 'vc_progress_bar: bgcolor="theme-bar" is not a WPBakery palette name', $result['notes'] );
     }
 
     public function test_per_bar_colours_become_custom_colours(): void {

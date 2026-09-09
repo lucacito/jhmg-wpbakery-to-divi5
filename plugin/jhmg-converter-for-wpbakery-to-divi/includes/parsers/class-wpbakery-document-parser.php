@@ -48,7 +48,9 @@ final class WPBakeryDocumentParser {
      * `nodes` are `ShortcodeParser` nodes — the same shape, `content`,
      * `children`, `self_closing` and `offset` included — with every element's
      * tag and attributes put through `AttributeNormaliser` recursively and the
-     * rules it applied attached as `notes`. Text nodes are kept as they are.
+     * rules it applied attached as `notes`. A node's `content` is replaced
+     * when the normaliser hands one back (only `vc_cta_button` does). Text
+     * nodes are kept as they are.
      *
      * @param string                       $content Post content (the shortcode string).
      * @param array<string, mixed>         $meta    Post metas, keyed by meta key, in either
@@ -88,8 +90,15 @@ final class WPBakeryDocumentParser {
 
             $normalised = AttributeNormaliser::normalise( $node['tag'], $node['atts'] );
 
-            $node['tag']      = $normalised['tag'];
-            $node['atts']     = $normalised['atts'];
+            $node['tag']  = $normalised['tag'];
+            $node['atts'] = $normalised['atts'];
+
+            // Only one rule rewrites content: `vc_cta_button`, whose text is an
+            // attribute where its replacement keeps it as the element's content.
+            if ( $normalised['content'] !== null ) {
+                $node['content'] = $normalised['content'];
+            }
+
             $node['children'] = self::normalise( $node['children'] );
             $node['notes']    = $normalised['notes'];
 
