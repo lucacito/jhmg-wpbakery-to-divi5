@@ -1,0 +1,28 @@
+{
+    "registered_tags": 75,
+    "registered_mapped": 75,
+    "registered_exact": 38,
+    "registered_approximate": 31,
+    "registered_read_by_parent": 6,
+    "registered_unmapped": 0,
+    "template_only_tags": 23,
+    "template_only_mapped": 23,
+    "theme_family_tags_seen": 73,
+    "theme_family_tags_handled": 30,
+    "theme_families_seen": 3,
+    "corpus_files": {
+        "templates": 75,
+        "layouts": 35,
+        "exports": 96
+    },
+    "corpus_documents": {
+        "templates": 75,
+        "layouts": 35,
+        "exports": 510
+    },
+    "corpus_elements": {
+        "templates": 1279,
+        "layouts": 3822,
+        "exports": 44278
+    }
+}
