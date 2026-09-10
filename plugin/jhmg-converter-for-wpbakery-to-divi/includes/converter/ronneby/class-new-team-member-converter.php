@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * `social.innerContent.desktop.value.{facebookUrl,twitterUrl,linkedinUrl}`
  * (`TeamMemberModule.php:685-790`).
  *
- * The social links are the difference in scale: Ronneby offers 41 networks as
+ * The social links are the difference in scale: Ronneby offers 39 networks as
  * one flat attribute each (`$this->social_networks`, lines 11-52 — `facebook`,
  * `dribbble`, `evernote`, …) and Divi's team member has three. The three
  * convert; the rest are reported with their URLs, because a team member is not

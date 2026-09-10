@@ -40,6 +40,8 @@
  * already literal text.
  */
 
+require __DIR__ . '/lib/corpus-shortcodes.php';
+
 $root = dirname( __DIR__ );
 
 /**
@@ -108,7 +110,7 @@ if ( ! is_file( $path ) ) {
 
 $xml = (string) file_get_contents( $path );
 
-$matches = find_shortcodes( $xml, $tag );
+$matches = wbdc_find_shortcodes( $xml, $tag );
 
 if ( $matches === [] ) {
     fwrite( STDERR, sprintf( "[%s] does not appear in %s\n", $tag, basename( $path ) ) );
@@ -154,88 +156,6 @@ printf(
     count( $sidecar['attachments'] ),
     count( $sidecar['attachments'] ) === 1 ? '' : 's'
 );
-
-/**
- * Every `[tag …]…[/tag]` (or self-closing `[tag …]`) in the document, with the
- * offset it starts at.
- *
- * The closing tag is matched by counting opens and closes rather than with a
- * lazy `.*?`, so a `dfd_accordion` holding another `dfd_accordion` — or, more
- * usually, a `vc_tta_section` holding a second element of the same kind — is cut
- * whole instead of at the first `[/tag]`.
- *
- * @return array<int, array{offset: int, text: string}>
- */
-function find_shortcodes( string $document, string $tag ): array {
-    $pattern = '/\[' . preg_quote( $tag, '/' ) . '(?![\w-])([^\]]*)\]/';
-
-    if ( preg_match_all( $pattern, $document, $opens, PREG_OFFSET_CAPTURE ) === 0 ) {
-        return [];
-    }
-
-    $close     = '[/' . $tag . ']';
-    $found     = [];
-    $skip_past = -1;
-
-    foreach ( $opens[0] as $index => $open ) {
-        [ $open_text, $offset ] = $open;
-
-        // A nested occurrence is part of the element already cut; listing it
-        // again would give the reviewer the same span twice.
-        if ( $offset < $skip_past ) {
-            continue;
-        }
-
-        // A self-closing element (`[dfd_spacer …]`) has no closing tag at all.
-        $next_close = strpos( $document, $close, $offset );
-        if ( $next_close === false ) {
-            $found[] = [ 'offset' => $offset, 'text' => $open_text ];
-
-            continue;
-        }
-
-        // Is there another open of the same tag before that close? Then the
-        // close belongs to it, and this element's own close is further on.
-        $depth  = 1;
-        $cursor = $offset + strlen( $open_text );
-        $end    = null;
-
-        while ( $depth > 0 ) {
-            $next_open  = preg_match( $pattern, $document, $m, PREG_OFFSET_CAPTURE, $cursor ) === 1 ? $m[0][1] : false;
-            $next_close = strpos( $document, $close, $cursor );
-
-            if ( $next_close === false ) {
-                break;
-            }
-
-            if ( $next_open !== false && $next_open < $next_close ) {
-                $depth++;
-                $cursor = $next_open + strlen( $m[0][0] );
-
-                continue;
-            }
-
-            $depth--;
-            $cursor = $next_close + strlen( $close );
-            if ( $depth === 0 ) {
-                $end = $cursor;
-            }
-        }
-
-        if ( $end === null ) {
-            // Unbalanced: keep the opening tag alone rather than the rest of
-            // the document.
-            $found[] = [ 'offset' => $offset, 'text' => $open_text ];
-
-            continue;
-        }
-
-        $found[]   = [ 'offset' => $offset, 'text' => substr( $document, $offset, $end - $offset ) ];
-        $skip_past = $end;
-    }
-
-    return $found;
-}
 
 /**
  * The `id => ['url' => …]` map for every attachment the cut element names.

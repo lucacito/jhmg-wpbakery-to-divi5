@@ -1052,11 +1052,11 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
                 'addon',
                 $node_id,
                 sprintf(
-                    '%s adds %s to this WPBakery element; %s the theme\'s own field%s, drawn by its stylesheet and script, and %s no Divi equivalent',
-                    $label,
+                    '%s: %s added by a theme (matches %s\'s table of the fields it bolts onto WPBakery elements with vc_add_param). %s drawn by that theme\'s own stylesheet and script, and %s no Divi equivalent',
                     implode( ', ', $keys ),
-                    count( $keys ) === 1 ? 'it is' : 'they are',
-                    count( $keys ) === 1 ? '' : 's',
+                    count( $keys ) === 1 ? 'a parameter' : 'parameters',
+                    $label,
+                    count( $keys ) === 1 ? 'It is' : 'They are',
                     count( $keys ) === 1 ? 'has' : 'have'
                 )
             );

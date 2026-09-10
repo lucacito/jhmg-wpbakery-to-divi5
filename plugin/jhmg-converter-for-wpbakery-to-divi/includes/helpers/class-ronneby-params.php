@@ -81,6 +81,14 @@ final class RonnebyParams {
      * escapes undone the way line 217 does, and nothing else is decoded —
      * a family name is stored plainly (`font_family:TeXGyreAdventorRegular`).
      *
+     * **One deliberate divergence.** The theme splits each pair with
+     * `explode( ':', $single_param )` and keeps part 1
+     * (`dfd_vc_addons.php:167-168`), so a value that contains a colon is
+     * truncated at the second one — `color:rgba(0,0,0,.5)` survives, but a
+     * hypothetical `font_family:Font: Bold` would become `Font`. Everything
+     * after the first colon is kept here instead: the theme's truncation is a
+     * bug that loses data, and no corpus value depends on it.
+     *
      * @return array<string,string>
      */
     public static function fontOptions( string $raw ): array {

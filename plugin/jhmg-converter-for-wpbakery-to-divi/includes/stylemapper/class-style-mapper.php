@@ -327,7 +327,9 @@ class StyleMapper {
      * with `px` appended (`dfd_vc_addons.php:225`).
      */
     private static function dfdPixels( string $value ): string {
-        return preg_match( '/^-\d+(?:\.\d+)?$/', $value ) === 1
+        // `letter_spacing:-3` and `letter_spacing:-.2` are both common in the
+        // Ronneby corpus and both printed verbatim with `px` appended.
+        return preg_match( '/^-(?:\d+(?:\.\d+)?|\.\d+)$/', $value ) === 1
             ? $value . 'px'
             : PackedParams::sizeWithUnit( $value );
     }

@@ -21,8 +21,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * `IconListModule.php:246-272`, `IconListItemModule.php:78-345`).
  *
  * An older build of the theme stored the whole list in one `list_fields`
- * param group instead of in children (39 lists in the corpus do), with
- * `block_title` and `block_content` per row; those are read too.
+ * param group instead of in children — 39 lists, 203 rows, in the corpus — with
+ * `{icon_type, select_icon, ic_<library>, text_content, link_box, link}` per
+ * row. Those are read the same way, and a key such a row carries that the
+ * element's form no longer maps is reported: `logUnmappedSettings()` never sees
+ * it, because it lives inside the one attribute the parent claims.
  *
  * Three things Divi's icon list has no part for: the disc drawn behind each
  * icon (`icon_dec_size`, `icon_background`, `icon_border_*`), the rule under
@@ -138,24 +141,43 @@ class DfdIconListConverter extends RonnebyConverter {
 
         foreach ( RonnebyParams::items( $this->att( $atts, 'list_fields' ) ) as $row ) {
             $index++;
-            $title   = trim( (string) ( $row['block_title'] ?? '' ) );
-            $content = trim( (string) ( $row['block_content'] ?? '' ) );
-            $body    = $title !== '' && $content !== '' ? '<strong>' . $title . '</strong> ' . $content : $title . $content;
+            $row = array_map( static fn( $value ): string => is_scalar( $value ) ? (string) $value : '', $row );
 
-            $items[] = $this->item(
-                array_map( static fn( $value ): string => is_scalar( $value ) ? (string) $value : '', $row ),
-                $body,
-                $id . '-item-' . $index,
-                null
-            );
+            $items[] = $this->item( $row, $this->legacyBody( $row ), $id . '-item-' . $index, null );
         }
 
         return $items;
     }
 
     /**
-     * One row. `icon_type` is `selector` (a glyph), `custom` (an uploaded
-     * picture) or `none`; `link_box` makes the whole row a link
+     * A legacy row's body.
+     *
+     * The 39 `list_fields` lists in the corpus all store it as `text_content`
+     * (203 rows, e.g. `63_fifty_third.xml`:
+     * `{"icon_type":"selector","select_icon":"dfd_icons","ic_dfd_icons":"dfd-socicon-arrow-right","text_content":"Leverage agile frameworks…"}`).
+     * `content` is the name the same element's Elementor port gives the field
+     * (`ronneby-core/elementor/widgets/el-icon-list.php:120-127, 492`), which is
+     * what a build between the two writes, so both are read.
+     *
+     * @param array<string,string> $row
+     */
+    private function legacyBody( array $row ): string {
+        foreach ( [ 'text_content', 'content' ] as $key ) {
+            $value = trim( $row[ $key ] ?? '' );
+            if ( $value !== '' ) {
+                return $value;
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * One row, from a `dfd_icon_list_item` child or from a legacy
+     * `list_fields` entry.
+     *
+     * `icon_type` is `selector` (a glyph), `custom` (an uploaded picture) or
+     * `none`; `link_box` makes the whole row a link
      * (`dfd-icon-list-module.php:466-481`).
      *
      * `icon.innerContent` is a required object on `divi/icon-list-item`, so a
@@ -168,18 +190,19 @@ class DfdIconListConverter extends RonnebyConverter {
      */
     protected function item( array $atts, string $body, string $item_id, ?array $child ): array {
         $attrs    = [];
-        $consumed = [ 'icon_type', 'icon', 'icon_img', 'link_box', 'link', 'select_icon', 'block_title', 'block_content' ];
+        $consumed = [ 'icon_type', 'icon', 'icon_img', 'icon_image_id', 'link_box', 'link', 'text_content', 'content' ];
 
-        $type  = strtolower( trim( $this->att( $atts, 'icon_type' ) ) );
-        $class = trim( $this->att( $atts, 'icon' ) );
+        $type    = strtolower( trim( $this->att( $atts, 'icon_type' ) ) );
+        $picture = trim( $this->att( $atts, 'icon_img', $this->att( $atts, 'icon_image_id' ) ) );
+        $class   = $this->rowIcon( $atts, $consumed );
 
-        if ( $type === 'custom' || trim( $this->att( $atts, 'icon_img' ) ) !== '' ) {
+        if ( $type === 'custom' || $picture !== '' ) {
             $this->engine->logNotCarriedOver(
                 'layout',
                 $item_id,
                 sprintf(
                     'this row\'s icon is the uploaded picture %s; Divi\'s icon list draws a glyph, so the row was written without one',
-                    $this->att( $atts, 'icon_img' )
+                    $picture !== '' ? $picture : '(none named)'
                 )
             );
             StyleMapper::write( $attrs, 'icon.innerContent.desktop.value', self::EMPTY_ICON );
@@ -210,11 +233,64 @@ class DfdIconListConverter extends RonnebyConverter {
 
         $this->engine->logConverted( 'icon-list-item' );
 
+        // A child row is a shortcode and reports through the usual path; a
+        // legacy row is a `param_group` entry, which `logUnmappedSettings()`
+        // never sees — its keys are inside one attribute the parent already
+        // claimed — so anything left over is reported here instead of being
+        // dropped where no gate can see it.
         if ( $child !== null ) {
             $this->logUnmappedSettings( $item_id, $atts, $consumed, 'dfd_icon_list_item' );
+
+            return $this->block( $item_id, 'divi/icon-list-item', $attrs );
+        }
+
+        $left_over = [];
+        foreach ( $atts as $key => $value ) {
+            if ( in_array( $key, $consumed, true ) || trim( (string) $value ) === '' ) {
+                continue;
+            }
+            $left_over[] = $key . '="' . $value . '"';
+        }
+
+        if ( $left_over !== [] ) {
+            $this->engine->logNotCarriedOver(
+                'layout',
+                $item_id,
+                'this list row carries ' . implode( ', ', $left_over ) . ', which the element\'s own form no longer maps'
+            );
         }
 
         return $this->block( $item_id, 'divi/icon-list-item', $attrs );
+    }
+
+    /**
+     * The glyph class a row names.
+     *
+     * A `dfd_icon_list_item` child stores it in one `icon` field written by the
+     * theme's icon manager (`dfd-icon-list-module.php:326-332`). A legacy
+     * `list_fields` row stores WPBakery's picker instead: `select_icon` is the
+     * library and `ic_<library>` the class — the shape
+     * `dfd_button_gradient.php:564` also uses, and the one all 203 legacy rows
+     * in the corpus carry (`select_icon: "dfd_icons"`,
+     * `ic_dfd_icons: "dfd-socicon-arrow-right"`).
+     *
+     * @param string[] $consumed
+     */
+    private function rowIcon( array $atts, array &$consumed ): string {
+        $consumed[] = 'select_icon';
+
+        $library = trim( $this->att( $atts, 'select_icon' ) );
+
+        foreach ( [ 'dfd_icons', 'fontawesome', 'openiconic', 'typicons', 'entypo', 'linecons' ] as $known ) {
+            $consumed[] = 'ic_' . $known;
+        }
+
+        $class = trim( $this->att( $atts, 'icon' ) );
+        if ( $class !== '' ) {
+            return $class;
+        }
+
+        return $library === '' ? '' : trim( $this->att( $atts, 'ic_' . $library ) );
     }
 
     /**

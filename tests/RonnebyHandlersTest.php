@@ -58,6 +58,7 @@ final class RonnebyHandlersTest extends TestCase {
             'screen_mobile_resolution' => 'the width Divi\'s phone breakpoint stands in for',
         ],
         'ronneby-heading'     => [
+            'title_font_options'    => 'the title\'s heading level',
             'delimiter_settings'    => 'the divider\'s style, weight, colour and width',
             'subheading_margin'     => 'the subtitle block\'s bottom margin',
             'title_responsive'      => 'the title\'s tablet and phone sizes',
@@ -74,6 +75,7 @@ final class RonnebyHandlersTest extends TestCase {
         ],
         'ronneby-delimiter'   => [
             'delimiter_style'    => 'which blocks the element becomes',
+            'use_google_fonts'   => 'switches the text\'s Google font on',
             'custom_fonts'       => 'the text\'s font family and weight',
             'title_font_options' => 'the text\'s size, line height and letter spacing',
         ],
@@ -84,6 +86,12 @@ final class RonnebyHandlersTest extends TestCase {
             'layout'             => 'the blurb\'s icon placement',
         ],
         'ronneby-icon-list'   => [],
+        'ronneby-icon-list-legacy' => [
+            'use_google_fonts' => 'switches the row text\'s Google font on',
+            'custom_fonts'     => 'the row text\'s font family and weight',
+            'font_options'     => 'the row text\'s size and colour',
+            'list_fields'      => 'the rows an older build stored in one attribute; this element also carries them as children, which 1.5.74 renders',
+        ],
         'ronneby-icon-list-item' => [
             'icon_type' => 'switches the row\'s glyph off',
             'link_box'  => 'switches the row\'s link on',
@@ -131,6 +139,8 @@ final class RonnebyHandlersTest extends TestCase {
         'ronneby-piecharts'   => [
             'content_custom_fonts' => 'the figure\'s font family and weight',
             'title_custom_fonts'   => 'the caption\'s font family and weight',
+            'unit'                 => 'switches Divi\'s own percent sign on',
+            'font_options'         => 'the figure\'s size and colour',
         ],
         'ronneby-countdown'   => [
             'custom_fonts'        => 'the unit labels\' font family and weight',
@@ -252,7 +262,6 @@ final class RonnebyHandlersTest extends TestCase {
         );
 
         // Slashes unescaped, or a URL and a date would never be found.
-        $blocks   = (string) wp_json_encode( $converted['result']['divi'], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
         $reported = implode( ' ', array_column( $converted['result']['report']['not_carried_over'], 'detail' ) )
             . ' ' . implode( ' ', $converted['result']['report']['warnings'] );
 
@@ -267,9 +276,9 @@ final class RonnebyHandlersTest extends TestCase {
                 continue;
             }
 
-            $covered = str_contains( $reported, $key )
+            $covered = self::namedInReport( $reported, $key )
                 || str_contains( $reported, $value )
-                || str_contains( $blocks, $value )
+                || self::valueInBlocks( $converted['result']['divi'], $value )
                 || isset( self::TRANSFORMED[ $name ][ $key ] );
 
             $this->assertTrue(
@@ -397,6 +406,64 @@ final class RonnebyHandlersTest extends TestCase {
         $this->assertReported( 'ronneby-icon-list', 'dfd-icon-map_marker' );
     }
 
+    public function test_a_legacy_list_fields_list_keeps_every_row(): void {
+        // `63_fifty_third.xml#1` carries the rows twice: in `list_fields`, the
+        // way a build before 1.5.74 stored them, and as `dfd_icon_list_item`
+        // children, which is what 1.5.74 renders. The children win.
+        $list = $this->firstBlock( 'ronneby-icon-list-legacy', 'divi/icon-list' );
+
+        $this->assertCount( 4, $list['elements'] );
+        $this->assertStringContainsString(
+            'Leverage agile frameworks',
+            $list['elements'][0]['settings']['content']['innerContent']['desktop']['value']
+        );
+    }
+
+    /**
+     * The same element with its children removed, so the `list_fields` branch
+     * is the one that runs.
+     *
+     * All 39 legacy lists in the corpus store their rows as
+     * `{icon_type, select_icon, ic_<library>, text_content, link_box, link}`
+     * — never `block_title`/`block_content` — so a row read for the wrong names
+     * comes out with no text and no glyph, which no gate would see: the keys
+     * live inside one attribute the parent already claims.
+     */
+    public function test_a_legacy_list_fields_row_keeps_its_text_and_reports_its_icon(): void {
+        wbdc_test_reset_hooks();
+
+        $source = (string) file_get_contents( __DIR__ . '/../fixtures/wpbakery/ronneby-icon-list-legacy.txt' );
+        $this->assertSame( 1, preg_match( '/(\[dfd_icon_list [^\]]*\])/', $source, $open ) );
+
+        $result = ( new ConverterEngine() )->convert(
+            [ 'content' => '[vc_row][vc_column]' . $open[1] . '[/dfd_icon_list][/vc_column][/vc_row]' ],
+            [ 'mode' => 'import' ]
+        );
+
+        $blocks = [];
+        self::collectModules( $result['divi']['elements'], $blocks );
+
+        $this->assertCount( 1, $blocks );
+        $this->assertSame( 'divi/icon-list', $blocks[0]['name'] );
+        $this->assertCount( 4, $blocks[0]['elements'] );
+
+        $texts = array_map(
+            static fn( array $row ): string => $row['settings']['content']['innerContent']['desktop']['value'],
+            $blocks[0]['elements']
+        );
+
+        $this->assertStringContainsString( 'Leverage agile frameworks to provide a robust synopsis.', $texts[0] );
+        $this->assertStringContainsString( 'Iterative approaches to corporate strategy foster.', $texts[1] );
+        $this->assertStringContainsString( 'Bring to the table win-win survival strategies.', $texts[2] );
+        $this->assertStringContainsString( 'Scalable gun control breakthroughs social movement.', $texts[3] );
+
+        // `select_icon: "dfd_icons"` + `ic_dfd_icons: "dfd-socicon-arrow-right"`
+        // is the theme's own icon font, so a star stands in and it is said so.
+        $reported = implode( ' ', array_column( $result['report']['not_carried_over'], 'detail' ) );
+        $this->assertStringContainsString( 'dfd-socicon-arrow-right', $reported );
+        $this->assertSame( [], $result['report']['skipped_settings'] );
+    }
+
     public function test_a_stray_icon_list_row_is_wrapped_in_a_list_of_its_own(): void {
         $list = $this->firstBlock( 'ronneby-icon-list-item', 'divi/icon-list' );
 
@@ -462,6 +529,64 @@ final class RonnebyHandlersTest extends TestCase {
         $this->assertSame( '4', $blog['post']['advanced']['number']['desktop']['value'] );
         $this->assertSame( 'h3', $blog['title']['decoration']['font']['font']['desktop']['value']['headingLevel'] );
         $this->assertReported( 'ronneby-blog-posts', 'fashionable-summer-2019' );
+    }
+
+    /**
+     * The three blog switches that have no Divi toggle meaning the same thing,
+     * and the one that has three.
+     */
+    public function test_blog_switches_that_divi_has_no_equivalent_for_are_reported(): void {
+        wbdc_test_reset_hooks();
+
+        $result = ( new ConverterEngine() )->convert(
+            [ 'content' => '[vc_row][vc_column][dfd_blog_posts posts_to_show="4" enabled_meta="" enabled_title="" enabled_link_thumb="" enabled_category="category"][/vc_column][/vc_row]' ],
+            [ 'mode' => 'import' ]
+        );
+
+        $blocks = [];
+        self::collectModules( $result['divi']['elements'], $blocks );
+        $meta = $blocks[0]['settings']['meta']['advanced'];
+
+        // One theme switch over the whole meta line, three Divi toggles.
+        $this->assertSame( 'off', $meta['showDate']['desktop']['value'] );
+        $this->assertSame( 'off', $meta['showAuthor']['desktop']['value'] );
+        $this->assertSame( 'off', $meta['showCategories']['desktop']['value'] );
+
+        // "Link on thumb" only wraps the thumbnail in an `<a>`; Divi's
+        // `image.advanced.enable` shows or hides it, which is a different thing.
+        $this->assertArrayNotHasKey( 'image', $blocks[0]['settings'] );
+
+        $reported = implode( ' ', array_column( $result['report']['not_carried_over'], 'detail' ) );
+        $this->assertStringContainsString( 'enabled_link_thumb is off', $reported );
+        $this->assertStringContainsString( 'enabled_title is off', $reported );
+        $this->assertStringContainsString( 'enabled_category draws a highlighted category label', $reported );
+        $this->assertStringContainsString( 'one switch over the whole meta line', $reported );
+        $this->assertSame( [], $result['report']['skipped_settings'] );
+    }
+
+    /**
+     * `font_style_bold` beats the Google font's own weight, because the theme
+     * appends `font-weight:bold` after the Google declarations
+     * (`dfd_vc_addons.php:186-212`).
+     */
+    public function test_a_packed_bold_flag_beats_the_google_font_weight(): void {
+        wbdc_test_reset_hooks();
+
+        $result = ( new ConverterEngine() )->convert(
+            [
+                'content' => '[vc_row][vc_column][dfd_heading title_google_fonts="yes"'
+                    . ' title_custom_fonts="font_family:Lora%3Aregular%2Citalic%2C700%2C700italic|font_style:400%20regular%3A400%3Anormal"'
+                    . ' title_font_options="tag:h3|font_style_bold:1"]Bold[/dfd_heading][/vc_column][/vc_row]',
+            ],
+            [ 'mode' => 'import' ]
+        );
+
+        $blocks = [];
+        self::collectModules( $result['divi']['elements'], $blocks );
+        $font = $blocks[0]['settings']['title']['decoration']['font']['font']['desktop']['value'];
+
+        $this->assertSame( 'Lora', $font['family'] );
+        $this->assertSame( '700', $font['weight'] );
     }
 
     public function test_social_accounts_map_the_networks_divi_has_and_report_the_rest(): void {
@@ -768,74 +893,69 @@ final class RonnebyHandlersTest extends TestCase {
     }
 
     /**
-     * Every `[tag …]…[/tag]` in a document, the way
-     * `scripts/cut-corpus-element.php` cuts them: opens are counted so a nested
-     * element of the same tag does not end the outer one, and an occurrence
-     * inside one already taken is not returned again.
+     * Whether a value reached a Divi attribute, checked at a value position
+     * rather than anywhere in the encoded JSON.
+     *
+     * A `str_contains()` over `wp_json_encode( $divi )` passes for `"1"`,
+     * `"on"` or `"left"` found inside any key name or any other value, which
+     * would let a dropped attribute look mapped. So the tree is walked and each
+     * scalar leaf compared: an exact match always counts, and a substring match
+     * only for a value long enough not to be an accident — a URL or a sentence
+     * inside a `<p>`, never a flag.
+     *
+     * @param array<string,mixed>|array<int,mixed> $node
+     */
+    private static function valueInBlocks( array $node, string $value ): bool {
+        foreach ( $node as $leaf ) {
+            if ( is_array( $leaf ) ) {
+                if ( self::valueInBlocks( $leaf, $value ) ) {
+                    return true;
+                }
+
+                continue;
+            }
+
+            if ( ! is_scalar( $leaf ) ) {
+                continue;
+            }
+
+            $leaf = (string) $leaf;
+
+            if ( $leaf === $value ) {
+                return true;
+            }
+
+            // Ronneby stores every size as a bare number and prints it with
+            // `px` appended (`dfd_vc_addons.php:225`, and every module's own
+            // inline style), so `icon_size="18"` reaching Divi as `"18px"` is
+            // the value arriving, not a different one.
+            if ( is_numeric( $value ) && $leaf === $value . 'px' ) {
+                return true;
+            }
+
+            if ( strlen( $value ) >= 6 && str_contains( $leaf, $value ) ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** An attribute named in the report, on a word boundary — not as a prefix of another. */
+    private static function namedInReport( string $reported, string $key ): bool {
+        return preg_match( '/(?<![a-zA-Z0-9_])' . preg_quote( $key, '/' ) . '(?![a-zA-Z0-9_])/', $reported ) === 1;
+    }
+
+    /**
+     * Every occurrence of a tag in a document — the same scan
+     * `scripts/cut-corpus-element.php` cuts fixtures with, so the elements this
+     * gate converts and the fixtures in the repository are the same spans.
      *
      * @return string[]
      */
     private static function occurrences( string $document, string $tag ): array {
-        $pattern = '/\[' . preg_quote( $tag, '/' ) . '(?![\w-])([^\]]*)\]/';
-        $close   = '[/' . $tag . ']';
+        require_once __DIR__ . '/../scripts/lib/corpus-shortcodes.php';
 
-        if ( preg_match_all( $pattern, $document, $opens, PREG_OFFSET_CAPTURE ) === 0 ) {
-            return [];
-        }
-
-        $found     = [];
-        $skip_past = -1;
-
-        foreach ( $opens[0] as $open ) {
-            [ $open_text, $offset ] = $open;
-
-            if ( $offset < $skip_past ) {
-                continue;
-            }
-
-            $next_close = strpos( $document, $close, $offset );
-            if ( $next_close === false ) {
-                $found[] = $open_text;
-
-                continue;
-            }
-
-            $depth  = 1;
-            $cursor = $offset + strlen( $open_text );
-            $end    = null;
-
-            while ( $depth > 0 ) {
-                $next_open  = preg_match( $pattern, $document, $m, PREG_OFFSET_CAPTURE, $cursor ) === 1 ? $m[0][1] : false;
-                $next_close = strpos( $document, $close, $cursor );
-
-                if ( $next_close === false ) {
-                    break;
-                }
-
-                if ( $next_open !== false && $next_open < $next_close ) {
-                    $depth++;
-                    $cursor = $next_open + strlen( $m[0][0] );
-
-                    continue;
-                }
-
-                $depth--;
-                $cursor = $next_close + strlen( $close );
-                if ( $depth === 0 ) {
-                    $end = $cursor;
-                }
-            }
-
-            if ( $end === null ) {
-                $found[] = $open_text;
-
-                continue;
-            }
-
-            $found[]   = substr( $document, $offset, $end - $offset );
-            $skip_past = $end;
-        }
-
-        return $found;
+        return array_column( wbdc_find_shortcodes( $document, $tag ), 'text' );
     }
 }

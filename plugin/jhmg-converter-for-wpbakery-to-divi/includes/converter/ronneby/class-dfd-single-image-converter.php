@@ -70,7 +70,7 @@ class DfdSingleImageConverter extends RonnebyConverter {
         $this->cornerRadius( $atts, $attrs, $consumed );
         $this->shadow( $atts, $id, $attrs, $consumed );
         $this->alignment( $atts, $attrs, $consumed );
-        $this->clickTarget( $atts, $id, $src, $attrs, $consumed );
+        $this->clickTarget( $atts, $id, $attrs, $consumed );
         $this->retina( $atts, $id, $consumed );
         $this->hover( $atts, $id, $consumed );
         $this->reportAnimation( $atts, $id, $consumed );
@@ -258,7 +258,7 @@ class DfdSingleImageConverter extends RonnebyConverter {
      *
      * @param string[] $consumed
      */
-    private function clickTarget( array $atts, string $id, string $src, array &$attrs, array &$consumed ): void {
+    private function clickTarget( array $atts, string $id, array &$attrs, array &$consumed ): void {
         $consumed = array_merge( $consumed, [ 'enable_link', 'link_object', 'image_ext_link_url', 'onepage_navigate' ] );
 
         if ( ! $this->on( $atts, 'enable_link' ) ) {
@@ -288,9 +288,6 @@ class DfdSingleImageConverter extends RonnebyConverter {
 
             default:
                 StyleMapper::write( $attrs, 'image.advanced.lightbox.desktop.value', 'on' );
-                if ( $src === '' ) {
-                    break;
-                }
         }
     }
 

@@ -65,13 +65,10 @@ abstract class RonnebyConverter extends BaseWPBakeryConverter {
             $consumed[] = $attribute;
         }
 
-        $decoded  = RonnebyParams::fontOptions( $this->att( $atts, $fields['options'] ?? '' ) );
-        $unmapped = $this->applyFontOptions( $decoded, $font_path, $attrs, $renders_heading_level );
-
-        $this->reportFontOptions( $unmapped, (string) ( $fields['options'] ?? '' ), $node_id );
-
-        // `_crum_parse_text_shortcode_params()` reads the family only when the
-        // toggle says `yes` or `show` (dfd_vc_addons.php:178).
+        // Order matters. `_crum_parse_text_shortcode_params()` writes the
+        // Google family, weight and style first (dfd_vc_addons.php:186-198) and
+        // then walks the packed value (lines 205-227), so a `font_style_bold:1`
+        // beats the family's own weight in the theme. The same order here.
         $toggle = strtolower( trim( $this->att( $atts, $fields['toggle'] ?? '' ) ) );
         if ( in_array( $toggle, [ 'yes', 'show' ], true ) && isset( $fields['family'] ) ) {
             ( new StyleMapper() )->applyGoogleFonts(
@@ -80,6 +77,11 @@ abstract class RonnebyConverter extends BaseWPBakeryConverter {
                 $attrs
             );
         }
+
+        $decoded  = RonnebyParams::fontOptions( $this->att( $atts, $fields['options'] ?? '' ) );
+        $unmapped = $this->applyFontOptions( $decoded, $font_path, $attrs, $renders_heading_level );
+
+        $this->reportFontOptions( $unmapped, (string) ( $fields['options'] ?? '' ), $node_id );
 
         return $unmapped;
     }
@@ -217,11 +219,7 @@ abstract class RonnebyConverter extends BaseWPBakeryConverter {
             return;
         }
 
-        $this->engine->logNotCarriedOver(
-            'animation',
-            $node_id,
-            sprintf( 'module_animation="%s" plays a velocity.js transition when the element scrolls into view; set one of Divi\'s own animations on the module', $animation )
-        );
+        $this->engine->logNotCarriedOver( 'animation', $node_id, self::animationDetail( $animation ) );
     }
 
     /**
@@ -284,10 +282,28 @@ abstract class RonnebyConverter extends BaseWPBakeryConverter {
     protected function pixels( array $atts, string $key, string $default = '' ): string {
         $raw = trim( $this->att( $atts, $key, $default ) );
 
-        if ( $raw === '' || ! is_numeric( $raw ) ) {
+        if ( $raw === '' ) {
             return '';
         }
 
+        // Ronneby's number params are bare (`icon_size="18"`, printed as
+        // `18px`), but a page hand-edited in the text editor can carry the unit
+        // — `wpb_format_with_css_unit()`'s pattern accepts both, so a value
+        // that already has one is kept rather than dropped.
         return PackedParams::sizeWithUnit( $raw );
+    }
+
+    /**
+     * `module_animation` reported for a handler that is not a `RonnebyConverter`.
+     *
+     * `DfdAccordionConverter` and `DfdTabsConverter` extend Task 9's tta
+     * converters, so they cannot inherit `reportAnimation()`; this is the one
+     * wording, called from both.
+     */
+    public static function animationDetail( string $animation ): string {
+        return sprintf(
+            'module_animation="%s" plays a velocity.js transition when the element scrolls into view; set one of Divi\'s own animations on the module',
+            $animation
+        );
     }
 }

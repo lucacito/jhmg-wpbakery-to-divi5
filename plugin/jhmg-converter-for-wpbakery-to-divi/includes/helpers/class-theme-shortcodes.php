@@ -142,8 +142,19 @@ final class ThemeShortcodes {
      * (`BaseWPBakeryConverter::logUnmappedSettings()`).
      *
      * Source: Ronneby Core 1.5.74,
-     * `inc/vc_custom/dfd_vc_addons.php:900-1400` — every `vc_add_param()` call
-     * it makes, by the tag it makes it on.
+     * `inc/vc_custom/dfd_vc_addons.php:901-1729` — every live `vc_add_param()`
+     * call it makes, by the tag it makes it on. The four it makes on
+     * `vc_single_image` (lines 1730-1776, `image_opacity`, `onclick`,
+     * `link_one_page_value`, `item_animation`) are commented out in 1.5.74 and
+     * are deliberately absent.
+     *
+     * The table is keyed by param name, not by what the page proves is
+     * installed: an export carries no plugin list, and gating it on a Ronneby
+     * element being present on the same page would put every core-only Ronneby
+     * page back into `skipped_settings`. A name that another theme also uses is
+     * therefore attributed by name, which is why the report says the field
+     * *matches* this theme's table rather than asserting the theme is the one
+     * that added it.
      *
      * `wbdc_theme_params` lets a site add another theme's table.
      *
@@ -179,7 +190,6 @@ final class ThemeShortcodes {
             'vc_column_text'  => [ 'item_animation' ],
             'vc_accordion'    => [ 'item_animation', 'titles_alignment' ],
             'vc_tour'         => [ 'tabs_alignment' ],
-            'vc_single_image' => [ 'image_opacity', 'item_animation', 'link_one_page_value' ],
             'vc_video'        => [
                 'description', 'icon_color', 'label_background', 'module_alignment', 'video_id',
                 'video_module_mode', 'video_source', 'video_thumb_image', 'video_title',

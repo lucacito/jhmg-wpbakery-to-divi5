@@ -96,13 +96,11 @@ class DfdAccordionConverter extends TtaAccordionConverter {
             }
         }
 
+        // The wording `RonnebyConverter::reportAnimation()` uses; this class
+        // extends Task 9's tta converter, so it cannot inherit the method.
         $animation = trim( (string) ( $atts['module_animation'] ?? '' ) );
         if ( $animation !== '' ) {
-            $this->engine->logNotCarriedOver(
-                'animation',
-                $id,
-                sprintf( 'module_animation="%s" plays a velocity.js transition when the element scrolls into view; set one of Divi\'s own animations on the module', $animation )
-            );
+            $this->engine->logNotCarriedOver( 'animation', $id, RonnebyConverter::animationDetail( $animation ) );
         }
     }
 }

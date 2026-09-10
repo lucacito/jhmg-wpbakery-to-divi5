@@ -35,16 +35,48 @@ if ( ! defined( 'ABSPATH' ) ) {
 class DfdBlogPostsConverter extends RonnebyConverter {
 
     /**
-     * Ronneby's per-part switches and the Divi attribute each one is. A switch
+     * Ronneby's per-part switches and the Divi attributes each one is. A switch
      * the element does not carry is left alone: Divi's own default stands.
+     *
+     * `enabled_title`, `enabled_link_thumb` and `enabled_category` are
+     * deliberately absent — Divi has no toggle that means the same thing, and
+     * `switches()` reports all three.
+     *
+     * Each entry is `[ the token the switch is on at, the Divi paths ]`.
+     *
+     * @var array<string, array{0: string, 1: array<int, string>}>
      */
     const SWITCHES = [
-        'enabled_excerpt'  => 'post.advanced.showExcerpt.desktop.value',
-        'enabled_category' => 'meta.advanced.showCategories.desktop.value',
-        'enabled_meta'     => 'meta.advanced.showDate.desktop.value',
-        'enabled_comments' => 'meta.advanced.showComments.desktop.value',
-        'enabled_read_more' => 'readMore.advanced.enable.desktop.value',
-        'enabled_link_thumb' => 'image.advanced.enable.desktop.value',
+        'enabled_excerpt'   => [ 'excerpt', [ 'post.advanced.showExcerpt.desktop.value' ] ],
+        // `$enable_meta` gates the whole `.dfd-meta-wrap`
+        // (`templates/blog_posts/template_parts/heading.php:27-33`), and what
+        // that block prints is the date, the author and the category
+        // (`dfd-ronneby/templates/entry-meta-post-bottom.php:3-9`) — three
+        // toggles on Divi's blog, one switch on Ronneby's.
+        'enabled_meta'      => [ 'meta', [
+            'meta.advanced.showDate.desktop.value',
+            'meta.advanced.showAuthor.desktop.value',
+            'meta.advanced.showCategories.desktop.value',
+        ] ],
+        // The comment count: a badge on the thumbnail in Ronneby
+        // (`template_parts/comments_likes.php:3-7`), an item in the meta line
+        // in Divi — the same number in a different place.
+        'enabled_comments'  => [ 'comments', [ 'meta.advanced.showComments.desktop.value' ] ],
+        'enabled_read_more' => [ 'read_more', [ 'readMore.advanced.enable.desktop.value' ] ],
+    ];
+
+    /**
+     * The `dfd_single_checkbox` switches with no Divi toggle that means the
+     * same thing, and the token each one is on at.
+     */
+    const REPORTED_SWITCHES = [
+        'enabled_title'      => [ 'title', 'enabled_title is off, so Ronneby draws no card title; Divi\'s blog module always draws one' ],
+        // "Link on thumb" (`dfd_new_blog.php:500-513`) only decides whether the
+        // thumbnail is wrapped in an `<a>` to the post
+        // (`templates/blog_posts/standard.php:87-91`). Divi's
+        // `image.advanced.enable` shows or hides the thumbnail, which is a
+        // different thing entirely.
+        'enabled_link_thumb' => [ 'link_thumb', 'enabled_link_thumb is off, so Ronneby prints the thumbnail without a link to the post; Divi\'s blog always links it' ],
     ];
 
     /** The theme's own card and carousel, which Divi's blog module draws its own way. */
@@ -64,7 +96,6 @@ class DfdBlogPostsConverter extends RonnebyConverter {
         'add_exclude_from_loop'     => 'the same switch of an older Ronneby build',
         'post_tiled'                => 'a tiled layout',
         'post_content_style'        => 'how much of the post body a card shows',
-        'enabled_title'             => 'whether the card title is drawn at all',
         'enabled_share'             => 'the share icons on a card',
         'enabled_likes'             => 'the like count',
         'enabled_anim_com_like'     => 'the animated comment and like counters',
@@ -132,7 +163,7 @@ class DfdBlogPostsConverter extends RonnebyConverter {
 
         $this->query( $atts, $id, $attrs, $consumed );
         $this->grid( $atts, $attrs, $consumed );
-        $this->switches( $atts, $attrs, $consumed );
+        $this->switches( $atts, $id, $attrs, $consumed );
 
         $this->applyFontSet(
             $atts,
@@ -214,15 +245,66 @@ class DfdBlogPostsConverter extends RonnebyConverter {
      *
      * @param string[] $consumed
      */
-    private function switches( array $atts, array &$attrs, array &$consumed ): void {
-        foreach ( self::SWITCHES as $key => $path ) {
+    private function switches( array $atts, string $id, array &$attrs, array &$consumed ): void {
+        foreach ( self::SWITCHES as $key => [ $token, $paths ] ) {
             $consumed[] = $key;
 
             if ( ! array_key_exists( $key, $atts ) ) {
                 continue;
             }
 
-            StyleMapper::write( $attrs, $path, $this->on( $atts, $key ) ? 'on' : 'off' );
+            $value = $this->switchedOn( $atts, $key, $token ) ? 'on' : 'off';
+            foreach ( $paths as $path ) {
+                StyleMapper::write( $attrs, $path, $value );
+            }
         }
+
+        if ( array_key_exists( 'enabled_meta', $atts ) ) {
+            $this->engine->logNotCarriedOver(
+                'layout',
+                $id,
+                sprintf(
+                    'enabled_meta="%s" is one switch over the whole meta line — the date, the author and the category; Divi has a toggle for each, so all three were set together',
+                    $this->att( $atts, 'enabled_meta' )
+                )
+            );
+        }
+
+        foreach ( self::REPORTED_SWITCHES as $key => [ $token, $detail ] ) {
+            $consumed[] = $key;
+
+            if ( array_key_exists( $key, $atts ) && ! $this->switchedOn( $atts, $key, $token ) ) {
+                $this->engine->logNotCarriedOver( 'layout', $id, $detail );
+            }
+        }
+
+        // The highlighted category label above the title
+        // (`template_parts/heading.php:12-16`) is not Divi's category meta item;
+        // it is a badge the theme's stylesheet draws.
+        $consumed[] = 'enabled_category';
+        if ( $this->switchedOn( $atts, 'enabled_category', 'category' ) ) {
+            $this->engine->logNotCarriedOver(
+                'layout',
+                $id,
+                'enabled_category draws a highlighted category label above the card title; Divi lists the category in the meta line instead'
+            );
+        }
+    }
+
+    /**
+     * One of `dfd_new_blog`'s checkboxes.
+     *
+     * They are not WPBakery's `yes`/`true`: each stores a token of its own and
+     * the module compares against it — `$enable_meta = ($enabled_meta == 'meta')`
+     * (`dfd_new_blog.php:1047-1063`). An **absent** attribute is on, not off,
+     * because `vc_map_get_attributes()` fills the param's `'value'`, which for
+     * every one of them but `enabled_link_thumb` is the token itself.
+     */
+    private function switchedOn( array $atts, string $key, string $token ): bool {
+        if ( ! array_key_exists( $key, $atts ) ) {
+            return $token !== '' && $key !== 'enabled_link_thumb';
+        }
+
+        return trim( (string) $atts[ $key ] ) === $token;
     }
 }
