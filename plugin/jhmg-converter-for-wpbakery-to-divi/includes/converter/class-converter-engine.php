@@ -65,6 +65,12 @@ class ConverterEngine {
     private int $textNodes = 0;
     private int $bracketedText = 0;
 
+    /**
+     * Whether the node being converted right now is an approximate match.
+     * Scoped per node by `convertNode()`, which saves and restores it around
+     * the handler: an approximate container converts its children inside its
+     * own scope, and those children are matched on their own terms.
+     */
     private bool $countingApproximate = false;
 
     /**
@@ -325,15 +331,21 @@ class ConverterEngine {
 
             if ( $approximate ) {
                 $this->flagApproximate( (string) ( $node['id'] ?? '' ), $tag, $this->registry->converterName( $node ) );
-                $this->countingApproximate = true;
             }
+
+            // Saved and restored rather than set and cleared: a handler
+            // converts its children inside this scope, so an exact module
+            // inside an approximate box is exact, and coming back out of it
+            // returns to whatever the box was.
+            $previous                  = $this->countingApproximate;
+            $this->countingApproximate = $approximate;
 
             try {
                 return $converter->convert( $node );
             } catch ( \Throwable $e ) {
                 return $this->handlerFailed( $node, $converter, $e );
             } finally {
-                $this->countingApproximate = false;
+                $this->countingApproximate = $previous;
             }
         }
 

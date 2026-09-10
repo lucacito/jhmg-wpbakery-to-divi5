@@ -90,7 +90,8 @@ to `logUnmappedSettings()` has either mapped it onto a Divi attribute or filed i
 ## Counting rules
 
 - **Flattened children are not counted.** `ContentFlattener` converts a tab's or an accordion item's children only to render them back to HTML; the blocks are thrown away. `ConverterEngine::withConvertedCountSuppressed()` suppresses `logConverted()` for that call so `quality.module_coverage` is not inflated with modules that do not exist. Only the count is suppressed: warnings, `not_carried_over`, static copies, skipped settings, unresolved media and theme-element counts all still record, because they describe the source, which is real whatever happened to the blocks.
-- **One approximate element may emit several blocks.** `approximate` counts blocks; `approximate_matches` counts source elements, and that is what coverage uses.
+- **One approximate element may emit several blocks.** `approximate` counts blocks; `approximate_matches` counts source elements, and that is what coverage uses. All of that element's blocks are counted, including the ones it emits after converting its children.
+- **Approximate does not spread downwards.** The flag is scoped to the node the registry marked (`ConverterEngine::convertNode()` saves and restores it): a container matched approximately converts its children in place, and an exact module inside it — a `divi/button` in an `ult_content_box` — is counted under `converted`.
 - **Blocks a handler builds through `delegate()`** are pieces of one element: they carry no default margin and are not separately counted.
 
 ## Error boundary

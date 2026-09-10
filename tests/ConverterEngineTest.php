@@ -376,6 +376,34 @@ final class ConverterEngineTest extends TestCase {
         $this->assertContains( 'vc_flickr', $engine->registry()->approximateTags() );
     }
 
+    /**
+     * "Approximate" belongs to the node the registry flagged, not to
+     * everything underneath it. `ult_content_box` is registered approximate
+     * and converts its children in place: the button inside it is an exact
+     * `divi/button` and is counted as one, or the summary tells the reader
+     * "2 of them approximate" about a page with one approximate box on it.
+     */
+    public function test_an_approximate_container_does_not_make_its_children_approximate(): void {
+        $result = $this->convert( '[vc_row][vc_column][ult_content_box][vc_btn title="Press me"][/ult_content_box][/vc_column][/vc_row]' );
+
+        $this->assertSame( [ 'group' => 1 ], $result['report']['approximate'] );
+        $this->assertSame( 1, $result['report']['converted']['button'] );
+    }
+
+    /**
+     * And the other half: a child that is not approximate must not leave the
+     * flag switched off behind it, so what the approximate parent converts
+     * *after* that child is still its own.
+     */
+    public function test_an_exact_child_does_not_unflag_the_approximate_parent_around_it(): void {
+        $result = $this->convert(
+            '[vc_row][vc_column][ult_content_box][ult_content_box][/ult_content_box][vc_btn title="After"][/ult_content_box][/vc_column][/vc_row]'
+        );
+
+        $this->assertSame( [ 'group' => 2 ], $result['report']['approximate'] );
+        $this->assertSame( 1, $result['report']['converted']['button'] );
+    }
+
     public function test_the_registry_knows_its_structural_tags(): void {
         $tags = ( new ConverterEngine() )->registry()->knownTags();
 
