@@ -29,6 +29,23 @@ if ( ! function_exists( 'register_deactivation_hook' ) ) {
 if ( ! function_exists( 'wp_parse_url' ) ) {
     function wp_parse_url( $url, $component = -1 ) { return parse_url( (string) $url, $component ); }
 }
+if ( ! function_exists( 'wp_http_validate_url' ) ) {
+    /**
+     * Core's shape, not its every rule: a URL WordPress would be willing to
+     * fetch is an http(s) one with a host and no embedded credentials. Core
+     * additionally resolves the host and refuses non-routable addresses, which
+     * a unit test has no network for; the licence client's own https + host
+     * comparison is what the tests here exercise.
+     */
+    function wp_http_validate_url( $url ) {
+        if ( ! is_string( $url ) || '' === $url ) { return false; }
+        $parts = parse_url( $url );
+        if ( ! $parts || empty( $parts['host'] ) ) { return false; }
+        if ( ! in_array( strtolower( $parts['scheme'] ?? '' ), [ 'http', 'https' ], true ) ) { return false; }
+        if ( isset( $parts['user'] ) || isset( $parts['pass'] ) ) { return false; }
+        return $url;
+    }
+}
 
 // --- hooks --------------------------------------------------------------
 

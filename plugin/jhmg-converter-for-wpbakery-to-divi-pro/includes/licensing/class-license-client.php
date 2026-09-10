@@ -126,6 +126,12 @@ class LicenseClient {
             set_transient( $cache_key, $body, self::UPDATE_CHECK_TTL );
         }
 
+        // A 200 is not a promise that the payload is well-formed: a proxy, a
+        // captive portal or a broken deploy can all answer 200 with something
+        // that json_decode()s to anything at all. Nothing below reads a field
+        // it has not first checked the type of.
+        if ( ! is_array( $body ) ) { return $transient; }
+
         if ( ! is_object( $transient ) ) { $transient = (object) [ 'response' => [] ]; }
 
         if ( empty( $body['update'] ) ) {
@@ -141,20 +147,50 @@ class LicenseClient {
             ];
             return $transient;
         }
-        if ( empty( $body['package'] ) ) {
-            update_option( $this->opt_blocked, $body['version'] ?? '1', false );
+        $version = $body['version'] ?? null;
+        $package = $body['package'] ?? null;
+
+        // An update exists but the server withheld the package: that is the
+        // licence gate, and the notice needs the version to name it.
+        if ( ! is_string( $package ) || '' === $package ) {
+            update_option( $this->opt_blocked, is_string( $version ) ? $version : '1', false );
             return $transient;
         }
+
+        // What goes into $transient->response is a URL WordPress will download
+        // and unpack over the plugin directory, so it has to earn that: a
+        // version that is genuinely newer than what is installed, and an https
+        // package on the licence host itself. Anything else, and this update
+        // check simply did not happen.
+        if ( ! is_string( $version ) || '' === $version
+            || ! version_compare( $version, $this->plugin_version, '>' )
+            || ! $this->is_package_url( $package ) ) {
+            return $transient;
+        }
+
         delete_option( $this->opt_blocked );
         $transient->response[ $this->plugin_basename ] = (object) [
             'plugin'      => $this->plugin_basename,
             'id'          => $this->plugin_basename,
             'slug'        => dirname( $this->plugin_basename ),
-            'new_version' => $body['version'],
-            'package'     => $body['package'],
+            'new_version' => $version,
+            'package'     => $package,
             'url'         => $this->product_page_url,
         ];
         return $transient;
+    }
+
+    /** An https package URL WordPress may fetch: valid, and on the licence host. */
+    private function is_package_url( string $package ): bool {
+        if ( ! wp_http_validate_url( $package ) ) {
+            return false;
+        }
+        if ( 'https' !== strtolower( (string) wp_parse_url( $package, PHP_URL_SCHEME ) ) ) {
+            return false;
+        }
+        $api_host = strtolower( (string) wp_parse_url( $this->api_base, PHP_URL_HOST ) );
+
+        return '' !== $api_host && strtolower( (string) wp_parse_url( $package, PHP_URL_HOST ) ) === $api_host;
     }
 
     /** Cache key for a cached update-check response, scoped to product|version|key. */
