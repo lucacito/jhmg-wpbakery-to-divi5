@@ -76,6 +76,20 @@ if ( ! function_exists( 'do_action' ) ) {
         }
     }
 }
+if ( ! function_exists( 'remove_filter' ) ) {
+    function remove_filter( $tag, $callback, $priority = 10 ) {
+        foreach ( $GLOBALS['wbdc_test_hooks'][ $tag ] ?? [] as $index => $entry ) {
+            if ( $entry['cb'] === $callback ) {
+                unset( $GLOBALS['wbdc_test_hooks'][ $tag ][ $index ] );
+                return true;
+            }
+        }
+        return false;
+    }
+}
+if ( ! function_exists( 'remove_action' ) ) {
+    function remove_action( $tag, $callback, $priority = 10 ) { return remove_filter( $tag, $callback, $priority ); }
+}
 if ( ! function_exists( '__return_true' ) ) {
     function __return_true() { return true; }
 }
@@ -140,7 +154,11 @@ if ( ! function_exists( 'maybe_unserialize' ) ) {
 if ( ! class_exists( 'WP_Query' ) ) {
     class WP_Query {
         public array $posts = [];
-        public function __construct( array $args = [] ) {}
+        /** @var array<string,mixed> */
+        public array $query_vars = [];
+        public function __construct( array $args = [] ) { $this->query_vars = $args; }
+        public function get( $var, $default = '' ) { return $this->query_vars[ $var ] ?? $default; }
+        public function set( $var, $value ): void { $this->query_vars[ $var ] = $value; }
         public function have_posts(): bool { return ! empty( $this->posts ); }
     }
 }
@@ -397,6 +415,63 @@ if ( ! function_exists( 'wp_get_theme' ) ) {
     }
 }
 if ( ! function_exists( 'et_core_page_resource_get_the_ID' ) ) { function et_core_page_resource_get_the_ID() { return 0; } }
+
+// --- admin screens ------------------------------------------------------------
+
+// Tests read $GLOBALS['__test_menu_pages'] / $GLOBALS['__test_styles'].
+$GLOBALS['__test_menu_pages'] = [];
+$GLOBALS['__test_styles']     = [];
+
+if ( ! function_exists( 'add_management_page' ) ) {
+    function add_management_page( $page_title, $menu_title, $capability, $menu_slug, $callback = '', $position = null ) {
+        $GLOBALS['__test_menu_pages'][] = [
+            'page_title' => $page_title,
+            'menu_title' => $menu_title,
+            'capability' => $capability,
+            'menu_slug'  => $menu_slug,
+            'callback'   => $callback,
+        ];
+        return 'tools_page_' . $menu_slug;
+    }
+}
+if ( ! function_exists( 'wp_register_style' ) ) {
+    function wp_register_style( $handle, $src, $deps = [], $ver = false, $media = 'all' ) {
+        $GLOBALS['__test_styles'][ $handle ] = [ 'src' => $src, 'ver' => $ver, 'inline' => '', 'enqueued' => false ];
+        return true;
+    }
+}
+if ( ! function_exists( 'wp_enqueue_style' ) ) {
+    function wp_enqueue_style( $handle, $src = '', $deps = [], $ver = false, $media = 'all' ) {
+        $GLOBALS['__test_styles'][ $handle ]['enqueued'] = true;
+        return true;
+    }
+}
+if ( ! function_exists( 'wp_add_inline_style' ) ) {
+    function wp_add_inline_style( $handle, $data ) {
+        $GLOBALS['__test_styles'][ $handle ]['inline'] = ( $GLOBALS['__test_styles'][ $handle ]['inline'] ?? '' ) . $data;
+        return true;
+    }
+}
+
+// $wpdb, only as much of it as the page repository's LIKE clause needs.
+if ( ! isset( $GLOBALS['wpdb'] ) ) {
+    $GLOBALS['wpdb'] = new class {
+        public string $posts = 'wp_posts';
+        public function esc_like( $text ) { return addcslashes( (string) $text, '_%\\' ); }
+        public function prepare( $query, ...$args ) {
+            foreach ( $args as $arg ) {
+                $replacement = is_int( $arg ) ? (string) $arg : "'" . addslashes( (string) $arg ) . "'";
+                $query       = preg_replace_callback(
+                    '/%[sd]/',
+                    static fn(): string => $replacement,
+                    (string) $query,
+                    1
+                );
+            }
+            return $query;
+        }
+    };
+}
 
 // --- escaping / i18n / sanitising -----------------------------------------------
 
