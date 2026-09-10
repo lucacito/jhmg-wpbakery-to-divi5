@@ -97,9 +97,10 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
 7. `npm run i18n` when user-facing strings changed (`npm run i18n:free`, `npm run i18n:pro`).
 
 8. **Free — build and submit.** Build the wordpress.org submission zip with
-   `scripts/build-submission-zip.sh`; the listing assets it goes with (icon, banners, screenshots)
-   will live in `wporg-assets/`. *Both are added in Task 17 and do not exist yet — until then,
-   zip `plugin/jhmg-converter-for-wpbakery-to-divi/` by hand.* Then:
+   `scripts/build-submission-zip.sh` — it reads the version off the plugin header, writes
+   `dist/jhmg-converter-for-wpbakery-to-divi-<version>.zip` and prints the path and its SHA-256. The
+   listing assets it goes with (icon, banners, screenshots) live in `wporg-assets/`, with the
+   submission notes and the render commands in `wporg-assets/README.md`. Then:
 
    ```bash
    rsync -a --delete --exclude='.DS_Store' --exclude='.svn' \

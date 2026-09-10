@@ -5,6 +5,9 @@ vendor/
 test-results/
 playwright-report/
 
+# Built release artefacts (scripts/build-submission-zip.sh); never committed
+dist/
+
 # Commercial / third-party reference archives (placed by hand, never committed)
 references/*
 !references/README.md
