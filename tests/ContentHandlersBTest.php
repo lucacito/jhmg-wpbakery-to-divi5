@@ -111,6 +111,14 @@ final class ContentHandlersBTest extends TestCase {
             'layerslider_vc'    => '[layerslider_vc id="3"]',
             'products'          => '[products limit="4" columns="4" category="hoodies"]',
             'contact-form-7'    => '[contact-form-7 id="1234" title="Contact form 1"]',
+            'vc_flexbox_container' => '[vc_flexbox_container gap="20px"][vc_flexbox_container_item][vc_column_text]A[/vc_column_text][/vc_flexbox_container_item][/vc_flexbox_container]',
+            'vc_grid_container' => '[vc_grid_container columns="3" rows="2" col_gap="10px" row_gap="5px"][vc_grid_container_item][vc_column_text]A[/vc_column_text][/vc_grid_container_item][/vc_grid_container]',
+            'bsf-info-box'      => '[bsf-info-box icon_type="selector" icon="Defaults-database" icon_size="32" icon_color="#333333" icon_style="circle" icon_color_bg="#ffffff" title="Hosting" heading_tag="h4" pos="top" read_more="more" read_text="Read More" link="url:https%3A%2F%2Fexample.com" title_font_size="desktop:20px;" title_font_color="#111111" desc_font_size="desktop:14px;"]Fast and reliable.[/bsf-info-box]',
+            'just_icon'         => '[just_icon icon="Defaults-database" icon_size="45" icon_color="#ffffff" icon_style="circle" icon_color_bg="#ffb400" icon_align="center" icon_link="url:https%3A%2F%2Fexample.com"]',
+            'stat_counter'      => '[stat_counter icon_size="32" icon_color="#ffffff" counter_title="PROJECTS" counter_value="82" counter_prefix="+" counter_suffix="%" counter_sep="," speed="3" counter_color_txt="#ffffff" title_font_size="desktop:20px;" desc_font_size="desktop:80px;"]',
+            'ultimate_pricing'  => '[ultimate_pricing design_style="design03" package_heading="Health" package_price="10.25" package_unit="Month" package_btn_text="Choose Plan" package_link="url:https%3A%2F%2Fexample.com"]One' . "\n" . 'Two[/ultimate_pricing]',
+            'ultimate_video'    => '[ultimate_video u_video_url="https://www.youtube.com/watch?v=abc" yt_autoplay="" default_thumb="hqdefault" play_source="icon" play_icon="Defaults-play-circle-o" play_size="90" icon_color="#ffffff" icon_hover_color="#ef1a5a"]',
+            'ult_content_box'   => '[ult_content_box bg_color="#f7f7f7" padding="padding-top:20px;padding-bottom:20px;" border="border-style:solid;|border-width:1px;|border-color:#cccccc;" box_shadow="horizontal:px|vertical:px|blur:px|spread:px|style:none|" min_height="200"][vc_column_text]A[/vc_column_text][/ult_content_box]',
         ];
     }
 
@@ -584,6 +592,183 @@ final class ContentHandlersBTest extends TestCase {
         $this->assertSame( 'divi/contact-form-7', $this->firstModule( $result )['name'] );
         $this->assertSame( '1234', $this->read( $this->firstModule( $result )['settings'], 'form.advanced.formId.desktop.value' ) );
         $this->assertCount( 1, $this->modules( $result ) );
+    }
+
+    // -------------------------------------------------------------------------
+    // The 9.0 containers
+    // -------------------------------------------------------------------------
+
+    public function test_a_flexbox_container_is_a_flexed_group_of_groups(): void {
+        $result = $this->convert( $this->row(
+            '[vc_flexbox_container gap="20px"][vc_flexbox_container_item][vc_column_text]A[/vc_column_text][/vc_flexbox_container_item]'
+            . '[vc_flexbox_container_item][vc_column_text]B[/vc_column_text][/vc_flexbox_container_item][/vc_flexbox_container]'
+        ) );
+
+        $group = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/group', $group['name'] );
+        $this->assertSame(
+            [ 'display' => 'flex', 'flexWrap' => 'wrap', 'columnGap' => '20px', 'rowGap' => '20px' ],
+            $this->read( $group['settings'], 'module.decoration.layout.desktop.value' )
+        );
+        // `.vc_flexbox_container{margin-left:-15px;margin-right:-15px}`
+        $this->assertSame( '-15px', $this->read( $group['settings'], 'module.decoration.spacing.desktop.value.margin.left' ) );
+        $this->assertCount( 2, $group['elements'] );
+        $this->assertSame( 'divi/group', $group['elements'][0]['name'] );
+        $this->assertSame( 'divi/text', $group['elements'][0]['elements'][0]['name'] );
+    }
+
+    public function test_a_container_with_no_gap_writes_a_zero_with_its_unit(): void {
+        $result = $this->convert( $this->row( '[vc_flexbox_container][vc_flexbox_container_item][vc_column_text]A[/vc_column_text][/vc_flexbox_container_item][/vc_flexbox_container]' ) );
+
+        // Divi tests a gap for truthiness, so "0px" and never "0".
+        $this->assertSame( '0px', $this->read( $this->firstModule( $result )['settings'], 'module.decoration.layout.desktop.value.columnGap' ) );
+    }
+
+    public function test_a_grid_container_uses_divis_own_grid_keys(): void {
+        $result = $this->convert( $this->row(
+            '[vc_grid_container columns="3" rows="2" col_gap="10px" row_gap="5px"][vc_grid_container_item][vc_column_text]A[/vc_column_text][/vc_grid_container_item][/vc_grid_container]'
+        ) );
+
+        $group  = $this->firstModule( $result );
+        $layout = $this->read( $group['settings'], 'module.decoration.layout.desktop.value' );
+
+        $this->assertSame( 'grid', $layout['display'] );
+        $this->assertSame( 'equal', $layout['gridColumnWidths'] );
+        $this->assertSame( '3', $layout['gridColumnCount'] );
+        $this->assertSame( '10px', $layout['columnGap'] );
+        $this->assertSame( '5px', $layout['rowGap'] );
+        // `.vc_grid_container_item>.vc_grid_container_item-inner{padding:0 15px}`
+        $this->assertSame( '15px', $this->read( $group['elements'][0]['settings'], 'module.decoration.spacing.desktop.value.padding.left' ) );
+        // WPBakery writes --grid-rows but never reads it.
+        $this->assertStringContainsString( 'rows="2"', $this->details( $result ) );
+    }
+
+    // -------------------------------------------------------------------------
+    // Ultimate Addons
+    // -------------------------------------------------------------------------
+
+    public function test_an_info_box_is_a_blurb_with_its_icon_title_and_copy(): void {
+        $result = $this->convert( $this->row(
+            '[bsf-info-box icon_type="selector" icon="Defaults-database" icon_color="#333333" icon_size="32" title="Hosting" heading_tag="h4" pos="left" title_font_size="desktop:20px;" title_font_color="#111111"]Fast and reliable.[/bsf-info-box]'
+        ) );
+
+        $blurb = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/blurb', $blurb['name'] );
+        $this->assertSame( 'on', $this->read( $blurb['settings'], 'imageIcon.innerContent.desktop.value.useIcon' ) );
+        // unicode, type, weight in that order.
+        $this->assertSame(
+            [ 'unicode', 'type', 'weight' ],
+            array_keys( (array) $this->read( $blurb['settings'], 'imageIcon.innerContent.desktop.value.icon' ) )
+        );
+        $this->assertSame( '#333333', $this->read( $blurb['settings'], 'imageIcon.advanced.color.desktop.value' ) );
+        $this->assertSame( 'left', $this->read( $blurb['settings'], 'imageIcon.advanced.placement.desktop.value' ) );
+        $this->assertSame( 'Hosting', $this->read( $blurb['settings'], 'title.innerContent.desktop.value.text' ) );
+        $this->assertSame( 'h4', $this->read( $blurb['settings'], 'title.decoration.font.font.desktop.value.headingLevel' ) );
+        $this->assertSame( '20px', $this->read( $blurb['settings'], 'title.decoration.font.font.desktop.value.size' ) );
+        $this->assertSame( '#111111', $this->read( $blurb['settings'], 'title.decoration.font.font.desktop.value.color' ) );
+        $this->assertStringContainsString( 'Fast and reliable.', (string) $this->read( $blurb['settings'], 'content.innerContent.desktop.value' ) );
+    }
+
+    public function test_an_info_box_with_a_custom_image_icon_uses_the_picture(): void {
+        $result = $this->convert( $this->row(
+            '[bsf-info-box icon_type="custom" icon_img="id^4282|url^https://example.com/icon.png|caption^null|alt^null|title^icon|description^null" img_width="80" title="Join"]Copy.[/bsf-info-box]'
+        ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'off', $this->read( $settings, 'imageIcon.innerContent.desktop.value.useIcon' ) );
+        $this->assertSame( 'https://example.com/icon.png', $this->read( $settings, 'imageIcon.innerContent.desktop.value.src' ) );
+        $this->assertSame( '80px', $this->read( $settings, 'imageIcon.decoration.sizing.desktop.value.width' ) );
+    }
+
+    public function test_an_info_box_read_more_link_becomes_a_button_after_it(): void {
+        $result = $this->convert( $this->row(
+            '[bsf-info-box title="Hosting" read_more="more" read_text="Learn more" link="url:https%3A%2F%2Fexample.com%2Fhosting"]Copy.[/bsf-info-box]'
+        ) );
+
+        $blocks = $this->modules( $result );
+
+        $this->assertCount( 2, $blocks );
+        $this->assertSame( 'divi/button', $blocks[1]['name'] );
+        $this->assertSame( 'Learn more', $this->read( $blocks[1]['settings'], 'button.innerContent.desktop.value.text' ) );
+    }
+
+    public function test_a_just_icon_is_an_icon_module_and_its_ring_is_reported(): void {
+        $result = $this->convert( $this->row(
+            '[just_icon icon="Defaults-database" icon_size="45" icon_color="#ffffff" icon_style="circle" icon_color_bg="#ffb400" icon_align="center"]'
+        ) );
+
+        $icon = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/icon', $icon['name'] );
+        $this->assertSame( '45px', $this->read( $icon['settings'], 'icon.advanced.size.desktop.value' ) );
+        $this->assertSame( '#ffffff', $this->read( $icon['settings'], 'icon.advanced.color.desktop.value' ) );
+        $this->assertSame( 'center', $this->read( $icon['settings'], 'icon.advanced.align.desktop.value' ) );
+        $this->assertStringContainsString( 'icon_style="circle"', $this->details( $result ) );
+    }
+
+    public function test_a_stat_counter_is_a_number_counter(): void {
+        $result   = $this->convert( $this->row( '[stat_counter counter_title="PROJECTS" counter_value="82" counter_prefix="+" counter_suffix="%" speed="3"]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'divi/number-counter', $this->firstModule( $result )['name'] );
+        $this->assertSame( 'PROJECTS', $this->read( $settings, 'title.innerContent.desktop.value' ) );
+        $this->assertSame( '+82%', $this->read( $settings, 'number.innerContent.desktop.value' ) );
+        // The add-on prints its own suffix, so Divi's percent sign stays off.
+        $this->assertSame( 'off', $this->read( $settings, 'number.advanced.enablePercentSign.desktop.value' ) );
+        $this->assertStringContainsString( 'speed="3"', $this->details( $result ) );
+    }
+
+    public function test_an_ultimate_pricing_table_turns_its_lines_into_a_list(): void {
+        $result = $this->convert( $this->row(
+            '[ultimate_pricing design_style="design03" package_heading="Health" package_price="10.25" package_unit="Month" package_btn_text="Choose Plan" package_link="url:https%3A%2F%2Fexample.com"]One' . "\n" . 'Two[/ultimate_pricing]'
+        ) );
+
+        $tables = $this->firstModule( $result );
+        $table  = $tables['elements'][0]['settings'];
+
+        $this->assertSame( 'divi/pricing-tables', $tables['name'] );
+        $this->assertSame( 'Health', $this->read( $table, 'title.innerContent.desktop.value' ) );
+        $this->assertSame( '10.25', $this->read( $table, 'price.innerContent.desktop.value' ) );
+        $this->assertSame( 'Month', $this->read( $table, 'currencyFrequency.innerContent.desktop.value.per' ) );
+        $this->assertSame( '<ul><li>One</li><li>Two</li></ul>', $this->read( $table, 'content.innerContent.desktop.value' ) );
+        $this->assertSame( 'Choose Plan', $this->read( $table, 'button.innerContent.desktop.value.text' ) );
+        $this->assertStringContainsString( 'design_style="design03"', $this->details( $result ) );
+    }
+
+    public function test_an_ultimate_video_is_a_video_module_with_its_custom_thumbnail(): void {
+        $result = $this->convert( $this->row(
+            '[ultimate_video u_video_url="https://www.youtube.com/watch?v=abc" thumbnail="custom" custom_thumb="id^90|url^https://example.com/poster.jpg|alt^null" play_size="90" icon_color="#ffffff"]'
+        ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'divi/video', $this->firstModule( $result )['name'] );
+        $this->assertSame( 'https://www.youtube.com/watch?v=abc', $this->read( $settings, 'video.innerContent.desktop.value.src' ) );
+        $this->assertSame( 'https://example.com/poster.jpg', $this->read( $settings, 'video.innerContent.desktop.value.thumbnailSrc' ) );
+        $this->assertStringContainsString( 'play button', $this->details( $result ) );
+    }
+
+    public function test_a_content_box_is_a_group_with_its_box_and_its_children(): void {
+        $result = $this->convert( $this->row(
+            '[ult_content_box bg_color="#f7f7f7" padding="padding-top:20px;padding-bottom:30px;" border="border-style:solid;|border-width:2px;|border-color:#cccccc;" min_height="200" hover_bg_color="#eeeeee"][vc_column_text]Inside.[/vc_column_text][/ult_content_box]'
+        ) );
+
+        $group = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/group', $group['name'] );
+        $this->assertSame( '#f7f7f7', $this->read( $group['settings'], 'module.decoration.background.desktop.value.color' ) );
+        $this->assertSame( '20px', $this->read( $group['settings'], 'module.decoration.spacing.desktop.value.padding.top' ) );
+        $this->assertSame( '30px', $this->read( $group['settings'], 'module.decoration.spacing.desktop.value.padding.bottom' ) );
+        $this->assertSame(
+            [ 'width' => '2px', 'style' => 'solid', 'color' => '#cccccc' ],
+            $this->read( $group['settings'], 'module.decoration.border.desktop.value.styles.all' )
+        );
+        $this->assertSame( '200px', $this->read( $group['settings'], 'module.decoration.sizing.desktop.value.minHeight' ) );
+        $this->assertSame( 'divi/text', $group['elements'][0]['name'] );
+        $this->assertStringContainsString( 'hover_bg_color', $this->details( $result ) );
     }
 
     /** Ids are generated from the source position, so two equivalent pages differ only there. */

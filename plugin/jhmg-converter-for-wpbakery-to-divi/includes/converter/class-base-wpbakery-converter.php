@@ -334,6 +334,27 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
     // -------------------------------------------------------------------------
 
     /**
+     * A node whose design-options field is named something other than `css`,
+     * rewritten so the StyleMapper can read it.
+     *
+     * Every Ultimate Addons element names that field after itself
+     * (`css_info_box`, `css_just_icon`, `css_stat_counter`, `css_price_box`,
+     * `css_video_design`) but stores exactly what WPBakery's `css` holds — the
+     * `.vc_custom_… { … }` rule the editor generated — so the alias is all the
+     * StyleMapper needs.
+     */
+    protected function withCss( array $node, string $key ): array {
+        $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
+
+        if ( ! empty( $atts[ $key ] ) && empty( $atts['css'] ) ) {
+            $atts['css']  = $atts[ $key ];
+            $node['atts'] = $atts;
+        }
+
+        return $node;
+    }
+
+    /**
      * Runs the StyleMapper over a node's design options and forwards its notes
      * to the report.
      *
@@ -748,6 +769,18 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         return $inner === ''
             ? '[' . $tag . $atts . ']'
             : '[' . $tag . $atts . ']' . $inner . '[/' . $tag . ']';
+    }
+
+    /**
+     * What an element held, whether or not its tag is a raw-content one.
+     *
+     * `NodeTree` keeps `content` only for `ShortcodeParser::RAW_CONTENT_TAGS`
+     * and parses everything else into children — so an add-on element whose
+     * content is a body of copy (`bsf-info-box`, `ultimate_pricing`) has to be
+     * rebuilt from those children to read it back.
+     */
+    protected function rawContent( array $node ): string {
+        return $this->innerShortcode( $node );
     }
 
     /** Everything a node held: its raw content, or its children rebuilt. */

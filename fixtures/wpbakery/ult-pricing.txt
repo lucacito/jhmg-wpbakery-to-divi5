@@ -1,0 +1,5 @@
+[vc_row][vc_column][ultimate_pricing design_style="design03" package_heading="Health Insurance" package_price="10.25" package_unit="Month" package_btn_text="Choose Plan" el_class="pricing-table-better"]Individual &amp; Family Doctor
+Prescription Drug Coverage
+Dental Coverage
+Medical Consultations
+24/7 Support[/ultimate_pricing][/vc_column][/vc_row]

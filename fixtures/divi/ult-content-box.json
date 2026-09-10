@@ -1,0 +1,459 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "4_4"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "4_4"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "ult_content_box-1",
+                                        "name": "divi/group",
+                                        "settings": [],
+                                        "elements": [
+                                            {
+                                                "id": "bsf-info-box-1",
+                                                "name": "divi/blurb",
+                                                "settings": {
+                                                    "module": {
+                                                        "decoration": {
+                                                            "spacing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "margin": {
+                                                                            "top": "",
+                                                                            "right": "0px",
+                                                                            "bottom": "35px",
+                                                                            "left": "0px",
+                                                                            "syncVertical": "off",
+                                                                            "syncHorizontal": "off"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "htmlAttributes": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "class": "icon-box"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "imageIcon": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "useIcon": "off",
+                                                                    "src": "https://layoutsforwpbakery.com/wp-content/uploads/2022/07/join-our-class-icon.png"
+                                                                }
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "sizing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "width": "80px"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "placement": {
+                                                                "desktop": {
+                                                                    "value": "top"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "text": "Join Our Class"
+                                                                }
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "font": {
+                                                                "font": {
+                                                                    "desktop": {
+                                                                        "value": {
+                                                                            "headingLevel": "h4",
+                                                                            "size": "20px",
+                                                                            "lineHeight": "30px",
+                                                                            "color": "#d98f00"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Metus, quam eu diam nulla diam.</p>"
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "bodyFont": {
+                                                                "body": {
+                                                                    "font": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "size": "14px",
+                                                                                "lineHeight": "24px",
+                                                                                "color": "#a3a4a7"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "bsf-info-box-2",
+                                                "name": "divi/blurb",
+                                                "settings": {
+                                                    "module": {
+                                                        "decoration": {
+                                                            "spacing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "margin": {
+                                                                            "top": "80px",
+                                                                            "right": "",
+                                                                            "bottom": "35px",
+                                                                            "left": "",
+                                                                            "syncVertical": "off",
+                                                                            "syncHorizontal": "off"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "htmlAttributes": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "class": "icon-box"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "imageIcon": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "useIcon": "off",
+                                                                    "src": "https://layoutsforwpbakery.com/wp-content/uploads/2022/11/dance-choreography-icon.png"
+                                                                }
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "sizing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "width": "80px"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "placement": {
+                                                                "desktop": {
+                                                                    "value": "top"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "text": "Dance Choreography"
+                                                                }
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "font": {
+                                                                "font": {
+                                                                    "desktop": {
+                                                                        "value": {
+                                                                            "headingLevel": "h4",
+                                                                            "size": "20px",
+                                                                            "lineHeight": "30px",
+                                                                            "color": "#d98f00"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Metus, quam eu diam nulla diam.</p>"
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "bodyFont": {
+                                                                "body": {
+                                                                    "font": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "size": "14px",
+                                                                                "lineHeight": "24px",
+                                                                                "color": "#a3a4a7"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "bsf-info-box-3",
+                                                "name": "divi/blurb",
+                                                "settings": {
+                                                    "module": {
+                                                        "decoration": {
+                                                            "spacing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "margin": {
+                                                                            "top": "80px",
+                                                                            "right": "0px",
+                                                                            "bottom": "35px",
+                                                                            "left": "0px",
+                                                                            "syncVertical": "off",
+                                                                            "syncHorizontal": "off"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "htmlAttributes": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "class": "icon-box"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "imageIcon": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "useIcon": "off",
+                                                                    "src": "https://layoutsforwpbakery.com/wp-content/uploads/2022/11/perform-onstage-icon.png"
+                                                                }
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "sizing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "width": "80px"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "advanced": {
+                                                            "placement": {
+                                                                "desktop": {
+                                                                    "value": "top"
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "text": "Dance Choreography"
+                                                                }
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "font": {
+                                                                "font": {
+                                                                    "desktop": {
+                                                                        "value": {
+                                                                            "headingLevel": "h4",
+                                                                            "size": "20px",
+                                                                            "lineHeight": "30px",
+                                                                            "color": "#d98f00"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Metus, quam eu diam nulla diam.</p>"
+                                                            }
+                                                        },
+                                                        "decoration": {
+                                                            "bodyFont": {
+                                                                "body": {
+                                                                    "font": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "size": "14px",
+                                                                                "lineHeight": "24px",
+                                                                                "color": "#a3a4a7"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": []
+}

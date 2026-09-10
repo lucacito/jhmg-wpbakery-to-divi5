@@ -1,0 +1,1 @@
+[vc_row][vc_column][ultimate_video u_video_url="https://www.youtube.com/watch?v=ineZXLbL7s8" yt_autoplay="" yt_sugg_video="" yt_mute_control="" yt_modest_branding="" yt_privacy_mode="" default_thumb="hqdefault" play_source="icon" play_icon="Defaults-play-circle-o" play_size="90" icon_color="#ffffff" enable_sub_bar="" icon_hover_color="#ef1a5a"][/vc_column][/vc_row]

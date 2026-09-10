@@ -268,6 +268,20 @@ class ConverterRegistry {
 
             // Contact Form 7 has a Divi module in 5.12.1.
             'contact-form-7'    => [ Handlers\ContactForm7Converter::class, false ],
+
+            // 9.0's flex and grid containers. Divi 5.12.1 has both layouts on
+            // its group module, so neither is on the flex fallback.
+            'vc_flexbox_container' => [ Handlers\FlexboxContainerConverter::class, false ],
+            'vc_grid_container'    => [ Handlers\GridContainerConverter::class, false ],
+
+            // Ultimate Addons. Approximate by design: the source read for them
+            // is 3.19.3 while a live site may run a newer build (spec §7).
+            'bsf-info-box'      => [ Handlers\UltInfoBoxConverter::class, true ],
+            'just_icon'         => [ Handlers\UltJustIconConverter::class, true ],
+            'stat_counter'      => [ Handlers\UltStatCounterConverter::class, true ],
+            'ultimate_pricing'  => [ Handlers\UltPricingConverter::class, true ],
+            'ultimate_video'    => [ Handlers\UltVideoConverter::class, true ],
+            'ult_content_box'   => [ Handlers\UltContentBoxConverter::class, true ],
         ];
 
         foreach ( $elements as $tag => [ $class, $approximate ] ) {

@@ -126,48 +126,31 @@
                                 },
                                 "elements": [
                                     {
-                                        "id": "vc_pricing_table-1",
+                                        "id": "ultimate_pricing-1",
                                         "name": "divi/pricing-tables",
                                         "settings": {
                                             "module": {
+                                                "advanced": {
+                                                    "htmlAttributes": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "class": "pricing-table-better"
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                                 "decoration": {
                                                     "spacing": {
                                                         "desktop": {
                                                             "value": {
-                                                                "padding": {
-                                                                    "top": "30px",
-                                                                    "right": "20px",
-                                                                    "bottom": "30px",
-                                                                    "left": "20px",
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "",
+                                                                    "bottom": "35px",
+                                                                    "left": "",
                                                                     "syncVertical": "off",
                                                                     "syncHorizontal": "off"
                                                                 }
-                                                            }
-                                                        }
-                                                    },
-                                                    "border": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "radius": {
-                                                                    "topLeft": "5px",
-                                                                    "topRight": "5px",
-                                                                    "bottomRight": "5px",
-                                                                    "bottomLeft": "5px"
-                                                                },
-                                                                "styles": {
-                                                                    "all": {
-                                                                        "width": "1px",
-                                                                        "style": "solid",
-                                                                        "color": "rgba(0,0,0,0.01)"
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "background": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "color": "#ececec"
                                                             }
                                                         }
                                                     }
@@ -176,27 +159,20 @@
                                         },
                                         "elements": [
                                             {
-                                                "id": "vc_pricing_table-1-table",
+                                                "id": "ultimate_pricing-1-table",
                                                 "name": "divi/pricing-table",
                                                 "settings": {
                                                     "title": {
                                                         "innerContent": {
                                                             "desktop": {
-                                                                "value": "Standard"
+                                                                "value": "Health Insurance"
                                                             }
                                                         }
                                                     },
                                                     "price": {
                                                         "innerContent": {
                                                             "desktop": {
-                                                                "value": "29"
-                                                            }
-                                                        }
-                                                    },
-                                                    "subtitle": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": "For small teams"
+                                                                "value": "10.25"
                                                             }
                                                         }
                                                     },
@@ -204,8 +180,7 @@
                                                         "innerContent": {
                                                             "desktop": {
                                                                 "value": {
-                                                                    "currency": "$",
-                                                                    "per": "month"
+                                                                    "per": "Month"
                                                                 }
                                                             }
                                                         }
@@ -213,14 +188,7 @@
                                                     "content": {
                                                         "innerContent": {
                                                             "desktop": {
-                                                                "value": "<ul>\n<li>Ten seats</li>\n<li>Priority support</li>\n<li>All integrations</li>\n</ul>"
-                                                            }
-                                                        },
-                                                        "advanced": {
-                                                            "bulletColor": {
-                                                                "desktop": {
-                                                                    "value": "#5472d2"
-                                                                }
+                                                                "value": "<ul><li>Individual &amp; Family Doctor</li><li>Prescription Drug Coverage</li><li>Dental Coverage</li><li>Medical Consultations</li><li>24/7 Support</li></ul>"
                                                             }
                                                         }
                                                     },
@@ -228,54 +196,7 @@
                                                         "innerContent": {
                                                             "desktop": {
                                                                 "value": {
-                                                                    "text": "Choose plan",
-                                                                    "linkUrl": "https://example.com/buy",
-                                                                    "linkTarget": "off"
-                                                                }
-                                                            }
-                                                        },
-                                                        "decoration": {
-                                                            "font": {
-                                                                "font": {
-                                                                    "desktop": {
-                                                                        "value": {
-                                                                            "size": "14px",
-                                                                            "color": "#fff"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "spacing": {
-                                                                "desktop": {
-                                                                    "value": {
-                                                                        "padding": {
-                                                                            "top": "14px",
-                                                                            "right": "20px",
-                                                                            "bottom": "14px",
-                                                                            "left": "20px",
-                                                                            "syncVertical": "off",
-                                                                            "syncHorizontal": "off"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "border": {
-                                                                "desktop": {
-                                                                    "value": {
-                                                                        "radius": {
-                                                                            "topLeft": "5px",
-                                                                            "topRight": "5px",
-                                                                            "bottomRight": "5px",
-                                                                            "bottomLeft": "5px"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "background": {
-                                                                "desktop": {
-                                                                    "value": {
-                                                                        "color": "#f4524d"
-                                                                    }
+                                                                    "text": "Choose Plan"
                                                                 }
                                                             }
                                                         }

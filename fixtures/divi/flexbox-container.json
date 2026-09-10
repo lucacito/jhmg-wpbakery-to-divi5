@@ -126,8 +126,8 @@
                                 },
                                 "elements": [
                                     {
-                                        "id": "vc_pricing_table-1",
-                                        "name": "divi/pricing-tables",
+                                        "id": "vc_flexbox_container-1",
+                                        "name": "divi/group",
                                         "settings": {
                                             "module": {
                                                 "decoration": {
@@ -135,39 +135,31 @@
                                                         "desktop": {
                                                             "value": {
                                                                 "padding": {
-                                                                    "top": "30px",
-                                                                    "right": "20px",
-                                                                    "bottom": "30px",
-                                                                    "left": "20px",
+                                                                    "top": "20px",
+                                                                    "right": "",
+                                                                    "bottom": "",
+                                                                    "left": "",
+                                                                    "syncVertical": "off",
+                                                                    "syncHorizontal": "off"
+                                                                },
+                                                                "margin": {
+                                                                    "top": "",
+                                                                    "right": "-15px",
+                                                                    "bottom": "",
+                                                                    "left": "-15px",
                                                                     "syncVertical": "off",
                                                                     "syncHorizontal": "off"
                                                                 }
                                                             }
                                                         }
                                                     },
-                                                    "border": {
+                                                    "layout": {
                                                         "desktop": {
                                                             "value": {
-                                                                "radius": {
-                                                                    "topLeft": "5px",
-                                                                    "topRight": "5px",
-                                                                    "bottomRight": "5px",
-                                                                    "bottomLeft": "5px"
-                                                                },
-                                                                "styles": {
-                                                                    "all": {
-                                                                        "width": "1px",
-                                                                        "style": "solid",
-                                                                        "color": "rgba(0,0,0,0.01)"
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "background": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "color": "#ececec"
+                                                                "display": "flex",
+                                                                "flexWrap": "wrap",
+                                                                "columnGap": "20px",
+                                                                "rowGap": "20px"
                                                             }
                                                         }
                                                     }
@@ -176,112 +168,109 @@
                                         },
                                         "elements": [
                                             {
-                                                "id": "vc_pricing_table-1-table",
-                                                "name": "divi/pricing-table",
+                                                "id": "vc_flexbox_container_item-1",
+                                                "name": "divi/group",
                                                 "settings": {
-                                                    "title": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": "Standard"
-                                                            }
-                                                        }
-                                                    },
-                                                    "price": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": "29"
-                                                            }
-                                                        }
-                                                    },
-                                                    "subtitle": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": "For small teams"
-                                                            }
-                                                        }
-                                                    },
-                                                    "currencyFrequency": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": {
-                                                                    "currency": "$",
-                                                                    "per": "month"
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "content": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": "<ul>\n<li>Ten seats</li>\n<li>Priority support</li>\n<li>All integrations</li>\n</ul>"
-                                                            }
-                                                        },
-                                                        "advanced": {
-                                                            "bulletColor": {
-                                                                "desktop": {
-                                                                    "value": "#5472d2"
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "button": {
-                                                        "innerContent": {
-                                                            "desktop": {
-                                                                "value": {
-                                                                    "text": "Choose plan",
-                                                                    "linkUrl": "https://example.com/buy",
-                                                                    "linkTarget": "off"
-                                                                }
-                                                            }
-                                                        },
+                                                    "module": {
                                                         "decoration": {
-                                                            "font": {
-                                                                "font": {
-                                                                    "desktop": {
-                                                                        "value": {
-                                                                            "size": "14px",
-                                                                            "color": "#fff"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "spacing": {
+                                                            "sizing": {
                                                                 "desktop": {
                                                                     "value": {
-                                                                        "padding": {
-                                                                            "top": "14px",
-                                                                            "right": "20px",
-                                                                            "bottom": "14px",
-                                                                            "left": "20px",
-                                                                            "syncVertical": "off",
-                                                                            "syncHorizontal": "off"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "border": {
-                                                                "desktop": {
-                                                                    "value": {
-                                                                        "radius": {
-                                                                            "topLeft": "5px",
-                                                                            "topRight": "5px",
-                                                                            "bottomRight": "5px",
-                                                                            "bottomLeft": "5px"
-                                                                        }
-                                                                    }
-                                                                }
-                                                            },
-                                                            "background": {
-                                                                "desktop": {
-                                                                    "value": {
-                                                                        "color": "#f4524d"
+                                                                        "maxWidth": "100%"
                                                                     }
                                                                 }
                                                             }
                                                         }
                                                     }
                                                 },
-                                                "elements": []
+                                                "elements": [
+                                                    {
+                                                        "id": "vc_column_text-1",
+                                                        "name": "divi/text",
+                                                        "settings": {
+                                                            "module": {
+                                                                "decoration": {
+                                                                    "spacing": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "margin": {
+                                                                                    "top": "",
+                                                                                    "right": "",
+                                                                                    "bottom": "35px",
+                                                                                    "left": "",
+                                                                                    "syncVertical": "off",
+                                                                                    "syncHorizontal": "off"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "content": {
+                                                                "innerContent": {
+                                                                    "desktop": {
+                                                                        "value": "<p>First column of copy.</p>"
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "elements": []
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                "id": "vc_flexbox_container_item-2",
+                                                "name": "divi/group",
+                                                "settings": {
+                                                    "module": {
+                                                        "decoration": {
+                                                            "sizing": {
+                                                                "desktop": {
+                                                                    "value": {
+                                                                        "maxWidth": "100%"
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": [
+                                                    {
+                                                        "id": "vc_single_image-1",
+                                                        "name": "divi/image",
+                                                        "settings": {
+                                                            "module": {
+                                                                "advanced": {
+                                                                    "spacing": {
+                                                                        "desktop": {
+                                                                            "value": {
+                                                                                "margin": {
+                                                                                    "top": "",
+                                                                                    "right": "",
+                                                                                    "bottom": "35px",
+                                                                                    "left": "",
+                                                                                    "syncVertical": "off",
+                                                                                    "syncHorizontal": "off"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            },
+                                                            "image": {
+                                                                "innerContent": {
+                                                                    "desktop": {
+                                                                        "value": {
+                                                                            "id": "7",
+                                                                            "src": "https://example.com/photo-300x200.jpg"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "elements": []
+                                                    }
+                                                ]
                                             }
                                         ]
                                     }

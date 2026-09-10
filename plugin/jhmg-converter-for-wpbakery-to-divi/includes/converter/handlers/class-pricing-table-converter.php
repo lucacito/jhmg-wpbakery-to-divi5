@@ -51,10 +51,19 @@ class PricingTableConverter extends BaseWPBakeryConverter {
         $table = [];
 
         StyleMapper::write( $table, 'title.innerContent.desktop.value', $this->att( $atts, 'heading' ) );
-        StyleMapper::write( $table, 'subtitle.innerContent.desktop.value', $this->att( $atts, 'subheading' ) );
         StyleMapper::write( $table, 'price.innerContent.desktop.value', $this->att( $atts, 'price' ) );
-        StyleMapper::write( $table, 'currencyFrequency.innerContent.desktop.value.currency', $this->att( $atts, 'currency' ) );
-        StyleMapper::write( $table, 'currencyFrequency.innerContent.desktop.value.per', $this->att( $atts, 'period' ) );
+
+        // A field the author left blank is left out rather than written empty.
+        foreach ( [
+            'subheading' => 'subtitle.innerContent.desktop.value',
+            'currency'   => 'currencyFrequency.innerContent.desktop.value.currency',
+            'period'     => 'currencyFrequency.innerContent.desktop.value.per',
+        ] as $key => $path ) {
+            $value = trim( $this->att( $atts, $key ) );
+            if ( $value !== '' ) {
+                StyleMapper::write( $table, $path, $value );
+            }
+        }
         StyleMapper::write( $table, 'content.innerContent.desktop.value', trim( $this->nestedShortcodes( $this->editorHtml( $content ), $id ) ) );
 
         $markers = $this->color( $atts, 'markers_color', $id );

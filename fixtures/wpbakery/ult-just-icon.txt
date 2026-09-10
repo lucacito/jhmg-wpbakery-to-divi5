@@ -1,0 +1,1 @@
+[vc_row][vc_column][just_icon icon="Defaults-database" icon_size="45" icon_color="#ffffff" icon_style="circle" icon_color_bg="#ffb400" el_class="icon-box"][/vc_column][/vc_row]
