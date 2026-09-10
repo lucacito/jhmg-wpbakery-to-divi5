@@ -32,9 +32,12 @@
  */
 
 require __DIR__ . '/../tests/bootstrap.php';
+// The classification (exact / approximate / read by its parent, and which
+// family a theme tag belongs to) is shared with `tests/ReleaseMetadataTest.php`,
+// which checks the readme's numbers against it. Two copies would drift.
+require __DIR__ . '/lib/element-coverage.php';
 
 use WPBakeryDivi5Converter\Converter\ConverterEngine;
-use WPBakeryDivi5Converter\Converter\Handlers\WoocommerceConverter;
 use WPBakeryDivi5Converter\Helpers\ThemeShortcodes;
 use WPBakeryDivi5Converter\Tests\RegisteredShortcodesTest;
 
@@ -46,33 +49,15 @@ $show_all  = in_array( '--unseen', $argv, true );
 // What WPBakery registers, and what is registered here
 // -----------------------------------------------------------------------------
 
-$registered = RegisteredShortcodesTest::registeredTags();
-$extra      = array_merge( RegisteredShortcodesTest::TEMPLATE_ONLY, WoocommerceConverter::SHORTCODES );
+$registered = WBDC_Element_Coverage::registered_tags();
+$extra      = WBDC_Element_Coverage::template_only_tags();
 
-$engine      = new ConverterEngine();
-$registry    = $engine->registry();
-$handled     = $registry->knownTags();
-$approximate = $registry->approximateTags();
+$engine   = new ConverterEngine();
+$registry = $engine->registry();
+$handled  = $registry->knownTags();
 
 /** The handler a tag reaches, after the normaliser has had its go at the tag. */
-$handler_for = static function ( string $tag ) use ( $registry ): array {
-    $effective = \WPBakeryDivi5Converter\Parsers\AttributeNormaliser::normalise( $tag, [] )['tag'];
-    $kind      = RegisteredShortcodesTest::STRUCTURE_KINDS[ $effective ] ?? 'element';
-    $converter = $registry->getConverter( [ 'tag' => $effective, 'kind' => $kind ] );
-
-    if ( $converter === null ) {
-        $parent = RegisteredShortcodesTest::READ_BY_THEIR_PARENT[ $effective ] ?? null;
-
-        return $parent === null
-            ? [ 'handler' => '', 'note' => '' ]
-            : [ 'handler' => '(read by ' . $parent . ')', 'note' => 'panel' ];
-    }
-
-    return [
-        'handler' => basename( str_replace( '\\', '/', get_class( $converter ) ) ),
-        'note'    => in_array( $effective, $registry->approximateTags(), true ) ? 'approximate' : '',
-    ];
-};
+$handler_for = static fn( string $tag ): array => WBDC_Element_Coverage::handler_for( $tag );
 
 // -----------------------------------------------------------------------------
 // What the corpora hold
@@ -162,45 +147,23 @@ arsort( $seen );
 // The numbers
 // -----------------------------------------------------------------------------
 
-$rows          = [];
-$mapped        = 0;
-$approx_mapped = 0;
-$panels        = 0;
-
-foreach ( $registered as $tag ) {
-    $resolved = $handler_for( $tag );
-    $rows[]   = [
-        'tag'         => $tag,
-        'occurrences' => $seen[ $tag ] ?? 0,
-        'handler'     => $resolved['handler'],
-        'note'        => $resolved['note'],
-    ];
-
-    if ( $resolved['note'] === 'panel' ) {
-        $panels++;
-        $mapped++;
-    } elseif ( $resolved['handler'] !== '' ) {
-        $mapped++;
-        if ( $resolved['note'] === 'approximate' ) {
-            $approx_mapped++;
-        }
+// The classification comes from the shared helper; this script's own job is to
+// hang an occurrence count off each row.
+$with_occurrences = static function ( array $rows ) use ( $seen ): array {
+    foreach ( $rows as $index => $row ) {
+        $rows[ $index ] = [
+            'tag'         => $row['tag'],
+            'occurrences' => $seen[ $row['tag'] ] ?? 0,
+            'handler'     => $row['handler'],
+            'note'        => $row['note'],
+        ];
     }
-}
 
-$extra_rows   = [];
-$extra_mapped = 0;
-foreach ( $extra as $tag ) {
-    $resolved     = $handler_for( $tag );
-    $extra_rows[] = [
-        'tag'         => $tag,
-        'occurrences' => $seen[ $tag ] ?? 0,
-        'handler'     => $resolved['handler'],
-        'note'        => $resolved['note'],
-    ];
-    if ( $resolved['handler'] !== '' ) {
-        $extra_mapped++;
-    }
-}
+    return $rows;
+};
+
+$rows       = $with_occurrences( WBDC_Element_Coverage::rows_for( $registered ) );
+$extra_rows = $with_occurrences( WBDC_Element_Coverage::rows_for( $extra ) );
 
 // Theme- and add-on-family tags: everything the corpora hold that WPBakery
 // does not ship. Split by whether a handler of this project's own converts it
@@ -225,21 +188,17 @@ $family_handled = count( array_filter( $family_rows, static fn( array $r ): bool
 $families_seen  = array_values( array_unique( array_column( $family_rows, 'family' ) ) );
 sort( $families_seen );
 
-$summary = [
-    'registered_tags'          => count( $registered ),
-    'registered_mapped'        => $mapped,
-    'registered_exact'         => $mapped - $approx_mapped - $panels,
-    'registered_approximate'   => $approx_mapped,
-    'registered_read_by_parent' => $panels,
-    'registered_unmapped'      => count( $registered ) - $mapped,
-    'template_only_tags'       => count( $extra ),
-    'template_only_mapped'     => $extra_mapped,
-    'theme_family_tags_seen'   => count( $family_rows ),
+// The corpus-independent half is the shared helper's; the corpus-dependent half
+// is this script's, and stays here — no test reads it, and it never reaches the
+// readme, because it describes whichever corpus files this checkout happens to
+// have rather than what the converter does.
+$summary = WBDC_Element_Coverage::summary() + [
+    'theme_family_tags_seen'    => count( $family_rows ),
     'theme_family_tags_handled' => $family_handled,
-    'theme_families_seen'      => count( $families_seen ),
-    'corpus_files'             => array_map( static fn( array $c ): int => count( $c['files'] ), $corpora ),
-    'corpus_documents'         => array_map( static fn( array $c ): int => $c['documents'], $corpora ),
-    'corpus_elements'          => array_map( static fn( array $c ): int => array_sum( $c['tags'] ), $corpora ),
+    'theme_families_seen'       => count( $families_seen ),
+    'corpus_files'              => array_map( static fn( array $c ): int => count( $c['files'] ), $corpora ),
+    'corpus_documents'          => array_map( static fn( array $c ): int => $c['documents'], $corpora ),
+    'corpus_elements'           => array_map( static fn( array $c ): int => array_sum( $c['tags'] ), $corpora ),
 ];
 
 if ( $as_json ) {
@@ -308,6 +267,18 @@ printf(
     $summary['theme_family_tags_seen'],
     $summary['theme_families_seen'],
     $summary['theme_family_tags_handled']
+);
+
+// What the readme is allowed to quote: handlers this plugin ships, which does
+// not depend on which corpus files this checkout has. The line above does.
+$family_parts = [];
+foreach ( $summary['family_handlers'] as $label => $count ) {
+    $family_parts[] = sprintf( '%s × %d', $label, $count );
+}
+printf(
+    "  Theme / add-on handlers shipped   %d          (%s)  ← the corpus-independent figure the readme quotes\n",
+    $summary['family_handler_tags'],
+    implode( ', ', $family_parts )
 );
 echo "\n";
 

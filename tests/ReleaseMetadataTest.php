@@ -10,45 +10,40 @@ use WPBakeryDivi5Converter\Telemetry\CoverageTelemetry;
  *
  * The version has to agree in three places, the external service has to be
  * disclosed key by key, and the coverage figures have to be the ones
- * `scripts/element-coverage.php` counts — never retyped from memory
- * (task-12-amendments §5). The corpus that script scans is partly gitignored,
- * so the figures are kept in a committed snapshot which this test regenerates
- * whenever the full corpus is on disk.
+ * `scripts/element-coverage.php` reports — never retyped from memory
+ * (task-12-amendments §5).
+ *
+ * Those figures are derived here from the registry, through the same
+ * classification the script uses (`scripts/lib/element-coverage.php`, required
+ * by both, so the two cannot drift). They are facts about the code: which tags
+ * reach a handler, which of those are exact, approximate or read by a parent,
+ * and how many theme and add-on handlers this plugin ships per family. How
+ * often a tag turns up in the corpora is not — part of that corpus is
+ * gitignored, so it differs per checkout — which is why no occurrence count is
+ * quoted in the readme and none is read here.
+ *
+ * This test reads. It writes nothing, to the repository or anywhere else.
  */
 final class ReleaseMetadataTest extends TestCase {
 
-    private const FREE     = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi';
-    private const SNAPSHOT = __DIR__ . '/../fixtures/element-coverage.json';
+    private const FREE = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi';
 
-    /** The export corpus is complete at 96 files; below that the snapshot is authoritative. */
-    private const FULL_CORPUS_EXPORTS = 96;
+    public static function setUpBeforeClass(): void {
+        require_once __DIR__ . '/../scripts/lib/element-coverage.php';
+    }
 
     private function readme(): string {
         return (string) file_get_contents( self::FREE . '/readme.txt' );
     }
 
     /**
-     * The coverage summary, refreshed from the script when every corpus is on
-     * disk and read from the committed snapshot otherwise.
+     * The corpus-independent coverage summary, from the same helper
+     * `scripts/element-coverage.php` classifies with.
      *
      * @return array<string,mixed>
      */
     private function coverage(): array {
-        $script = escapeshellarg( __DIR__ . '/../scripts/element-coverage.php' );
-        $raw    = (string) shell_exec( 'php ' . $script . ' --json 2>/dev/null' );
-        $live   = json_decode( $raw, true );
-
-        if ( is_array( $live['summary'] ?? null ) && (int) ( $live['summary']['corpus_files']['exports'] ?? 0 ) >= self::FULL_CORPUS_EXPORTS ) {
-            $encoded = (string) json_encode( $live['summary'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES ) . "\n";
-            if ( ! file_exists( self::SNAPSHOT ) || file_get_contents( self::SNAPSHOT ) !== $encoded ) {
-                file_put_contents( self::SNAPSHOT, $encoded );
-            }
-        }
-
-        $snapshot = json_decode( (string) file_get_contents( self::SNAPSHOT ), true );
-        $this->assertIsArray( $snapshot, 'the coverage snapshot is unreadable; run php scripts/element-coverage.php --json' );
-
-        return $snapshot;
+        return \WBDC_Element_Coverage::summary();
     }
 
     public function test_version_is_consistent_across_header_constant_and_readme(): void {
@@ -102,7 +97,7 @@ final class ReleaseMetadataTest extends TestCase {
         }
     }
 
-    public function test_readme_quotes_the_coverage_scripts_own_numbers(): void {
+    public function test_readme_quotes_the_registrys_own_coverage_numbers(): void {
         $summary = $this->coverage();
         $readme  = $this->readme();
 
@@ -124,8 +119,47 @@ final class ReleaseMetadataTest extends TestCase {
             $readme
         );
         $this->assertStringContainsString(
-            sprintf( '%d of the %d theme and add-on elements', $summary['theme_family_tags_handled'], $summary['theme_family_tags_seen'] ),
+            sprintf( '%d theme and add-on elements', $summary['family_handler_tags'] ),
             $readme
+        );
+
+        foreach ( $summary['family_handlers'] as $label => $count ) {
+            $this->assertStringContainsString( sprintf( '%s × %d', $label, $count ), $readme, $label );
+        }
+    }
+
+    /** The classification the readme is checked against is the one the script prints. */
+    public function test_the_test_and_the_coverage_script_classify_identically(): void {
+        $raw  = json_decode( (string) shell_exec( 'php ' . escapeshellarg( __DIR__ . '/../scripts/element-coverage.php' ) . ' --json 2>/dev/null' ), true );
+        $live = is_array( $raw['summary'] ?? null ) ? $raw['summary'] : [];
+
+        $this->assertNotSame( [], $live, 'scripts/element-coverage.php --json produced no summary' );
+
+        foreach ( $this->coverage() as $key => $value ) {
+            $this->assertSame( $value, $live[ $key ] ?? null, $key );
+        }
+    }
+
+    /** A theme family the converter recognises is named in the readme, so a reader can look for theirs. */
+    public function test_readme_names_every_theme_family_the_converter_recognises(): void {
+        $readme = $this->readme();
+
+        foreach ( \WPBakeryDivi5Converter\Helpers\ThemeShortcodes::families() as $family ) {
+            $this->assertStringContainsString( (string) $family['label'], $readme, (string) $family['label'] );
+        }
+    }
+
+    /** Whatever else this file does, it does not change the repository. */
+    public function test_this_test_writes_nothing(): void {
+        $before = (string) shell_exec( 'git -C ' . escapeshellarg( dirname( __DIR__ ) ) . ' status --porcelain 2>/dev/null' );
+
+        $this->coverage();
+        $this->readme();
+
+        $this->assertSame(
+            $before,
+            (string) shell_exec( 'git -C ' . escapeshellarg( dirname( __DIR__ ) ) . ' status --porcelain 2>/dev/null' ),
+            'a test must never write to the repository'
         );
     }
 
