@@ -148,6 +148,21 @@ trait CorpusAssertions {
     }
 
     /**
+     * The shortest string worth looking for.
+     *
+     * `str_contains()` over a page of text finds "Our" or "CEO" whether or not
+     * the element that held it survived, so a string that short proves nothing
+     * and would quietly pad the assertion count. Across the two fixture corpora
+     * it excludes **16 of 1,894** strings, all in the layouts corpus and all on
+     * a `vc_custom_heading` or a `vc_column_text`: "Our" ×4 (1093-resto),
+     * "CEO" ×3 (2632-fredo), and nine counter figures — "45%", "125", "$25",
+     * "$99", "217", "45+", "721", "30K", "274". Those elements lose only this
+     * check; the validator, the section count and the zero-skipped-settings gate
+     * still cover them, and the bundled-template corpus loses nothing at all.
+     */
+    private const SHORTEST_CHECKABLE_STRING = 4;
+
+    /**
      * Every string the source carries in a place a reader would notice is
      * still somewhere in the blocks.
      *
@@ -159,7 +174,7 @@ trait CorpusAssertions {
         foreach ( self::sourceStrings( WPBakeryDocumentParser::parse( $content )['nodes'] ) as [ $what, $string ] ) {
             $wanted = self::flatten( $string );
 
-            if ( $wanted === '' ) {
+            if ( mb_strlen( $wanted ) < self::SHORTEST_CHECKABLE_STRING ) {
                 continue;
             }
 

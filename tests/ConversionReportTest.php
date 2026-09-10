@@ -93,6 +93,22 @@ final class ConversionReportTest extends TestCase {
         return $cases;
     }
 
+    /**
+     * Presence is half the contract; the other half is that nothing is in the
+     * report that this file has not been made to think about. A key added
+     * without a line in `KEYS` fails here rather than shipping unpinned.
+     */
+    public function test_the_report_holds_these_keys_and_no_others(): void {
+        $report = $this->convert( '' )['report'];
+
+        $expected = array_keys( self::KEYS );
+        $actual   = array_keys( $report );
+        sort( $expected );
+        sort( $actual );
+
+        $this->assertSame( $expected, $actual, 'the report has a key ConversionReportTest::KEYS does not pin' );
+    }
+
     public function test_an_empty_document_reports_nothing_wrong(): void {
         $report = $this->convert( '' )['report'];
 
@@ -136,10 +152,10 @@ final class ConversionReportTest extends TestCase {
     }
 
     public function test_a_tag_no_family_claims_is_its_own_family_not_a_missing_one(): void {
-        $report = $this->convert( '[vc_row][vc_column][acme_widget][/vc_column][/vc_row]' )['report'];
+        $result = $this->convert( '[vc_row][vc_column][acme_widget][/vc_column][/vc_row]' );
 
-        $this->assertSame( [ 'Other shortcodes' => 1 ], $report['theme_elements'] );
-        $this->assertSame( [], $this->convert( '' )['unsupported'] );
+        $this->assertSame( [ 'Other shortcodes' => 1 ], $result['report']['theme_elements'] );
+        $this->assertSame( [], $result['unsupported'], 'a tag no family claims is still not a WPBakery element' );
     }
 
     public function test_a_theme_element_is_never_reported_as_unsupported(): void {
@@ -455,7 +471,7 @@ final class ConversionReportTest extends TestCase {
     }
 
     // -------------------------------------------------------------------------
-    // A shortcode WordPress itself cannot read
+    // A shortcode WordPress itself cannot read as key="value" pairs
     // -------------------------------------------------------------------------
 
     /**
@@ -476,7 +492,7 @@ final class ConversionReportTest extends TestCase {
 
         $malformed = array_values( array_filter(
             $report['warnings'],
-            static fn( string $w ): bool => str_contains( $w, 'cannot read' )
+            static fn( string $w ): bool => str_contains( $w, 'read positionally' )
         ) );
 
         $this->assertCount( 1, $malformed );
@@ -495,7 +511,7 @@ final class ConversionReportTest extends TestCase {
 
         $this->assertSame(
             [],
-            array_values( array_filter( $report['warnings'], static fn( string $w ): bool => str_contains( $w, 'cannot read' ) ) )
+            array_values( array_filter( $report['warnings'], static fn( string $w ): bool => str_contains( $w, 'read positionally' ) ) )
         );
     }
 
@@ -519,11 +535,29 @@ final class ConversionReportTest extends TestCase {
     // warnings
     // -------------------------------------------------------------------------
 
+    /**
+     * `logWarning()` deduplicates, and the input has to be one where that is
+     * the only reason there is a single entry: a warning that names the node
+     * it came from is distinct per node however the method behaves.
+     *
+     * `NodeTree` repairs a top-level `vc_row_inner` with a warning that names
+     * no node at all, so two of them produce the same string twice and the
+     * count says whether it was kept once.
+     */
     public function test_a_warning_is_recorded_once_however_often_it_happens(): void {
-        $report = $this->convert(
-            '[vc_row][vc_column][/vc_column][/vc_row][vc_row][vc_column][/vc_column][/vc_row]'
+        $repair = 'vc_row_inner at the top level treated as a row';
+
+        $one = $this->convert( '[vc_row_inner][vc_column][/vc_column][/vc_row_inner]' )['report'];
+        $this->assertContains( $repair, $one['warnings'], 'the input no longer produces the warning under test' );
+
+        $two = $this->convert(
+            '[vc_row_inner][vc_column][/vc_column][/vc_row_inner][vc_row_inner][vc_column][/vc_column][/vc_row_inner]'
         )['report'];
 
-        $this->assertSame( array_values( array_unique( $report['warnings'] ) ), $report['warnings'] );
+        $this->assertCount(
+            1,
+            array_keys( $two['warnings'], $repair, true ),
+            'the same warning was recorded twice'
+        );
     }
 }

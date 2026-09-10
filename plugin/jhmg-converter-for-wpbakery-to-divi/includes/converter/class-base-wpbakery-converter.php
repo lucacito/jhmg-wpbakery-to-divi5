@@ -978,19 +978,21 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * under `addon` with the theme named instead (`isThemeParam()`).
      *
      * A sixth thing is not a skipped setting either but must not be silent: an
-     * attribute with a **numeric** key (`reportMalformedAttributes()`). Those
-     * are what `shortcode_parse_atts()` produces when the shortcode's attribute
-     * string cannot be read as `key="value"` pairs — most often an unescaped
-     * `"` inside a value, as in `text="A FEW WORDS <span style="…">ABOUT</span>"`,
-     * which one page of the layouts corpus really does carry. WordPress reads it
-     * the same way, so the live WPBakery page has lost the value too and this
-     * converter must not invent it back; but the reader has to be told, because
-     * what they will see is an element that came out blank.
+     * attribute with a **numeric** key (`reportPositionalAttributes()`). Those
+     * are the values `shortcode_parse_atts()` read positionally rather than as
+     * `key="value"` pairs. No WPBakery element takes a positional attribute, so
+     * on this content they mean the attribute string could not be read — a
+     * value holding an unescaped `"`, as in
+     * `text="A FEW WORDS <span style="…">ABOUT</span>"`, which one page of the
+     * layouts corpus really does carry. WordPress reads it the same way, so the
+     * live WPBakery page has lost the value too and this converter must not
+     * invent it back; but the reader has to be told, because what they will see
+     * is an element that came out blank.
      */
     protected function logUnmappedSettings( string $node_id, array $atts, array $consumed = [], string $tag = '' ): void {
         $theme_params = [];
 
-        $this->reportMalformedAttributes( $node_id, $atts, $tag );
+        $this->reportPositionalAttributes( $node_id, $atts, $tag );
 
         static $always_ignore = [
             // The StyleMapper owns these five and reports what it could not
@@ -1031,17 +1033,18 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
     }
 
     /**
-     * The attribute string WordPress could not read.
+     * The values WordPress read positionally.
      *
-     * `shortcode_parse_atts()` falls back to numbered keys for anything that is
-     * not a `key="value"` pair, so a numeric key is never a field a handler
-     * could have claimed — it is the wreckage of one. The fragments go into a
-     * warning naming the element, rather than into `skipped_settings`: nothing
-     * here ignored a setting, the source never held a readable one.
+     * `shortcode_parse_atts()` gives a numbered key to anything that is not a
+     * `key="value"` pair. Some shortcodes take positional attributes by design;
+     * no WPBakery element does, so a numeric key here is never a field a handler
+     * could have claimed. The values go into a warning naming the element,
+     * rather than into `skipped_settings`: nothing here ignored a setting, the
+     * source never held one under a name.
      *
      * @param array<string|int, mixed> $atts
      */
-    private function reportMalformedAttributes( string $node_id, array $atts, string $tag ): void {
+    private function reportPositionalAttributes( string $node_id, array $atts, string $tag ): void {
         $fragments = [];
 
         foreach ( $atts as $key => $value ) {
@@ -1055,7 +1058,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         }
 
         $this->engine->logWarning( sprintf(
-            '%s: %s has an attribute string WordPress cannot read — an unescaped quote, most likely. These fragments were not attributes and could not be converted, and WPBakery renders them no better: %s',
+            '%s: %s carries values WordPress read positionally rather than as key="value" pairs, so no handler could claim them and nothing was converted from them: %s',
             $node_id,
             $tag !== '' ? $tag : 'the element',
             implode( ' ', $fragments )

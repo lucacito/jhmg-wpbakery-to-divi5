@@ -240,9 +240,16 @@ final class ThemeShortcodes {
             // `modules/ultimate_parallax.php`, every live `vc_add_param( 'vc_row', … )`
             // it makes (68). It is the most widely installed WPBakery add-on there
             // is, so these names are on the rows of a great many pages that have
-            // nothing else of the plugin left on them; Ronneby re-registers all but
-            // three of them from `Dfd_Override_Parallax.php` when the add-on is
-            // active, which is why the demo exports carry them too.
+            // nothing else of the plugin left on them.
+            //
+            // Ronneby Core's `Dfd_Override_Parallax.php` registers 65 of the same
+            // names, and not only alongside the add-on: `Dfd_VC_Addons.php:36-51`
+            // requires that file in the `class_exists( 'Ultimate_VC_Addons' )`
+            // branch *and* in the second loop unless `disable_ult_addons` is set,
+            // and it self-instantiates at :1518. So a page carrying `bg_type` may
+            // have got it from either. That is the attribution this table can make
+            // — by name, as the docblock above says — and the report says the field
+            // *matches* this plugin's table, not that this plugin added it.
             'vc_row' => [
                 'bg_type', 'bg_grad', 'bg_color_value', 'parallax_style', 'bg_image_new',
                 'layer_image', 'bg_image_repeat', 'bg_image_size', 'bg_cstm_size', 'bg_img_attach',

@@ -46,37 +46,60 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
     /** Task 11's WXR-backed source. */
     private const PARSER = 'WPBakeryDivi5Converter\Parsers\WPBakeryImportParser';
 
+    /**
+     * The one case an empty corpus provides.
+     *
+     * A data provider that returns nothing is a hard error in PHPUnit 13
+     * ("Empty data set provided by data provider"), raised before a line of
+     * the test body runs — so a guard inside the body cannot save a checkout
+     * with no exports. The empty case therefore has to *be* a case: one whose
+     * file is the empty string, which `requireCorpus()` recognises and marks
+     * incomplete on, exactly as the missing-parser guard does.
+     */
+    private const NO_CORPUS = '(no exports)';
+
+    /** Overrides the corpus directory, so the empty case can be exercised. */
+    private const CORPUS_ENV = 'WBDC_EXPORT_CORPUS';
+
+    private static function corpusRoot(): string {
+        $override = getenv( self::CORPUS_ENV );
+
+        return is_string( $override ) && $override !== '' ? $override : dirname( __DIR__ ) . '/wpbakery templates';
+    }
+
     /** @return array<string, array{0: string}> */
     public static function exportProvider(): array {
-        $root  = dirname( __DIR__ ) . '/wpbakery templates';
+        $root  = self::corpusRoot();
         $cases = [];
 
-        if ( ! is_dir( $root ) ) {
-            return $cases;
-        }
+        if ( is_dir( $root ) ) {
+            $files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $root, \FilesystemIterator::SKIP_DOTS ) );
 
-        $files = new \RecursiveIteratorIterator( new \RecursiveDirectoryIterator( $root, \FilesystemIterator::SKIP_DOTS ) );
-
-        foreach ( $files as $file ) {
-            if ( $file->isFile() && strtolower( $file->getExtension() ) === 'xml' ) {
-                $cases[ self::label( $root, $file->getPathname() ) ] = [ $file->getPathname() ];
+            foreach ( $files as $file ) {
+                if ( $file->isFile() && strtolower( $file->getExtension() ) === 'xml' ) {
+                    $cases[ self::label( $root, $file->getPathname() ) ] = [ $file->getPathname() ];
+                }
             }
+
+            ksort( $cases );
         }
 
-        ksort( $cases );
-
-        return $cases;
+        return $cases === [] ? [ self::NO_CORPUS => [ '' ] ] : $cases;
     }
 
     public function test_there_is_a_corpus_of_real_exports(): void {
-        $this->requireCorpus();
+        $cases = self::exportProvider();
 
-        $this->assertNotEmpty( self::exportProvider() );
+        $this->requireCorpus( (string) ( reset( $cases )[0] ?? '' ) );
+
+        foreach ( $cases as $label => [ $file ] ) {
+            $this->assertFileIsReadable( $file, $label );
+        }
     }
 
     #[DataProvider( 'exportProvider' )]
     public function test_a_real_theme_export_converts_to_valid_divi_5( string $file ): void {
-        $this->requireCorpus();
+        $this->requireCorpus( $file );
         $this->requireParser();
 
         $items    = self::PARSER::parse( $file );
@@ -85,9 +108,12 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
             static fn( array $item ): bool => WPBakeryDocumentParser::isWPBakeryContent( (string) ( $item['content'] ?? '' ) )
         ) );
 
-        $this->assertNotEmpty(
-            $wpbakery,
-            self::summary( $file, $items ) . ': no item in this export holds a WPBakery layout'
+        // `summary()` walks every item of a 40 MB export, so it is built only
+        // when it is about to be printed — never as an eagerly evaluated
+        // assertion message, once per assertion, once per item.
+        $this->assertTrue(
+            $wpbakery !== [],
+            $wpbakery !== [] ? '' : self::summary( $file, $items ) . ': no item in this export holds a WPBakery layout'
         );
 
         foreach ( $wpbakery as $item ) {
@@ -103,7 +129,12 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
                 is_array( $item['meta'] ?? null ) ? $item['meta'] : []
             );
 
-            $this->assertThemeElementsAreOnlyTheUnhandledOnes( (string) $item['content'], $result['report'], $where, $file, $items );
+            $this->assertThemeElementsAreOnlyTheUnhandledOnes(
+                (string) $item['content'],
+                $result['report'],
+                $where,
+                fn (): string => self::summary( $file, $items )
+            );
         }
     }
 
@@ -122,14 +153,13 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
      * is empty for the whole page.
      *
      * @param array<string,mixed> $report
-     * @param array<int,array<string,mixed>> $items
+     * @param callable(): string $summary Built only if the assertion fails.
      */
     private function assertThemeElementsAreOnlyTheUnhandledOnes(
         string $content,
         array $report,
         string $where,
-        string $file,
-        array $items
+        callable $summary
     ): void {
         require_once dirname( __DIR__ ) . '/scripts/lib/corpus-shortcodes.php';
 
@@ -146,16 +176,17 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
             $named[]    = $tag;
         }
 
-        $this->assertLessThanOrEqual(
-            $unhandled,
-            $report['theme_elements']['Ronneby'] ?? 0,
-            sprintf(
+        $counted = $report['theme_elements']['Ronneby'] ?? 0;
+
+        $this->assertTrue(
+            $counted <= $unhandled,
+            $counted <= $unhandled ? '' : sprintf(
                 "%s: %d elements were kept as Ronneby placeholders but only %d Ronneby tags on the page (%s) have no handler — a handled element fell through.\n%s",
                 $where,
-                $report['theme_elements']['Ronneby'] ?? 0,
+                $counted,
                 $unhandled,
                 $named === [] ? 'none' : implode( ', ', $named ),
-                self::summary( $file, $items )
+                $summary()
             )
         );
     }
@@ -200,8 +231,9 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
         );
     }
 
-    private function requireCorpus(): void {
-        if ( self::exportProvider() === [] ) {
+    /** @param string $file The provided file, or `''` — the empty-corpus sentinel. */
+    private function requireCorpus( string $file ): void {
+        if ( $file === '' ) {
             $this->markTestIncomplete(
                 'No exports in "wpbakery templates/". Three are committed; run scripts/extract-ronneby-corpus.sh for the other 93.'
             );

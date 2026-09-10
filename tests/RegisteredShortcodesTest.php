@@ -34,7 +34,8 @@ final class RegisteredShortcodesTest extends TestCase {
 
     /**
      * js_composer 9.0.1, `config/lean-map.php` — every `vc_lean_map()` call it
-     * makes, in file order, 69 of them.
+     * makes, 69 of them, sorted here rather than left in the file's own order
+     * so a tag can be found by eye.
      */
     const LEAN_MAP = [
         'vc_accordion', 'vc_accordion_tab', 'vc_basic_grid', 'vc_btn', 'vc_button',
