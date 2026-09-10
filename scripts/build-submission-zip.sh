@@ -22,7 +22,10 @@ MAIN="$SRC/$SLUG.php"
 [ -d "$SRC" ] || { echo "Not a directory: $SRC" >&2; exit 1; }
 [ -f "$MAIN" ] || { echo "Not a file: $MAIN" >&2; exit 1; }
 
-VERSION=$(sed -n 's/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*\([0-9][^[:space:]]*\).*/\1/p' "$MAIN" | head -n 1)
+# `sed -n '…{p;q;}'` rather than `sed … | head -n 1`: under `pipefail`, head
+# closing the pipe after the first line makes sed exit 141 and takes the whole
+# script with it.
+VERSION=$(sed -n '/^[[:space:]]*\*[[:space:]]*Version:/{s/^[[:space:]]*\*[[:space:]]*Version:[[:space:]]*\([0-9][^[:space:]]*\).*/\1/p;q;}' "$MAIN")
 if [ -z "$VERSION" ]; then
   echo "No 'Version:' in the plugin header of $MAIN" >&2
   exit 1

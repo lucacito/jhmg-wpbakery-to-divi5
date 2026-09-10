@@ -26,8 +26,4 @@ defined( 'WBDC_PLUGIN_VERSION' ) || define( 'WBDC_PLUGIN_VERSION', '1.0.0' );
 
 require_once WBDC_PLUGIN_DIR . 'includes/helpers/class-autoloader.php';
 
-// Activation runs inside an admin request, so the theme is loaded and Divi's
-// version is readable — unlike at plugins_loaded, where it is not yet.
-register_activation_hook( __FILE__, [ \WPBakeryDivi5Converter\Helpers\DiviRequirement::class, 'on_activation' ] );
-
 \WPBakeryDivi5Converter\Plugin::instance()->init();

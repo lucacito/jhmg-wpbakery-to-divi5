@@ -214,7 +214,7 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
         return $GLOBALS['__test_posts'][ (int) $post_id ] ?? null;
     }
     /**
-     * Enough of get_posts() for the repositories and the Theme Builder exporter:
+     * Enough of get_posts() for the repositories and the Divi Library exporter:
      * filter by post_type ('any' allowed) and one meta_key/meta_value pair —
      * an array meta_value is an IN, as WP_Meta_Query reads it — newest id
      * first, return ids.
@@ -442,6 +442,18 @@ if ( ! function_exists( 'get_user_meta' ) ) {
     function get_user_meta( int $user_id, string $key, bool $single = false ) { return $GLOBALS['__test_user_meta'][ $user_id ][ $key ] ?? ( $single ? '' : [] ); }
     function update_user_meta( int $user_id, string $key, $value ): bool { $GLOBALS['__test_user_meta'][ $user_id ][ $key ] = $value; return true; }
     function delete_user_meta( int $user_id, string $key ): bool { unset( $GLOBALS['__test_user_meta'][ $user_id ][ $key ] ); return true; }
+    /** Only the one form `uninstall.php` uses: every user's value for one key. */
+    function delete_metadata( string $type, int $object_id, string $key, $value = '', bool $delete_all = false ): bool {
+        if ( $type !== 'user' ) {
+            return false;
+        }
+        foreach ( array_keys( $GLOBALS['__test_user_meta'] ) as $user_id ) {
+            if ( $delete_all || (int) $user_id === $object_id ) {
+                unset( $GLOBALS['__test_user_meta'][ $user_id ][ $key ] );
+            }
+        }
+        return true;
+    }
 }
 
 // --- environment ------------------------------------------------------------
@@ -537,10 +549,14 @@ if ( ! function_exists( 'wp_add_inline_style' ) ) {
     }
 }
 
-// $wpdb, only as much of it as the page repository's LIKE clause needs.
+// $wpdb, only as much of it as the page repository's LIKE clause needs, plus
+// the `option_name LIKE` sweep `uninstall.php` runs over the transient rows.
 if ( ! isset( $GLOBALS['wpdb'] ) ) {
     $GLOBALS['wpdb'] = new class {
         public string $posts = 'wp_posts';
+        public string $options = 'wp_options';
+        /** @var string[] Every query `get_col()` was asked, for the tests that check the shape of one. */
+        public array $queries = [];
         public function esc_like( $text ) { return addcslashes( (string) $text, '_%\\' ); }
         public function prepare( $query, ...$args ) {
             foreach ( $args as $arg ) {
@@ -553,6 +569,35 @@ if ( ! isset( $GLOBALS['wpdb'] ) ) {
                 );
             }
             return $query;
+        }
+        /**
+         * `SELECT option_name … LIKE 'prefix%'` against the options array.
+         * `esc_like()` has escaped every `_` and `%` the caller meant
+         * literally and `prepare()` escaped those backslashes again, so the
+         * only wildcard left is the trailing one and every backslash is
+         * quoting, not content: an option name never holds one.
+         *
+         * @return string[]
+         */
+        public function get_col( $query ) {
+            $this->queries[] = (string) $query;
+
+            if ( ! preg_match_all( "/'([^']*)'/", (string) $query, $matches ) ) {
+                return [];
+            }
+
+            $found = [];
+            foreach ( array_keys( $GLOBALS['__test_options'] ?? [] ) as $name ) {
+                foreach ( $matches[1] as $pattern ) {
+                    $prefix = str_replace( '\\', '', rtrim( $pattern, '%' ) );
+                    if ( $prefix !== '' && str_starts_with( (string) $name, $prefix ) ) {
+                        $found[] = (string) $name;
+                        break;
+                    }
+                }
+            }
+
+            return $found;
         }
     };
 }

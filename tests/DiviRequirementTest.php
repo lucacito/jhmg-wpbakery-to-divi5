@@ -37,16 +37,6 @@ final class DiviRequirementTest extends TestCase {
         $this->assertStringContainsString( 'no Divi installation was found', DiviRequirement::message() );
     }
 
-    public function test_activation_records_a_failure_and_clears_it_when_satisfied(): void {
-        $GLOBALS['__test_divi_present'] = false;
-        DiviRequirement::on_activation();
-        $this->assertSame( 'missing', get_option( DiviRequirement::ACTIVATION_NOTICE_OPTION ) );
-
-        wbdc_test_reset_divi();
-        DiviRequirement::on_activation();
-        $this->assertFalse( get_option( DiviRequirement::ACTIVATION_NOTICE_OPTION ) );
-    }
-
     public function test_notice_is_silent_when_satisfied(): void {
         ob_start();
         DiviRequirement::render_notice();

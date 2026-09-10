@@ -85,10 +85,10 @@ line	column	type	code	message	docs
 ```
 
 The "wp" being flagged is the one inside **WPBakery** — the builder this plugin converts, named in
-the plugin name and slug so a user can find it. readme.txt's first paragraph and its own
-`== Description ==` say the plugin is not affiliated with or endorsed by WPBakery Page Builder, and
-the name is descriptive of what it does, which is what the directory asks for. If the review team
-asks for a different name, only the name and slug change; nothing in the code depends on them.
+the plugin name and slug so a user can find it. readme.txt says in its `== Description ==` that the
+plugin is not affiliated with or endorsed by WPBakery Page Builder, and the name is descriptive of
+what it does, which is what the directory asks for. If the review team asks for a different name,
+only the name and slug change; nothing in the code depends on them.
 
 `Tested up to` in readme.txt is `7.1`, read off this container with
 `docker compose exec -T wordpress wp core version --allow-root` at the time of the release, never

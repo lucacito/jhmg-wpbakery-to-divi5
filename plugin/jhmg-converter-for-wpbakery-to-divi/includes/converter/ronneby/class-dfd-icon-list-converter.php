@@ -190,10 +190,10 @@ class DfdIconListConverter extends RonnebyConverter {
      */
     protected function item( array $atts, string $body, string $item_id, ?array $child ): array {
         $attrs    = [];
-        $consumed = [ 'icon_type', 'icon', 'icon_img', 'icon_image_id', 'link_box', 'link', 'text_content', 'content' ];
+        $consumed = [ 'icon_type', 'icon', 'icon_img', 'link_box', 'link', 'text_content', 'content' ];
 
         $type    = strtolower( trim( $this->att( $atts, 'icon_type' ) ) );
-        $picture = trim( $this->att( $atts, 'icon_img', $this->att( $atts, 'icon_image_id' ) ) );
+        $picture = trim( $this->att( $atts, 'icon_img' ) );
         $class   = $this->rowIcon( $atts, $consumed );
 
         if ( $type === 'custom' || $picture !== '' ) {

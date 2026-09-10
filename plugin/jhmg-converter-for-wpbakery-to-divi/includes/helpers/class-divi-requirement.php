@@ -24,9 +24,6 @@ class DiviRequirement {
      */
     const MINIMUM_DIVI_VERSION = '5.0.0';
 
-    /** Set at activation so the first admin page load can explain a failed install. */
-    const ACTIVATION_NOTICE_OPTION = 'wbdc_divi_requirement_failed';
-
     /**
      * The running Divi version, or null when Divi is not present.
      *
@@ -116,18 +113,5 @@ class DiviRequirement {
             '<div class="notice notice-error"><p>%s</p></div>',
             esc_html( $message )
         );
-    }
-
-    /**
-     * Activation-time check. The plugin is left active deliberately: deactivating
-     * it would hide the explanation along with the plugin.
-     */
-    public static function on_activation(): void {
-        if ( self::is_satisfied() ) {
-            delete_option( self::ACTIVATION_NOTICE_OPTION );
-            return;
-        }
-
-        update_option( self::ACTIVATION_NOTICE_OPTION, self::failure_reason(), false );
     }
 }

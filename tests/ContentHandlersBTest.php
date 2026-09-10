@@ -376,6 +376,24 @@ final class ContentHandlersBTest extends TestCase {
         );
     }
 
+    /** Same for a border, the other surface padding would stretch into the gap. */
+    public function test_an_author_margin_stays_a_margin_when_padding_would_move_the_border(): void {
+        $result  = $this->convert( $this->row(
+            '[vc_pie value="70" title="T" css=".vc_custom_5{margin-bottom: 40px !important;border: 2px solid #333333 !important;}"]'
+        ) );
+        $settings = $this->firstModule( $result )['settings'];
+        $spacing  = $this->read( $settings, 'module.decoration.spacing.desktop.value' );
+
+        $this->assertSame(
+            '2px',
+            $this->read( $settings, 'module.decoration.border.desktop.value.styles.all.width' ),
+            'the border is the surface the margin must not be turned into padding around'
+        );
+        $this->assertSame( '40px', $spacing['margin']['bottom'] );
+        $this->assertArrayNotHasKey( 'padding', $spacing, 'the author margin was not turned into padding' );
+        $this->assertStringContainsString( 'Divi ignores margins on this module type', $this->details( $result ) );
+    }
+
     /** Same, when the author already used the padding side the margin would move to. */
     public function test_an_author_margin_stays_a_margin_when_that_padding_side_is_already_used(): void {
         $result  = $this->convert( $this->row(

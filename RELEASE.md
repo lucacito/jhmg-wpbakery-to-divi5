@@ -86,13 +86,14 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
         plugin/jhmg-converter-for-wpbakery-to-divi-pro/includes/licensing/class-license-client.php
    ```
 
-   The only hunks it may print are line 16 (`namespace ElementorDivi5Converter\Pro\Licensing;` →
-   `namespace WPBakeryDivi5Converter\Pro\Licensing;`) and three pairs of `__()` calls at lines
-   218-219, 230-231 and 240-241 whose text domain changes from
-   `jhmg-converter-for-elementor-to-divi-pro` to `jhmg-converter-for-wpbakery-to-divi-pro` — six
-   literals, same strings. Anything else in the diff is drift and has to be reconciled before
-   shipping. (The canonical copy currently carries the Elementor project's namespace and domain
-   because that was the last port; the client logic is identical.)
+   It may print exactly four hunks: the `namespace` line
+   (`namespace ElementorDivi5Converter\Pro\Licensing;` →
+   `namespace WPBakeryDivi5Converter\Pro\Licensing;`) and three pairs of `__()` calls whose text
+   domain changes from `jhmg-converter-for-elementor-to-divi-pro` to
+   `jhmg-converter-for-wpbakery-to-divi-pro` — six literals, same strings. Line numbers move with
+   every client update; the shape does not. Anything else in the diff is drift and has to be
+   reconciled before shipping. (The canonical copy currently carries the Elementor project's
+   namespace and domain because that was the last port; the client logic is identical.)
 
 7. `npm run i18n` when user-facing strings changed (`npm run i18n:free`, `npm run i18n:pro`).
 

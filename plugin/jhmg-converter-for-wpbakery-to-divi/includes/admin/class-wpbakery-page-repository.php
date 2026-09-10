@@ -170,9 +170,17 @@ class WPBakeryPageRepository {
             'fields'         => 'ids',
         ] );
 
+        $found = array_map( 'intval', is_array( $found ) ? $found : [] );
+
+        // Primes the meta cache for the whole page in one query, so the reads
+        // below cost nothing — the same as `flagged()` does.
+        if ( $found !== [] && function_exists( 'update_meta_cache' ) ) {
+            update_meta_cache( 'post', $found );
+        }
+
         $converted = [];
-        foreach ( is_array( $found ) ? $found : [] as $post_id ) {
-            $source = (int) get_post_meta( (int) $post_id, '_wbdc_source_post_id', true );
+        foreach ( $found as $post_id ) {
+            $source = (int) get_post_meta( $post_id, '_wbdc_source_post_id', true );
             if ( in_array( $source, $source_post_ids, true ) ) {
                 $converted[] = $source;
             }

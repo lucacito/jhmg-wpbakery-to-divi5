@@ -156,6 +156,8 @@ async function main(): Promise<void> {
 }
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
+  // The whole error, not just its message: a Playwright failure says where it
+  // happened in the stack, and a one-line message hides it.
+  console.error(error);
   process.exit(1);
 });
