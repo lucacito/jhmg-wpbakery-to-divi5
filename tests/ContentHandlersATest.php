@@ -615,9 +615,35 @@ Another line[/vc_column_text]' ) );
         $this->assertSame( [], $result['report']['skipped_settings'] );
     }
 
-    public function test_every_handler_reports_what_it_did_not_use(): void {
+    /**
+     * A field WPBakery declares for the element and no handler read: the
+     * converter's own gap, and the only thing `skipped_settings` records
+     * (task-11-amendments §7). `custom_font_container` is the font of the
+     * optional custom heading WPBakery integrates into a toggle's title.
+     */
+    public function test_a_declared_field_no_handler_read_is_a_skipped_setting(): void {
+        $result = $this->convert( $this->row( '[vc_toggle title="T" custom_font_container="tag:h3"]Body[/vc_toggle]' ) );
+
+        $this->assertContains( 'vc_toggle-1: custom_font_container', $result['report']['skipped_settings'] );
+    }
+
+    /**
+     * A field WPBakery does not declare for the element was added by somebody
+     * else — a theme, an add-on — so it is reported under `addon` rather than
+     * as a gap here. Either way it is reported: nothing is dropped in silence.
+     */
+    public function test_a_field_wpbakery_never_declared_is_reported_as_an_addon(): void {
         $result = $this->convert( $this->row( '[vc_separator style="shadow" accent_color="#ff9100" el_width="50" align="align_center" wbdc_unknown="42"]' ) );
 
-        $this->assertContains( 'vc_separator-1: wbdc_unknown', $result['report']['skipped_settings'] );
+        $this->assertSame( [], $result['report']['skipped_settings'] );
+
+        $details = array_column(
+            array_filter( $result['report']['not_carried_over'], static fn( array $e ): bool => $e['kind'] === 'addon' ),
+            'detail'
+        );
+
+        $this->assertCount( 1, $details );
+        $this->assertStringContainsString( 'wbdc_unknown', $details[0] );
+        $this->assertStringContainsString( 'not declared by WPBakery', $details[0] );
     }
 }

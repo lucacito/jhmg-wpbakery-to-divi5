@@ -68,6 +68,14 @@ class ConverterEngine {
     private bool $countingApproximate = false;
 
     /**
+     * The one theme or add-on family this page's elements belong to, when
+     * there is exactly one — read off the tree before the walk begins, so an
+     * attribution made while converting the first row already knows about the
+     * last.
+     */
+    private ?string $detectedFamily = null;
+
+    /**
      * How many `withConvertedCountSuppressed()` scopes are open. A counter
      * rather than a flag: a flattened accordion can hold a nested row whose
      * own children are flattened again, and the inner scope closing must not
@@ -89,6 +97,56 @@ class ConverterEngine {
     }
 
     /**
+     * The theme or add-on family this page belongs to, when there is exactly
+     * one to name.
+     *
+     * A parameter WPBakery does not declare was added by somebody, and on a
+     * page whose only non-core elements are one theme's, that theme is the
+     * only candidate there is — which is a great deal more useful to the
+     * reader than "a theme or plugin". Two families on the page and there is
+     * no honest answer, so it says nothing.
+     *
+     * Only families whose kind is `addon` count: WooCommerce and Contact Form
+     * 7 render a shop and a form, they do not bolt fields onto WPBakery's rows.
+     */
+    public function detectedFamily(): ?string {
+        return $this->detectedFamily;
+    }
+
+    /** @param array<int,array<string,mixed>> $nodes */
+    private static function familyOf( array $nodes ): ?string {
+        $labels = [];
+
+        self::collectFamilies( $nodes, $labels );
+
+        return count( $labels ) === 1 ? (string) reset( $labels ) : null;
+    }
+
+    /**
+     * @param array<int,array<string,mixed>> $nodes
+     * @param array<string,string> $labels family key ⇒ label
+     */
+    private static function collectFamilies( array $nodes, array &$labels ): void {
+        foreach ( $nodes as $node ) {
+            if ( ! is_array( $node ) ) {
+                continue;
+            }
+
+            $tag = (string) ( $node['tag'] ?? '' );
+
+            if ( $tag !== '' && $tag !== '#text' && ! ThemeShortcodes::isCore( $tag ) ) {
+                $family = ThemeShortcodes::family( $tag );
+
+                if ( $family['key'] !== ThemeShortcodes::OTHER['key'] && $family['kind'] === 'addon' ) {
+                    $labels[ $family['key'] ] = $family['label'];
+                }
+            }
+
+            self::collectFamilies( is_array( $node['children'] ?? null ) ? $node['children'] : [], $labels );
+        }
+    }
+
+    /**
      * @param array $document One of `['content' => string, 'meta' => array]`, the
      *   `WPBakeryDocumentParser::parse()` return value (`['nodes' => …]`),
      *   `['roots' => array]`, or a list of tree nodes.
@@ -99,6 +157,8 @@ class ConverterEngine {
         $this->options = $this->resolveOptions( $options );
 
         [ $roots, $page_css ] = $this->treeFrom( $document );
+
+        $this->detectedFamily = self::familyOf( $roots );
 
         if ( trim( $page_css ) !== '' ) {
             $this->logNotCarriedOver(

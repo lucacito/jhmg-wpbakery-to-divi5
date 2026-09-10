@@ -6,6 +6,7 @@ use WPBakeryDivi5Converter\Helpers\Autop;
 use WPBakeryDivi5Converter\Helpers\Color;
 use WPBakeryDivi5Converter\Helpers\PackedParams;
 use WPBakeryDivi5Converter\Helpers\ThemeShortcodes;
+use WPBakeryDivi5Converter\Helpers\WPBakeryParams;
 use WPBakeryDivi5Converter\StyleMapper\GlobalSettingsResolver;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
 
@@ -969,13 +970,15 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * Every attribute the handler did not consume, so nothing is dropped in
      * silence.
      *
-     * Five things are not "skipped settings": a blank value, a toggle switched
+     * Six things are not "skipped settings": a blank value, a toggle switched
      * off (it describes nothing the page loses), the keys the StyleMapper
      * already owns, WPBakery's own form scaffolding — the six icon-library
      * fields every icon element carries whether or not that library is the one
-     * selected, an editor-only row label, a tab's generated id — and a field a
+     * selected, an editor-only row label, a tab's generated id — a field a
      * theme added to a WPBakery element with `vc_add_param()`, which is filed
-     * under `addon` with the theme named instead (`isThemeParam()`).
+     * under `addon` with the theme named instead (`isThemeParam()`), and a
+     * field WPBakery does not declare for this element at all, which somebody
+     * else added whoever they were (`isUndeclaredParam()`).
      *
      * A sixth thing is not a skipped setting either but must not be silent: an
      * attribute with a **numeric** key (`reportPositionalAttributes()`). Those
@@ -991,6 +994,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      */
     protected function logUnmappedSettings( string $node_id, array $atts, array $consumed = [], string $tag = '' ): void {
         $theme_params = [];
+        $undeclared   = [];
 
         $this->reportPositionalAttributes( $node_id, $atts, $tag );
 
@@ -1025,11 +1029,69 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
             if ( $this->isThemeParam( $key, $tag, $node_id, $theme_params ) ) {
                 continue;
             }
+            if ( $this->isUndeclaredParam( $key, $tag ) ) {
+                $undeclared[] = $key;
+                continue;
+            }
 
             $this->engine->logSkippedSetting( "{$node_id}: {$key}" );
         }
 
         $this->reportThemeParams( $node_id, $theme_params );
+        $this->reportUndeclaredParams( $node_id, $undeclared );
+    }
+
+    /**
+     * A field WPBakery does not declare for this element (task-11-amendments §7).
+     *
+     * `THEME_PARAMS` above names the fields whose owner this project has the
+     * source for; this is the same finding without the name. Older builds of a
+     * theme wrote parameters that no shipped version of it registers any more —
+     * `cus_bg_position` and `col_hover` on a `vc_column`, `bg_check` on a
+     * `vc_row_inner` — and a name can only enter `THEME_PARAMS` from a live
+     * `vc_add_param()` call, never from a corpus. But WPBakery's own table
+     * settles it from the other side: this is not one of the element's fields,
+     * so WPBakery is not who put it there, and the converter has no gap to
+     * answer for.
+     *
+     * Only for a core element, and only when the table knows the element: a
+     * theme's own shortcode has no WPBakery-declared fields to compare against,
+     * and a core tag registered outside `config/**` has none this project can
+     * read (`WPBakeryParams::declares()` answers null for both).
+     */
+    private function isUndeclaredParam( string $key, string $tag ): bool {
+        if ( $tag === '' || ! ThemeShortcodes::isCore( $tag ) ) {
+            return false;
+        }
+
+        return WPBakeryParams::declares( $tag, $key ) === false;
+    }
+
+    /**
+     * One entry per node naming every such field, with the page's own theme
+     * named when there is exactly one it could be.
+     *
+     * @param string[] $keys
+     */
+    private function reportUndeclaredParams( string $node_id, array $keys ): void {
+        if ( $keys === [] ) {
+            return;
+        }
+
+        $family = $this->engine->detectedFamily();
+
+        $this->engine->logNotCarriedOver(
+            'addon',
+            $node_id,
+            sprintf(
+                '%s: %s added by a theme or plugin (not declared by WPBakery)%s',
+                implode( ', ', $keys ),
+                count( $keys ) === 1 ? 'a parameter' : 'parameters',
+                $family === null
+                    ? '. It is drawn by whatever added it, and has no Divi equivalent'
+                    : sprintf( '. The only theme or add-on family on this page is %s', $family )
+            )
+        );
     }
 
     /**

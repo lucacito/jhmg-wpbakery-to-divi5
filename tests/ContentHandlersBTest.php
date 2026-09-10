@@ -910,9 +910,12 @@ final class ContentHandlersBTest extends TestCase {
     public function test_a_btn_field_the_button_handler_does_not_map_is_reported_inside_a_cta(): void {
         // `embeddedButton()` returns the fields it actually read, re-prefixed,
         // so anything else under `btn_` still reaches logUnmappedSettings().
-        $result = $this->convert( $this->row( '[vc_cta h2="Hi" add_button="bottom" btn_title="Go" btn_wbdc_unknown="42"]Body[/vc_cta]' ) );
+        // `btn_css` is a field WPBakery declares for `vc_cta` (the embedded
+        // button's design-options box), so it is a gap here rather than
+        // somebody else's parameter.
+        $result = $this->convert( $this->row( '[vc_cta h2="Hi" add_button="bottom" btn_title="Go" btn_css=".x{color:red}"]Body[/vc_cta]' ) );
 
-        $this->assertContains( 'vc_cta-1: btn_wbdc_unknown', $result['report']['skipped_settings'] );
+        $this->assertContains( 'vc_cta-1: btn_css', $result['report']['skipped_settings'] );
     }
 
     public function test_a_posts_slider_with_no_description_keeps_divis_excerpt_and_says_so(): void {

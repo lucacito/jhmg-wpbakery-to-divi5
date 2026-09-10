@@ -327,11 +327,18 @@ final class ConversionReportTest extends TestCase {
     }
 
     public function test_settings_issues_is_the_number_of_skipped_settings(): void {
+        // Two fields WPBakery declares for `vc_toggle` — the optional custom
+        // heading it integrates into the title — that this converter does not
+        // map yet. Fields WPBakery declares are the only ones that count as
+        // gaps (task-11-amendments §7).
         $report = $this->convert(
-            '[vc_row][vc_column][vc_column_text made_up_field="1" another_one="2"]Hi[/vc_column_text][/vc_column][/vc_row]'
+            '[vc_row][vc_column][vc_toggle title="T" custom_font_container="tag:h3" custom_google_fonts="font_family:Roboto"]Body[/vc_toggle][/vc_column][/vc_row]'
         )['report'];
 
-        $this->assertCount( 2, $report['skipped_settings'] );
+        $this->assertSame(
+            [ 'vc_toggle-1: custom_font_container', 'vc_toggle-1: custom_google_fonts' ],
+            $report['skipped_settings']
+        );
         $this->assertSame( 2, $report['quality']['settings_issues'] );
     }
 
@@ -408,24 +415,83 @@ final class ConversionReportTest extends TestCase {
         $this->assertStringContainsString( 'Ronneby', $addon[0]['detail'] );
     }
 
-    /** The table is the whole of the allowance: a name not on it is still a gap. */
-    public function test_a_field_that_is_not_in_the_theme_param_table_is_still_a_skipped_setting(): void {
+    /**
+     * A name no theme table claims, on an element WPBakery does not declare it
+     * for.
+     *
+     * Older builds of Ronneby wrote `cus_bg_position` and `col_hover` on a
+     * `vc_column`, and no shipped version of the theme registers either, so
+     * neither can enter `THEME_PARAMS` — a name only ever gets in there from a
+     * live `vc_add_param()` call. WPBakery's own parameter table settles it
+     * from the other side: `vc_column` has no such fields, so WPBakery did not
+     * put them there and this converter has no gap to answer for
+     * (task-11-amendments §7).
+     */
+    public function test_a_field_wpbakery_never_declared_is_an_addon_not_a_skipped_setting(): void {
         $report = $this->convert(
-            '[vc_row dfd_row_config="wide" dfd_row_invented="1"][vc_column][/vc_column][/vc_row]'
+            '[vc_row][vc_column cus_bg_position="center" col_hover="yes"][dfd_carousel][/vc_column][/vc_row]'
         )['report'];
 
-        $this->assertCount( 1, $report['skipped_settings'] );
-        $this->assertStringContainsString( 'dfd_row_invented', $report['skipped_settings'][0] );
+        $this->assertSame( [], $report['skipped_settings'] );
+
+        $addon = $this->addonEntries( $report, 'vc_column-1' );
+
+        $this->assertCount( 1, $addon, 'one entry per node, naming every such field' );
+        $this->assertStringContainsString( 'cus_bg_position, col_hover', $addon[0]['detail'] );
+        $this->assertStringContainsString( 'not declared by WPBakery', $addon[0]['detail'] );
+        $this->assertStringContainsString( 'Ronneby', $addon[0]['detail'], 'the page\'s one theme family is named' );
     }
 
-    /** The same field on an element the theme never added it to is a gap too. */
-    public function test_a_theme_param_on_the_wrong_element_is_still_a_skipped_setting(): void {
+    /** With two families on the page there is no honest single answer, so none is given. */
+    public function test_the_family_is_only_named_when_the_page_has_exactly_one(): void {
+        $report = $this->convert(
+            '[vc_row][vc_column cus_bg_position="center"][dfd_carousel][mpc_button][/vc_column][/vc_row]'
+        )['report'];
+
+        $addon = $this->addonEntries( $report, 'vc_column-1' );
+
+        $this->assertStringContainsString( 'not declared by WPBakery', $addon[0]['detail'] );
+        $this->assertStringNotContainsString( 'Ronneby', $addon[0]['detail'] );
+        $this->assertStringNotContainsString( 'Massive Addons', $addon[0]['detail'] );
+    }
+
+    /**
+     * The other half of §7: a field WPBakery *does* declare, that no handler
+     * read, is a gap in this converter and is still a skipped setting.
+     */
+    public function test_a_field_wpbakery_declares_that_no_handler_read_is_still_a_skipped_setting(): void {
+        $report = $this->convert(
+            '[vc_row][vc_column][vc_progress_bar values="50|Design" customcolor="#ffffff"][/vc_column][/vc_row]'
+        )['report'];
+
+        $this->assertSame( [ 'vc_progress_bar-1: customcolor' ], $report['skipped_settings'] );
+        $this->assertSame( [], $this->addonEntries( $report, 'vc_progress_bar-1' ) );
+    }
+
+    /** The same field on an element the theme never added it to is not attributed to that theme. */
+    public function test_a_theme_param_on_the_wrong_element_is_not_attributed_to_that_theme(): void {
         $report = $this->convert(
             '[vc_row][vc_column][vc_column_text dfd_row_config="wide"]Hi[/vc_column_text][/vc_column][/vc_row]'
         )['report'];
 
-        $this->assertCount( 1, $report['skipped_settings'] );
-        $this->assertStringContainsString( 'dfd_row_config', $report['skipped_settings'][0] );
+        $this->assertSame( [], $report['skipped_settings'] );
+
+        $addon = $this->addonEntries( $report, 'vc_column_text-1' );
+
+        $this->assertCount( 1, $addon );
+        $this->assertStringContainsString( 'not declared by WPBakery', $addon[0]['detail'] );
+        $this->assertStringNotContainsString( 'matches', $addon[0]['detail'], 'no table claims it for this element' );
+    }
+
+    /**
+     * @param array<string,mixed> $report
+     * @return array<int, array{kind: string, node_id: string, detail: string}>
+     */
+    private function addonEntries( array $report, string $node_id = '' ): array {
+        return array_values( array_filter(
+            $report['not_carried_over'],
+            static fn( array $e ): bool => $e['kind'] === 'addon' && ( $node_id === '' || $e['node_id'] === $node_id )
+        ) );
     }
 
     /**
