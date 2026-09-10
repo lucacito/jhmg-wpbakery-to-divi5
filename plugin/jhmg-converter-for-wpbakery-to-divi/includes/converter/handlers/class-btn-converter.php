@@ -137,12 +137,7 @@ class BtnConverter extends BaseWPBakeryConverter {
 
         $radius = self::SHAPES[ strtolower( $this->att( $atts, 'shape', 'rounded' ) ) ] ?? self::SHAPES['rounded'];
 
-        StyleMapper::write( $attrs, 'button.decoration.border.desktop.value.radius', [
-            'topLeft'     => $radius,
-            'topRight'    => $radius,
-            'bottomRight' => $radius,
-            'bottomLeft'  => $radius,
-        ] );
+        StyleMapper::write( $attrs, 'button.decoration.border.desktop.value.radius', self::radius( $radius ) );
     }
 
     /**

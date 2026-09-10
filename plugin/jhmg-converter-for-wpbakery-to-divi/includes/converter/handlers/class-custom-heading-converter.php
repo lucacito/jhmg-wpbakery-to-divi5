@@ -41,7 +41,7 @@ class CustomHeadingConverter extends BaseWPBakeryConverter {
 
         // A heading carries the theme's own margins; `mapStyle()` would add
         // WPBakery's 35 px element margin, which this element never has.
-        $style    = $this->mapStyle( 'heading', array_merge( $node, [ 'delegated' => true ] ) );
+        $style    = $this->mapStyle( 'heading', $node, 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = $style['handled_keys'];
 
@@ -50,7 +50,7 @@ class CustomHeadingConverter extends BaseWPBakeryConverter {
 
         $font_container = PackedParams::fontContainer( $this->att( $atts, 'font_container' ) );
         if ( $font_container !== [] ) {
-            $mapper->applyFontContainer( $this->oneH1PerPage( $font_container, $id ), $font_path, $attrs );
+            $mapper->applyFontContainer( $font_container, $font_path, $attrs );
             $consumed[] = 'font_container';
         }
 
@@ -81,35 +81,6 @@ class CustomHeadingConverter extends BaseWPBakeryConverter {
         $this->logUnmappedSettings( $id, $atts, $consumed, (string) ( $node['tag'] ?? '' ) );
 
         return $this->block( $id, 'divi/heading', $attrs );
-    }
-
-    /**
-     * A page has one `<h1>`. WPBakery does not enforce that — several of its own
-     * templates put two or three `tag:h1` headings on one page — so the first
-     * one keeps the tag and every later one is written `h2` and reported. The
-     * size and line height stay whatever `font_container` set, so a demoted
-     * heading looks the same; only its place in the document outline changes.
-     *
-     * @param array<string,string> $fc
-     * @return array<string,string>
-     */
-    private function oneH1PerPage( array $fc, string $node_id ): array {
-        if ( strtolower( trim( $fc['tag'] ?? '' ) ) !== 'h1' ) {
-            return $fc;
-        }
-        if ( $this->engine->claimFirst( 'h1' ) ) {
-            return $fc;
-        }
-
-        $fc['tag'] = 'h2';
-
-        $this->engine->logNotCarriedOver(
-            'layout',
-            $node_id,
-            'a second <h1> on the page was written as <h2>; its size and line height are unchanged'
-        );
-
-        return $fc;
     }
 
     /**

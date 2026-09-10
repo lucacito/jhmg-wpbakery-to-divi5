@@ -23,6 +23,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * It is approximate because WPBakery only ever resolves that token inside a grid
  * item: outside one the shortcode prints the token itself, so what the visitor
  * saw depends on where the element sat.
+ *
+ * No default bottom margin: `vc_custom_field`'s registration sets no
+ * `element_default_class` anywhere.
  */
 class CustomFieldConverter extends BaseWPBakeryConverter {
 
@@ -41,7 +44,9 @@ class CustomFieldConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_custom_field_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'text', $node );
+        // No `element_default_class` anywhere in `vc-custom-field`'s registration,
+        // so the element carries no WPBakery margin of its own.
+        $style    = $this->mapStyle( 'text', $node, 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [ 'custom_field_key', 'field_key', 'key' ] );
 

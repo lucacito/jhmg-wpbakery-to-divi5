@@ -14,3 +14,11 @@ document. Refresh by copying `src/*.php` over this directory.
   `"category": "child-module"`, so a map with pins is a valid document that this
   copy rejected. Fold the same two lines into the sibling project before the next
   refresh, or they will be lost.
+- `Validator::validate()` / `validateContent()` take an optional second `$ignore` argument —
+  a list of `self::E_*` violation codes to drop from the result before it comes back. Added
+  in Task 8's fix round 1 so `ConverterFixtureTest` can ignore `E_MULTIPLE_H1`: the controller
+  ruled that a heading keeps the author's level (`task-8-fix-round-1.md`, R1) rather than
+  having the converter demote a second `<h1>` on the page, so a handful of expected fixtures
+  legitimately carry more than one `<h1>` and the render-critical/hierarchy passes must still
+  run and fail on everything else. Task 10's corpus tests use the same ignore list. Fold this
+  into the sibling project before the next refresh, or it will be lost.

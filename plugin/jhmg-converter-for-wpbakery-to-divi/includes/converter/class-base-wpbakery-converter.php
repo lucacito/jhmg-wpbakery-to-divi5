@@ -137,6 +137,35 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         ];
     }
 
+    /** Divi's four-corner border radius value, the same radius on every corner. */
+    public static function radius( string $r ): array {
+        return [
+            'topLeft'     => $r,
+            'topRight'    => $r,
+            'bottomRight' => $r,
+            'bottomLeft'  => $r,
+        ];
+    }
+
+    /**
+     * `el_width` (a WPBakery percentage, exclusive of 0 and 100) and an alignment
+     * already resolved to Divi's `left|center|right`, written to the pair of
+     * `module.decoration.sizing` keys `vc_separator`, `vc_zigzag` and `vc_video`
+     * all carry. A caller reads its own `align` attribute and default (they
+     * differ: `align_center` for the separator, `center` for the zigzag, `left`
+     * for the video) and maps it to a Divi value or `null` before calling this.
+     */
+    protected function elWidth( array &$attrs, string $width, ?string $alignment ): void {
+        $width = trim( $width );
+        if ( preg_match( '/^\d+$/', $width ) === 1 && (int) $width > 0 && (int) $width < 100 ) {
+            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.width', $width . '%' );
+        }
+
+        if ( $alignment !== null ) {
+            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.alignment', $alignment );
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Children
     // -------------------------------------------------------------------------
@@ -237,11 +266,19 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
     }
 
     /**
-     * The URL of a media-library attachment.
+     * The URL of a media-library attachment, at a named size when the import
+     * map carries one.
      *
      * On this site the library answers; from an export only the id/URL map a
      * WXR carried does. Either way a miss is reported and null, never a
      * fabricated path.
+     *
+     * The map entry can be a plain URL string, or `['url' => …, 'sizes' => [name
+     * => url]]` (Task 11's WXR shape). A size WPBakery asked for that is not in
+     * the `sizes` map — because the map has none at all, or just not that size
+     * — falls back to the attachment's own URL and is reported, the same way an
+     * unresolved size elsewhere in this file is: the page shows the right
+     * picture, at the wrong crop.
      */
     protected function attachmentUrl( int $id, string $size, string $node_id ): ?string {
         if ( $id <= 0 ) {
@@ -250,10 +287,25 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
 
         $options = $this->engine->options();
         $mapped  = $options['attachments'][ $id ] ?? '';
+
+        $sizes = [];
         if ( is_array( $mapped ) ) {
+            $sizes  = is_array( $mapped['sizes'] ?? null ) ? $mapped['sizes'] : [];
             $mapped = $mapped['url'] ?? '';
         }
+
         if ( is_string( $mapped ) && $mapped !== '' ) {
+            if ( $size !== '' && $size !== 'full' ) {
+                if ( is_string( $sizes[ $size ] ?? null ) && $sizes[ $size ] !== '' ) {
+                    return $sizes[ $size ];
+                }
+                $this->engine->logNotCarriedOver(
+                    'layout',
+                    $node_id,
+                    "img_size=\"{$size}\" is not in the import's size map for attachment {$id}; the attachment's own URL was used instead"
+                );
+            }
+
             return $mapped;
         }
 
@@ -292,7 +344,10 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * through `delegate()` are pieces of one element and get no default at all.
      *
      * @param string $kind        StyleMapper kind: section|row|column|group|heading|text|image|…
-     * @param string $margin_kind GlobalSettingsResolver kind: content|button|message|toggle|inner_row
+     * @param string $margin_kind GlobalSettingsResolver kind: content|button|message|toggle|inner_row|none
+     *                            (`none` skips the default outright — the element carries no
+     *                            WPBakery margin of its own, distinct from an unset `css` side,
+     *                            which still takes the per-kind default)
      * @return array{divi_attrs: array, handled_keys: string[]}
      */
     protected function mapStyle( string $kind, array $node, string $margin_kind = 'content' ): array {
@@ -307,7 +362,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
 
         $attrs = $result['divi_attrs'];
 
-        if ( ! in_array( $kind, [ 'section', 'row', 'column', 'group' ], true ) && empty( $node['delegated'] ) ) {
+        if ( $margin_kind !== 'none' && ! in_array( $kind, [ 'section', 'row', 'column', 'group' ], true ) && empty( $node['delegated'] ) ) {
             $attrs = $this->fillModuleMarginBottom( $kind, $attrs, $margin_kind );
         }
 
@@ -500,6 +555,13 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * copy; from an export nothing can render it, so the text is left where it
      * was and the family is reported once per node.
      *
+     * `do_shortcode()` matches only registered shortcodes internally
+     * (`get_shortcode_regex()`); handed a tag nothing registered, it returns
+     * the input untouched — non-empty, so a bare `trim( $html ) !== ''` check
+     * would read that as "rendered" and file the tag as a static copy it never
+     * was. `shortcode_exists( $tag )` is the actual signal; a tag it does not
+     * know is a placeholder, not a render.
+     *
      * A bracketed token that is not a shortcode at all — `[1]`, a footnote
      * marker — is prose: WordPress prints it verbatim because nothing
      * registers it (amendment §5), so it is left alone and never reported.
@@ -513,7 +575,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         }
 
         $options  = $this->engine->options();
-        $render   = $options['mode'] === 'direct' && $options['render_shortcodes'] && function_exists( 'do_shortcode' );
+        $render   = $options['mode'] === 'direct' && $options['render_shortcodes'] && function_exists( 'do_shortcode' ) && function_exists( 'shortcode_exists' );
         $reported = [];
         $rendered = false;
 
@@ -533,7 +595,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
 
                 $family = ThemeShortcodes::family( $tag );
 
-                if ( $render ) {
+                if ( $render && shortcode_exists( $tag ) ) {
                     $html = (string) do_shortcode( $m[0] );
                     if ( trim( $html ) !== '' ) {
                         $rendered = true;
@@ -611,6 +673,11 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * export nothing can render it, so a labelled placeholder keeps the text
      * and the position instead.
      *
+     * `do_shortcode()` on a tag nothing registered returns its input
+     * untouched — non-empty, so it must not be read as a render on its own;
+     * `shortcode_exists( $tag )` gates the call, the same fix `nestedShortcodes()`
+     * needed.
+     *
      * @param string $reason The `not_carried_over` kind to file it under
      *   (`addon`, `integration`); `''` when the caller has already reported
      *   the element some other way and a second entry would only repeat it.
@@ -621,7 +688,10 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         $tag     = (string) ( $node['tag'] ?? '' );
         $options = $this->engine->options();
 
-        if ( $options['mode'] === 'direct' && $options['render_shortcodes'] && function_exists( 'do_shortcode' ) ) {
+        $can_render = $options['mode'] === 'direct' && $options['render_shortcodes']
+            && function_exists( 'do_shortcode' ) && function_exists( 'shortcode_exists' ) && shortcode_exists( $tag );
+
+        if ( $can_render ) {
             $html = (string) do_shortcode( $this->originalShortcode( $node ) );
             if ( trim( $html ) !== '' ) {
                 $this->engine->logStaticCopy( $id );

@@ -66,9 +66,6 @@ class ConverterEngine {
 
     private bool $countingApproximate = false;
 
-    /** @var array<string,bool> One-per-page facts a handler has already taken. */
-    private array $claimed = [];
-
     public function __construct() {
         $this->registry = new ConverterRegistry( $this );
     }
@@ -91,7 +88,6 @@ class ConverterEngine {
      */
     public function convert( array $document, array $options = [] ): array {
         $this->options = $this->resolveOptions( $options );
-        $this->claimed = [];
 
         [ $roots, $page_css ] = $this->treeFrom( $document );
 
@@ -360,7 +356,7 @@ class ConverterEngine {
         }
     }
 
-    /** @param string $kind animation|visibility|background|interaction|integration|custom_code|addon|layout|error */
+    /** @param string $kind animation|visibility|background|interaction|integration|custom_code|addon|layout|hover|error */
     public function logNotCarriedOver( string $kind, string $node_id, string $detail ): void {
         $entry = [ 'kind' => $kind, 'node_id' => $node_id, 'detail' => $detail ];
         if ( ! in_array( $entry, $this->notCarriedOver, true ) ) {
@@ -400,25 +396,6 @@ class ConverterEngine {
         if ( ! in_array( $entry, $this->unresolvedMedia, true ) ) {
             $this->unresolvedMedia[] = $entry;
         }
-    }
-
-    /**
-     * "Is this the first one on the page?" — true once per conversion for a
-     * given key, false every time after.
-     *
-     * A page has one `<h1>`, and a WPBakery page can hold several
-     * `vc_custom_heading tag:h1`; the handler that meets the first one keeps it
-     * and the rest are demoted. Only the engine sees a whole page, so the fact
-     * lives here.
-     */
-    public function claimFirst( string $key ): bool {
-        if ( isset( $this->claimed[ $key ] ) ) {
-            return false;
-        }
-
-        $this->claimed[ $key ] = true;
-
-        return true;
     }
 
     /** A run of text that sat between shortcodes and was kept as a text module. */

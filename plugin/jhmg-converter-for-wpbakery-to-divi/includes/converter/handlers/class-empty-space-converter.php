@@ -33,7 +33,7 @@ class EmptySpaceConverter extends BaseWPBakeryConverter {
 
         // The element is the space; `mapStyle()` would add a bottom margin on
         // top of it.
-        $style    = $this->mapStyle( 'generic', array_merge( $node, [ 'delegated' => true ] ) );
+        $style    = $this->mapStyle( 'generic', $node, 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [ 'height' ] );
 

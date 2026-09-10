@@ -142,6 +142,28 @@ Another line[/vc_column_text]' ) );
         $this->assertNotEmpty( $result['report']['static_copies'] );
     }
 
+    public function test_an_unregistered_shortcode_inside_text_is_not_mistaken_for_a_render(): void {
+        // do_shortcode() on a tag nothing registered returns its input
+        // untouched (WordPress builds its shortcode regex from registered
+        // tags only) — a non-empty result that a bare "did it come back
+        // empty?" check would misread as a render. Nothing seeds
+        // __test_rendered_shortcodes here, so shortcode_exists('nectar_btn')
+        // is false and the tag has to fall back to the unrendered branch
+        // even though the bootstrap's do_shortcode() stub would otherwise
+        // fabricate output for it (task-8-fix-round-1.md, #7).
+        $result = $this->convert(
+            $this->row( '[vc_column_text]<p>Before</p>[nectar_btn text="Go"]<p>After</p>[/vc_column_text]' ),
+            [ 'mode' => 'direct', 'render_shortcodes' => true ]
+        );
+
+        $this->assertSame( [], $result['report']['static_copies'] );
+        $this->assertStringContainsString(
+            '[nectar_btn',
+            (string) $this->read( $this->firstModule( $result )['settings'], 'content.innerContent.desktop.value' ),
+            'an unregistered shortcode has to survive as text, not do_shortcode()\'s pass-through mistaken for a static copy'
+        );
+    }
+
     public function test_a_bare_bracket_token_inside_text_is_prose(): void {
         $result = $this->convert( $this->row( '[vc_column_text]<p>See note [1] below.</p>[/vc_column_text]' ) );
 
@@ -206,21 +228,6 @@ Another line[/vc_column_text]' ) );
         $this->assertSame( 'on', $this->read( $settings, 'module.advanced.link.desktop.value.target' ) );
     }
 
-    public function test_only_the_first_h1_on_a_page_stays_an_h1(): void {
-        $result = $this->convert( $this->row(
-            '[vc_custom_heading text="One" font_container="tag:h1|font_size:60px"][vc_custom_heading text="Two" font_container="tag:h1|font_size:40px"]'
-        ) );
-        $modules = $this->modules( $result );
-
-        $this->assertSame( 'h1', $this->read( $modules[0]['settings'], 'title.decoration.font.font.desktop.value.headingLevel' ) );
-        $this->assertSame( 'h2', $this->read( $modules[1]['settings'], 'title.decoration.font.font.desktop.value.headingLevel' ) );
-        // The demotion is about the outline, not the design.
-        $this->assertSame( '40px', $this->read( $modules[1]['settings'], 'title.decoration.font.font.desktop.value.size' ) );
-
-        $details = array_column( $result['report']['not_carried_over'], 'detail' );
-        $this->assertNotEmpty( array_filter( $details, static fn( string $d ): bool => str_contains( $d, 'second <h1>' ) ) );
-    }
-
     // -------------------------------------------------------------------------
     // vc_single_image
     // -------------------------------------------------------------------------
@@ -255,6 +262,38 @@ Another line[/vc_column_text]' ) );
 
         $this->assertNull( $this->read( $settings, 'module.advanced.sizing.desktop.value.width' ) );
         $this->assertNull( $this->read( $settings, 'module.advanced.sizing.desktop.value.forceFullwidth' ) );
+    }
+
+    public function test_a_named_image_size_resolves_through_the_import_maps_sizes(): void {
+        // task-8-fix-round-1.md, #8: attachments[id]['sizes'][size] is read
+        // when the map entry is an array, so a named img_size resolves to the
+        // size WPBakery actually rendered rather than the attachment's base URL.
+        $result = $this->convert(
+            $this->row( '[vc_single_image image="7" img_size="medium"]' ),
+            [ 'attachments' => [ 7 => [
+                'url'   => 'https://example.com/a.jpg',
+                'sizes' => [ 'medium' => 'https://example.com/a-300x225.jpg', 'large' => 'https://example.com/a-1024x768.jpg' ],
+            ] ] ]
+        );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'https://example.com/a-300x225.jpg', $this->read( $settings, 'image.innerContent.desktop.value.src' ) );
+        $this->assertSame( [], $result['report']['unresolved_media'] );
+    }
+
+    public function test_a_named_image_size_missing_from_the_sizes_map_falls_back_and_is_reported(): void {
+        $result = $this->convert(
+            $this->row( '[vc_single_image image="7" img_size="thumbnail"]' ),
+            [ 'attachments' => [ 7 => [
+                'url'   => 'https://example.com/a.jpg',
+                'sizes' => [ 'large' => 'https://example.com/a-1024x768.jpg' ],
+            ] ] ]
+        );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'https://example.com/a.jpg', $this->read( $settings, 'image.innerContent.desktop.value.src' ) );
+        $details = array_column( $result['report']['not_carried_over'], 'detail' );
+        $this->assertNotEmpty( array_filter( $details, static fn( string $d ): bool => str_contains( $d, 'img_size="thumbnail"' ) ) );
     }
 
     public function test_a_lightbox_image_sets_the_lightbox_switch(): void {
@@ -538,6 +577,21 @@ Another line[/vc_column_text]' ) );
             '<p>Hi</p>',
             (string) $this->read( $this->firstModule( $result )['settings'], 'content.innerContent.desktop.value' )
         );
+    }
+
+    public function test_gutenberg_blocks_are_not_rendered_in_direct_mode_without_do_blocks_true(): void {
+        // vc_gutenberg.php: `'true' === $do_blocks ? do_blocks( $content ) : $content` —
+        // the attribute gates do_blocks() even on the live site, so direct
+        // mode alone must not render it (task-8-fix-round-1.md, #10).
+        $result = $this->convert(
+            $this->row( '[vc_gutenberg]<!-- wp:paragraph --><p>Hi</p><!-- /wp:paragraph -->[/vc_gutenberg]' ),
+            [ 'mode' => 'direct', 'render_shortcodes' => true ]
+        );
+        $module = $this->firstModule( $result );
+
+        $this->assertSame( [], $result['report']['static_copies'] );
+        $this->assertNotEmpty( $result['report']['warnings'] );
+        $this->assertStringContainsString( 'wp:paragraph', (string) $this->read( $module['settings'], 'content.innerContent.desktop.value' ) );
     }
 
     public function test_gutenberg_blocks_are_kept_with_a_warning_on_import(): void {

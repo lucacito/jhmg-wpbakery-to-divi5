@@ -141,15 +141,8 @@ class VideoConverter extends BaseWPBakeryConverter {
 
     /** `el_width` (a percentage), `align` and the aspect ratio the wrapper forces. */
     private function geometry( array $atts, string $id, array &$attrs ): void {
-        $width = trim( $this->att( $atts, 'el_width' ) );
-        if ( preg_match( '/^\d+$/', $width ) === 1 && (int) $width > 0 && (int) $width < 100 ) {
-            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.width', $width . '%' );
-        }
-
         $align = strtolower( $this->att( $atts, 'align', 'left' ) );
-        if ( in_array( $align, [ 'left', 'center', 'right' ], true ) ) {
-            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.alignment', $align );
-        }
+        $this->elWidth( $attrs, $this->att( $atts, 'el_width' ), in_array( $align, [ 'left', 'center', 'right' ], true ) ? $align : null );
 
         $aspect = trim( $this->att( $atts, 'el_aspect' ) );
         if ( $aspect !== '' && $aspect !== '169' ) {

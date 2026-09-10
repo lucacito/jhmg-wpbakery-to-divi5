@@ -14,7 +14,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * The element holds block-editor markup verbatim (it is one of
  * `ShortcodeParser::RAW_CONTENT_TAGS`) and the template prints
  * `do_blocks( $content )` when `do_blocks="true"`, or the markup as it stands
- * otherwise.
+ * otherwise: `$content = 'true' === $do_blocks ? do_blocks( $content ) : $content;`
+ * (`include/templates/shortcodes/vc_gutenberg.php`) — the attribute is the
+ * gate even on the live site, so a `[vc_gutenberg]` with no `do_blocks="true"`
+ * never renders, in direct mode or otherwise.
  *
  * Amendment §4: on the site the page lives on the markup is rendered with
  * `do_blocks()` and kept as a static copy; from an export nothing can render it,
@@ -32,10 +35,11 @@ class GutenbergConverter extends BaseWPBakeryConverter {
         $style    = $this->mapStyle( 'generic', $node );
         $consumed = array_merge( $style['handled_keys'], [ 'do_blocks' ] );
 
-        $options = $this->engine->options();
-        $html    = $content;
+        $options   = $this->engine->options();
+        $html      = $content;
+        $do_blocks = $this->att( $atts, 'do_blocks' ) === 'true';
 
-        if ( $options['mode'] === 'direct' && $options['render_shortcodes'] && function_exists( 'do_blocks' ) ) {
+        if ( $do_blocks && $options['mode'] === 'direct' && $options['render_shortcodes'] && function_exists( 'do_blocks' ) ) {
             $rendered = (string) do_blocks( $content );
             if ( trim( $rendered ) !== '' ) {
                 $html = $rendered;

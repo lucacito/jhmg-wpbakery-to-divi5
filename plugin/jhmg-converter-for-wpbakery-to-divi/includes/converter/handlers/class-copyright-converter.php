@@ -19,6 +19,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * page would leave every converted site showing the year of its conversion, so
  * it becomes Divi's `current_date` dynamic-content token with a custom format
  * of `Y` — which is what `gmdate( 'Y' )` prints (spec §6).
+ *
+ * No default bottom margin: `element_default_class` is `wpb_copyright_element`,
+ * not `wpb_content_element`, and `.wpb_copyright_element` carries no margin
+ * rule in `js_composer.min.css`.
  */
 class CopyrightConverter extends BaseWPBakeryConverter {
 
@@ -26,7 +30,10 @@ class CopyrightConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_copyright_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'text', $node );
+        // `wpb_copyright_element` has no margin rule of its own
+        // (`js_composer.min.css`) — `element_default_class` is
+        // `wpb_copyright_element`, not `wpb_content_element`.
+        $style    = $this->mapStyle( 'text', $node, 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [ 'prefix', 'postfix', 'align' ] );
 

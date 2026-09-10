@@ -51,6 +51,20 @@ class IconConverter extends BaseWPBakeryConverter {
         'rounded-less-outline' => '5px',
     ];
 
+    /**
+     * `.vc_icon_element-size-<size>.vc_icon_element-have-style-inner{height;width}`
+     * — the fixed square `background_style` draws behind the glyph, one value
+     * per size, not the single "4em" (the `md` figure) the note used to quote
+     * for every size.
+     */
+    const BACKGROUND_SQUARE = [
+        'xs' => '2.5em',
+        'sm' => '3.15em',
+        'md' => '4em',
+        'lg' => '5em',
+        'xl' => '7.15em',
+    ];
+
     public function convert( array $node ): array {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_icon_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
@@ -166,12 +180,7 @@ class IconConverter extends BaseWPBakeryConverter {
 
         $radius = self::BACKGROUND_RADIUS[ $shape ] ?? null;
         if ( $radius !== null ) {
-            StyleMapper::write( $attrs, 'module.decoration.border.desktop.value.radius', [
-                'topLeft'     => $radius,
-                'topRight'    => $radius,
-                'bottomRight' => $radius,
-                'bottomLeft'  => $radius,
-            ] );
+            StyleMapper::write( $attrs, 'module.decoration.border.desktop.value.radius', self::radius( $radius ) );
         }
 
         $color = $this->color( $atts, 'custom_background_color', $id );
@@ -187,13 +196,16 @@ class IconConverter extends BaseWPBakeryConverter {
             }
         }
 
+        $size   = strtolower( $this->att( $atts, 'size', 'md' ) );
+        $square = self::BACKGROUND_SQUARE[ $size ] ?? self::BACKGROUND_SQUARE['md'];
+
         $this->engine->logNotCarriedOver(
             'layout',
             $id,
             sprintf(
-                'vc_icon background_style="%s" draws a fixed square behind the glyph (%s of the icon size); Divi paints the module instead',
+                'vc_icon background_style="%s" draws a fixed %s square behind the glyph; Divi paints the module instead',
                 $shape,
-                '4em'
+                $square
             )
         );
     }

@@ -278,6 +278,15 @@ if ( ! function_exists( 'do_shortcode' ) ) {
         return $GLOBALS['__test_rendered_shortcodes'][ $tag ] ?? '<!-- test: rendered ' . $tag . ' -->';
     }
 }
+if ( ! function_exists( 'shortcode_exists' ) ) {
+    // A tag is "registered" in a test the same way it is rendered: by being a
+    // key of $GLOBALS['__test_rendered_shortcodes']. Production code gates
+    // do_shortcode() on this (task-8-fix-round-1.md, #7) so a tag no plugin
+    // registered is never mistaken for a static copy.
+    function shortcode_exists( $tag ) {
+        return array_key_exists( (string) $tag, $GLOBALS['__test_rendered_shortcodes'] ?? [] );
+    }
+}
 if ( ! function_exists( 'the_widget' ) ) {
     function the_widget( $widget, $instance = [], $args = [] ) {
         echo '<div class="widget ' . $widget . '">…</div>';
@@ -379,10 +388,15 @@ if ( ! function_exists( '_x' ) ) { function _x( string $text, string $context, s
 if ( ! function_exists( '_n' ) ) { function _n( string $single, string $plural, int $number, string $domain = 'default' ): string { return $number === 1 ? $single : $plural; } }
 if ( ! function_exists( 'wp_kses_post' ) ) { function wp_kses_post( $t ): string { return (string) $t; } }
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
+    // Core trims unconditionally (wp-includes/formatting.php:5636), not only
+    // when $remove_breaks is set — task-8-fix-round-1.md, #9.
     function wp_strip_all_tags( $text, $remove_breaks = false ) {
         $text = preg_replace( '@<(script|style)[^>]*?>.*?</\\1>@si', '', (string) $text );
         $text = strip_tags( (string) $text ); // phpcs:ignore
-        return $remove_breaks ? trim( preg_replace( '/[\\r\\n\\t ]+/', ' ', $text ) ) : $text;
+        if ( $remove_breaks ) {
+            $text = preg_replace( '/[\\r\\n\\t ]+/', ' ', $text );
+        }
+        return trim( (string) $text );
     }
 }
 if ( ! function_exists( 'wp_json_encode' ) ) { function wp_json_encode( $data, $options = 0, $depth = 512 ) { return json_encode( $data, $options, $depth ); } }

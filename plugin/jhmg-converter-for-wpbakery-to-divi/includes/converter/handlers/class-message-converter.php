@@ -131,12 +131,7 @@ class MessageConverter extends BaseWPBakeryConverter {
         $shape  = strtolower( $this->att( $atts, 'style', 'rounded' ) );
         $radius = self::SHAPES[ $shape ] ?? self::SHAPES['rounded'];
 
-        StyleMapper::write( $attrs, 'module.decoration.border.desktop.value.radius', [
-            'topLeft'     => $radius,
-            'topRight'    => $radius,
-            'bottomRight' => $radius,
-            'bottomLeft'  => $radius,
-        ] );
+        StyleMapper::write( $attrs, 'module.decoration.border.desktop.value.radius', self::radius( $radius ) );
 
         if ( $this->read( $attrs, 'module.decoration.spacing.desktop.value.padding' ) === null ) {
             StyleMapper::write( $attrs, 'module.decoration.spacing.desktop.value.padding', self::box( ...self::PADDING ) );

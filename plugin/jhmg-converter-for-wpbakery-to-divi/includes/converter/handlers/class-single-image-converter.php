@@ -150,12 +150,18 @@ class SingleImageConverter extends BaseWPBakeryConverter {
             return $this->att( $atts, 'custom_src' );
         }
 
+        // `img_size` is consumed here, before the `featured_image` return: `sizing()`
+        // reads it for every source but `external_link` and applies it (width +
+        // `forceFullwidth`) regardless of where the picture comes from, so marking
+        // it consumed only in the branch below left a false `skipped_settings`
+        // entry on a featured-image source whose size was in fact applied.
+        $consumed[] = 'img_size';
+
         if ( $source === 'featured_image' ) {
             return DynamicContent::token( 'post_featured_image' );
         }
 
         $consumed[] = 'image';
-        $consumed[] = 'img_size';
 
         $attachment = $this->attachmentId( $atts );
         if ( $attachment <= 0 ) {
@@ -289,15 +295,13 @@ class SingleImageConverter extends BaseWPBakeryConverter {
         }
 
         if ( isset( $spec['radius'] ) ) {
-            StyleMapper::write( $attrs, 'image.decoration.border.desktop.value.radius', [
-                'topLeft'     => $spec['radius'],
-                'topRight'    => $spec['radius'],
-                'bottomRight' => $spec['radius'],
-                'bottomLeft'  => $spec['radius'],
-            ] );
+            StyleMapper::write( $attrs, 'image.decoration.border.desktop.value.radius', self::radius( $spec['radius'] ) );
         }
 
-        if ( isset( $spec['pad'] ) ) {
+        // WPBakery writes a `css` design-option padding `!important`, so it wins
+        // over the style's own 6px frame rather than the handler silently
+        // replacing it (the same guard `MessageConverter::shape()` uses).
+        if ( isset( $spec['pad'] ) && $this->read( $attrs, 'module.advanced.spacing.desktop.value.padding' ) === null ) {
             StyleMapper::write(
                 $attrs,
                 'module.advanced.spacing.desktop.value.padding',

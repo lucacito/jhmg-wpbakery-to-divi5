@@ -105,14 +105,7 @@ class SeparatorConverter extends BaseWPBakeryConverter {
         $consumed[] = 'el_width';
         $consumed[] = 'align';
 
-        $width = trim( $this->att( $atts, 'el_width' ) );
-        if ( preg_match( '/^\d+$/', $width ) === 1 && (int) $width > 0 && (int) $width < 100 ) {
-            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.width', $width . '%' );
-        }
-
         $align = strtolower( $this->att( $atts, 'align', 'align_center' ) );
-        if ( isset( self::ALIGNMENTS[ $align ] ) ) {
-            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.alignment', self::ALIGNMENTS[ $align ] );
-        }
+        $this->elWidth( $attrs, $this->att( $atts, 'el_width' ), self::ALIGNMENTS[ $align ] ?? null );
     }
 }

@@ -83,7 +83,10 @@ final class ConverterFixtureTest extends TestCase {
         $expected = json_decode( (string) file_get_contents( $expected_file ), true );
         $content  = ( new DiviBlockSerializer() )->serialize( $expected );
 
-        $result = ( new Validator() )->validateContent( $content );
+        // Headings keep the author's level (task-8-fix-round-1.md, R1): a page can
+        // legitimately carry more than one <h1> after conversion, so that one check
+        // is ignored here rather than the converter rewriting what the author wrote.
+        $result = ( new Validator() )->validateContent( $content, [ Validator::E_MULTIPLE_H1 ] );
 
         $this->assertTrue(
             $result->isValid(),

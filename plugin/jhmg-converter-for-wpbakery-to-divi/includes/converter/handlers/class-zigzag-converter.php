@@ -18,6 +18,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * has no zigzag divider, and painting one with custom CSS would put a data URI
  * into every page the converter touches — so the colour, the height and the
  * width become a straight divider and the pattern is reported.
+ *
+ * No default bottom margin: `shortcode-vc-zigzag.php` sets no
+ * `element_default_class` at all, and `.vc-zigzag-wrapper` carries no margin
+ * rule in `js_composer.min.css`.
  */
 class ZigzagConverter extends BaseWPBakeryConverter {
 
@@ -31,7 +35,10 @@ class ZigzagConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_zigzag_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'generic', $node );
+        // `shortcode-vc-zigzag.php` sets no `element_default_class`; the
+        // template prints `vc-zigzag-wrapper` only, which carries no margin
+        // rule in `js_composer.min.css`.
+        $style    = $this->mapStyle( 'generic', $node, 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [ 'color', 'custom_color', 'el_border_width', 'el_width', 'align' ] );
 
@@ -47,15 +54,8 @@ class ZigzagConverter extends BaseWPBakeryConverter {
             StyleMapper::write( $attrs, 'divider.advanced.line.desktop.value.weight', str_replace( 'px', '', $weight ) . 'px' );
         }
 
-        $width = trim( $this->att( $atts, 'el_width' ) );
-        if ( preg_match( '/^\d+$/', $width ) === 1 && (int) $width > 0 && (int) $width < 100 ) {
-            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.width', $width . '%' );
-        }
-
         $align = strtolower( $this->att( $atts, 'align', 'center' ) );
-        if ( isset( self::ALIGNMENTS[ $align ] ) ) {
-            StyleMapper::write( $attrs, 'module.decoration.sizing.desktop.value.alignment', self::ALIGNMENTS[ $align ] );
-        }
+        $this->elWidth( $attrs, $this->att( $atts, 'el_width' ), self::ALIGNMENTS[ $align ] ?? null );
 
         $this->engine->logNotCarriedOver(
             'layout',

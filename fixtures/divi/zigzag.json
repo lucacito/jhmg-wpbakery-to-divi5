@@ -129,32 +129,6 @@
                                         "id": "vc_zigzag-1",
                                         "name": "divi/divider",
                                         "settings": {
-                                            "module": {
-                                                "decoration": {
-                                                    "spacing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "margin": {
-                                                                    "top": "",
-                                                                    "right": "",
-                                                                    "bottom": "35px",
-                                                                    "left": "",
-                                                                    "syncVertical": "off",
-                                                                    "syncHorizontal": "off"
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    "sizing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "width": "40%",
-                                                                "alignment": "center"
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },
                                             "divider": {
                                                 "advanced": {
                                                     "line": {
@@ -163,6 +137,18 @@
                                                                 "show": "on",
                                                                 "color": "#5472d2",
                                                                 "weight": "12px"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "module": {
+                                                "decoration": {
+                                                    "sizing": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "width": "40%",
+                                                                "alignment": "center"
                                                             }
                                                         }
                                                     }

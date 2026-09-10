@@ -59,27 +59,34 @@ final class Validator
         $this->parser = $parser ?? new BlockParser();
     }
 
-    public function validateContent(string $postContent): ValidationResult
+    /** @param string[] $ignore Violation codes (the `self::E_*` constants) to drop from the result. */
+    public function validateContent(string $postContent, array $ignore = []): ValidationResult
     {
         $json = json_encode(['post_content' => $postContent]);
         if ($json === false) {
-            return new ValidationResult([new Violation(
+            return new ValidationResult(self::filterIgnored([new Violation(
                 self::E_INVALID_JSON,
                 'post_content contains unencodable bytes: ' . json_last_error_msg(),
                 '$.post_content'
-            )]);
+            )], $ignore));
         }
-        return $this->validate($json);
+        return $this->validate($json, $ignore);
     }
 
-    public function validate(string $json): ValidationResult
+    /**
+     * @param string[] $ignore Violation codes (the `self::E_*` constants) to drop from the
+     *   result — a caller-supplied allowance, not something the schema itself accepts. A
+     *   fixture test that knowingly builds a document with more than one `<h1>`, say, passes
+     *   `[self::E_MULTIPLE_H1]` rather than asserting on a violation it already expects.
+     */
+    public function validate(string $json, array $ignore = []): ValidationResult
     {
         $violations = [];
 
         // Pass 1 — envelope well-formedness
         $envelope = $this->passEnvelopeWellFormedness($json, $violations);
         if ($violations !== []) {
-            return new ValidationResult($violations);
+            return new ValidationResult(self::filterIgnored($violations, $ignore));
         }
 
         $postContent = $envelope['post_content'];
@@ -87,7 +94,7 @@ final class Validator
         // Pass 2 — block parsing
         $tree = $this->passBlockParsing($postContent, $violations);
         if ($violations !== []) {
-            return new ValidationResult($violations);
+            return new ValidationResult(self::filterIgnored($violations, $ignore));
         }
 
         // Pass 3 — schema conformance
@@ -102,7 +109,24 @@ final class Validator
         // Pass 6 — SEO / accessibility (at most one h1 per page)
         $this->passSingleH1($tree, $violations);
 
-        return new ValidationResult($violations);
+        return new ValidationResult(self::filterIgnored($violations, $ignore));
+    }
+
+    /**
+     * @param Violation[] $violations
+     * @param string[]    $ignore
+     * @return Violation[]
+     */
+    private static function filterIgnored(array $violations, array $ignore): array
+    {
+        if ($ignore === []) {
+            return $violations;
+        }
+
+        return array_values(array_filter(
+            $violations,
+            static fn (Violation $v): bool => !in_array($v->code(), $ignore, true)
+        ));
     }
 
     // ---------------------------------------------------------------

@@ -98,6 +98,26 @@ final class ConverterEngineTest extends TestCase {
         $this->assertSame( [ 'Salient' => 1 ], $result['report']['theme_elements'] );
     }
 
+    public function test_an_unregistered_theme_tag_in_direct_mode_is_a_placeholder_not_a_static_copy(): void {
+        // do_shortcode() on a tag nothing registered returns its input
+        // untouched — non-empty, so BaseWPBakeryConverter::staticCopy() must
+        // gate the call on shortcode_exists() rather than read that as a
+        // render (task-8-fix-round-1.md, #7). Nothing seeds
+        // __test_rendered_shortcodes, so nectar_btn is not "registered" here.
+        $result = $this->convert(
+            '[vc_row][vc_column][nectar_btn text="Go"][/vc_column][/vc_row]',
+            [],
+            [ 'mode' => 'direct', 'render_shortcodes' => true ]
+        );
+
+        $this->assertSame( [], $result['report']['static_copies'] );
+
+        $column = $result['divi']['elements'][0]['elements'][0]['elements'][0];
+        $html   = (string) $column['elements'][0]['settings']['content']['innerContent']['desktop']['value'];
+        $this->assertStringContainsString( 'wbdc-unconverted-element', $html, 'an unregistered tag falls back to the labelled placeholder' );
+        $this->assertStringContainsString( 'nectar_btn', $html );
+    }
+
     public function test_mode_defaults_to_import(): void {
         $engine = new ConverterEngine();
         $engine->convert( [ 'content' => '[vc_row][vc_column][/vc_column][/vc_row]' ] );

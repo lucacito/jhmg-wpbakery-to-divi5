@@ -129,24 +129,6 @@
                                         "id": "vc_custom_field-1",
                                         "name": "divi/text",
                                         "settings": {
-                                            "module": {
-                                                "decoration": {
-                                                    "spacing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "margin": {
-                                                                    "top": "",
-                                                                    "right": "",
-                                                                    "bottom": "35px",
-                                                                    "left": "",
-                                                                    "syncVertical": "off",
-                                                                    "syncHorizontal": "off"
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {

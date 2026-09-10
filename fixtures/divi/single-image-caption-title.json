@@ -177,9 +177,9 @@
                                                     "desktop": {
                                                         "value": {
                                                             "id": "1616",
-                                                            "linkUrl": "https://example.com/wp-content/uploads/team.jpg",
+                                                            "linkUrl": "https://example.com/wp-content/uploads/team-1024x768.jpg",
                                                             "linkTarget": "off",
-                                                            "src": "https://example.com/wp-content/uploads/team.jpg",
+                                                            "src": "https://example.com/wp-content/uploads/team-300x225.jpg",
                                                             "alt": "The team"
                                                         }
                                                     }

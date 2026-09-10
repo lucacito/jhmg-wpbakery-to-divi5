@@ -212,7 +212,9 @@ class ConverterRegistry {
             'vc_gmaps'          => [ Handlers\GmapsConverter::class, true ],
             'vc_goo_maps'       => [ Handlers\GmapsConverter::class, true ],
             'vc_video'          => [ Handlers\VideoConverter::class, false ],
-            'vc_gutenberg'      => [ Handlers\GutenbergConverter::class, false ],
+            // A code stand-in, like vc_gmaps: block-editor markup rendered (or
+            // kept verbatim) in a divi/code module, not a native Divi block.
+            'vc_gutenberg'      => [ Handlers\GutenbergConverter::class, true ],
             // WPBakery resolves its meta token only inside a grid item.
             'vc_custom_field'   => [ Handlers\CustomFieldConverter::class, true ],
         ];
