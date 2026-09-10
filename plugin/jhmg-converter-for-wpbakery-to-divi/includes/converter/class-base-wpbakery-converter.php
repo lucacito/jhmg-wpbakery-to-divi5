@@ -969,13 +969,17 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * Every attribute the handler did not consume, so nothing is dropped in
      * silence.
      *
-     * Four things are not "skipped settings": a blank value, a toggle switched
+     * Five things are not "skipped settings": a blank value, a toggle switched
      * off (it describes nothing the page loses), the keys the StyleMapper
-     * already owns, and WPBakery's own form scaffolding — the six icon-library
+     * already owns, WPBakery's own form scaffolding — the six icon-library
      * fields every icon element carries whether or not that library is the one
-     * selected, an editor-only row label, a tab's generated id.
+     * selected, an editor-only row label, a tab's generated id — and a field a
+     * theme added to a WPBakery element with `vc_add_param()`, which is filed
+     * under `addon` with the theme named instead (`isThemeParam()`).
      */
     protected function logUnmappedSettings( string $node_id, array $atts, array $consumed = [], string $tag = '' ): void {
+        $theme_params = [];
+
         static $always_ignore = [
             // The StyleMapper owns these five and reports what it could not
             // express — `css_animation` under `animation`, `disable_element`
@@ -1004,8 +1008,58 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
             if ( $key === 'layout' && $tag === 'vc_text_separator' ) {
                 continue;
             }
+            if ( $this->isThemeParam( $key, $tag, $node_id, $theme_params ) ) {
+                continue;
+            }
 
             $this->engine->logSkippedSetting( "{$node_id}: {$key}" );
+        }
+
+        $this->reportThemeParams( $node_id, $theme_params );
+    }
+
+    /**
+     * A field a theme bolted onto a WPBakery core element with
+     * `vc_add_param()` (`ThemeShortcodes::THEME_PARAMS`).
+     *
+     * It is not a skipped setting: no handler here ignored it, it belongs to a
+     * theme that is not being converted, and the report already has a kind for
+     * exactly that. So it is collected and filed under `addon` with the theme
+     * named — one entry per node naming every such field, rather than one entry
+     * per field.
+     *
+     * @param array<string, array<int, string>> $collected family label ⇒ "key=value" list
+     */
+    private function isThemeParam( string $key, string $tag, string $node_id, array &$collected ): bool {
+        if ( $tag === '' ) {
+            return false;
+        }
+
+        $family = ThemeShortcodes::themeParam( $tag, $key );
+        if ( $family === null ) {
+            return false;
+        }
+
+        $collected[ $family['label'] ][] = $key;
+
+        return true;
+    }
+
+    /** @param array<string, array<int, string>> $collected */
+    private function reportThemeParams( string $node_id, array $collected ): void {
+        foreach ( $collected as $label => $keys ) {
+            $this->engine->logNotCarriedOver(
+                'addon',
+                $node_id,
+                sprintf(
+                    '%s adds %s to this WPBakery element; %s the theme\'s own field%s, drawn by its stylesheet and script, and %s no Divi equivalent',
+                    $label,
+                    implode( ', ', $keys ),
+                    count( $keys ) === 1 ? 'it is' : 'they are',
+                    count( $keys ) === 1 ? '' : 's',
+                    count( $keys ) === 1 ? 'has' : 'have'
+                )
+            );
         }
     }
 

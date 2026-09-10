@@ -41,6 +41,9 @@ final class ThemeShortcodes {
 
     const FILTER = 'wbdc_theme_families';
 
+    /** The filter for `THEME_PARAMS`. */
+    const PARAMS_FILTER = 'wbdc_theme_params';
+
     /**
      * family key ⇒ { label, kind, tags[], prefixes[] }.
      *
@@ -125,6 +128,91 @@ final class ThemeShortcodes {
             'prefixes' => [ 'rev_slider', 'layerslider', 'smartslider3', 'metaslider' ],
         ],
     ];
+
+    /**
+     * Params a theme adds to a WPBakery **core** element with `vc_add_param()`.
+     *
+     * A theme does not only register elements of its own (`FAMILIES` above); it
+     * also bolts fields onto WPBakery's rows, columns and text blocks, and those
+     * fields end up in the shortcode of every page the theme built. They are
+     * not WPBakery's, so no core handler knows them, and they are not "skipped
+     * settings" in the sense that word has here — nobody wrote a handler that
+     * ignored them, they belong to a plugin that is not being converted. So
+     * they are reported under `addon`, with the family named, instead
+     * (`BaseWPBakeryConverter::logUnmappedSettings()`).
+     *
+     * Source: Ronneby Core 1.5.74,
+     * `inc/vc_custom/dfd_vc_addons.php:900-1400` — every `vc_add_param()` call
+     * it makes, by the tag it makes it on.
+     *
+     * `wbdc_theme_params` lets a site add another theme's table.
+     *
+     * @var array<string, array<int, string>>
+     */
+    const THEME_PARAMS = [
+        'ronneby' => [
+            'vc_row'          => [
+                'align_content_vertically', 'anchor', 'delimiter_bg_color_value', 'delimiter_height',
+                'dfd_row_config', 'dfd_row_parallax', 'dfd_row_responsive_enable', 'effects',
+                'extra_css_styles', 'extra_features', 'force_equal_height_columns', 'heading',
+                'mobile_destroy_equal_heights', 'mobile_destroy_equal_heights_resolution',
+                'one_page_title', 'responsive_styles', 'row_delimiter', 'row_effect',
+                'row_parallax_limit', 'row_parallax_sense', 'row_prebuilt_classes',
+                'row_responsive_mobile_classes', 'row_responsive_mobile_resolutions', 'sizing',
+            ],
+            'vc_row_inner'    => [
+                'dfd_row_responsive_enable', 'extra_features', 'inner_row_bg_position',
+                'inner_row_bg_repeat', 'inner_row_custom_img_size', 'responsive_styles',
+            ],
+            'vc_column'       => [
+                'col_hover_bg', 'col_hover_settings', 'col_shadow', 'col_shadow_hover',
+                'column_bg_check', 'column_bg_position', 'column_bg_repeat', 'column_parallax',
+                'column_parallax_destroy', 'column_parallax_limit', 'column_parallax_sense',
+                'column_prebuilt_classes', 'column_responsive_mobile_classes',
+                'column_responsive_mobile_resolutions', 'dfd_column_responsive_enable', 'extra_features',
+                'main', 'responsive_styles',
+            ],
+            'vc_column_inner' => [
+                'col_inner_hover_bg', 'col_inner_hover_settings', 'col_inner_shadow',
+                'col_inner_shadow_hover', 'dfd_column_responsive_enable', 'responsive_styles',
+            ],
+            'vc_column_text'  => [ 'item_animation' ],
+            'vc_accordion'    => [ 'item_animation', 'titles_alignment' ],
+            'vc_tour'         => [ 'tabs_alignment' ],
+            'vc_single_image' => [ 'image_opacity', 'item_animation', 'link_one_page_value' ],
+            'vc_video'        => [
+                'description', 'icon_color', 'label_background', 'module_alignment', 'video_id',
+                'video_module_mode', 'video_source', 'video_thumb_image', 'video_title',
+            ],
+        ],
+    ];
+
+    /**
+     * The theme family a param on a core element belongs to, or null.
+     *
+     * @return array{key: string, label: string, kind: string}|null
+     */
+    public static function themeParam( string $tag, string $param ): ?array {
+        foreach ( self::themeParams() as $family => $tags ) {
+            if ( in_array( $param, (array) ( $tags[ $tag ] ?? [] ), true ) ) {
+                return self::entry( $family, self::families()[ $family ] ?? [] );
+            }
+        }
+
+        return null;
+    }
+
+    /** @return array<string, array<string, array<int, string>>> The table, overlaid with the filter. */
+    public static function themeParams(): array {
+        if ( ! function_exists( 'apply_filters' ) ) {
+            return self::THEME_PARAMS;
+        }
+
+        // Literal so Plugin Check can read the hook name.
+        $filtered = apply_filters( 'wbdc_theme_params', self::THEME_PARAMS );
+
+        return is_array( $filtered ) ? $filtered : self::THEME_PARAMS;
+    }
 
     /** The family a tag nobody claims belongs to. */
     const OTHER = [ 'key' => 'other', 'label' => 'Other shortcodes', 'kind' => 'addon' ];

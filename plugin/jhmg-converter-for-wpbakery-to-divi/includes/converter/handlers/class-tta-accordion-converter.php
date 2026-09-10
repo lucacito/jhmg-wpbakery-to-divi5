@@ -78,13 +78,14 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_tta_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'generic', $node, 'tta' );
+        $style    = $this->mapStyle( 'generic', $node, $this->marginKind() );
         $attrs    = $style['divi_attrs'];
         $consumed = $style['handled_keys'];
 
         $this->colours( $atts, $id, $attrs, $consumed );
         $this->behaviour( $atts, $id, $consumed );
         $this->look( $atts, $id, $consumed );
+        $this->extras( $atts, $id, $attrs, $consumed );
 
         $items = $this->items( $node );
 
@@ -116,6 +117,26 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
     protected function parentName(): string {
         return 'divi/accordion';
     }
+
+    /**
+     * The `GlobalSettingsResolver` margin kind this element's wrapper earns.
+     *
+     * `js_composer_tta.min.css` `.vc_tta-container{margin-bottom:21.73913043px}`
+     * for WPBakery's own tta family; a theme that renders the same children
+     * from its own template carries no such class and overrides this with
+     * `none` (task-9b-amendments.md §6).
+     */
+    protected function marginKind(): string {
+        return 'tta';
+    }
+
+    /**
+     * A subclass's own settings, applied after the shared colours and look.
+     * Empty here: `vc_tta_accordion` has nothing beyond them.
+     *
+     * @param string[] $consumed
+     */
+    protected function extras( array $atts, string $id, array &$attrs, array &$consumed ): void {}
 
     protected function itemName(): string {
         return 'divi/accordion-item';
@@ -342,10 +363,10 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
 
     /** @param string[] $consumed */
     protected function look( array $atts, string $id, array &$consumed ): void {
-        $consumed = array_merge( $consumed, array_keys( self::REPORTED_LOOK ) );
+        $consumed = array_merge( $consumed, array_keys( static::REPORTED_LOOK ) );
 
         $described = [];
-        foreach ( self::REPORTED_LOOK as $key => $what ) {
+        foreach ( static::REPORTED_LOOK as $key => $what ) {
             $value = trim( $this->att( $atts, $key ) );
             if ( $value !== '' ) {
                 $described[] = $key . '="' . $value . '" (' . $what . ')';

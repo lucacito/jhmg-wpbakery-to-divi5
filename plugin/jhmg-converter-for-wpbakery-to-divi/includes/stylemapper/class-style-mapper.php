@@ -220,6 +220,118 @@ class StyleMapper {
         }
     }
 
+    /**
+     * A decoded DFD Ronneby `*_font_options` value applied to a Divi font path
+     * (`Helpers\RonnebyParams::fontOptions()`).
+     *
+     * It sits beside `applyFontContainer()` because it is the same job for a
+     * different theme's packing, and because two unrelated handler hierarchies
+     * need it: the Ronneby elements and the Ronneby accordion/tabs, which
+     * extend Task 9's tta converters instead.
+     *
+     * `$renders_heading_level` says whether the target's font actually has a
+     * `headingLevel` field: `heading/module.json`, `team-member`'s `name`,
+     * `number-counter`, `circle-counter`, `countdown-timer` and `blog`'s
+     * `title` declare it with `render: true`, while `blurb`, `cta`,
+     * `testimonial`, `text` and `counter` do not, so Ronneby's `tag` has
+     * nowhere to go on those and comes back unmapped.
+     *
+     * The semantics are `_crum_parse_text_shortcode_params()`'s
+     * (`ronneby-core/inc/vc_custom/dfd_vc_addons.php:205-227`): every numeric
+     * field is pixels, `font_style_bold` is `font-weight:bold`, and
+     * `font_style_italic` / `font_style_underline` are the two `style` flags
+     * Divi's `Font.php` renders (lines 507-540). A `tag` that is not a heading
+     * level has no Divi field and comes back in the return value, as does any
+     * key this does not know.
+     *
+     * @param array<string,string> $decoded
+     * @return string[] The keys it could not express.
+     */
+    public function applyDfdFontOptions( array $decoded, string $font_path, array &$attrs, bool $renders_heading_level = false ): array {
+        $unmapped = [];
+        $styles   = [];
+
+        foreach ( $decoded as $key => $value ) {
+            $value = trim( (string) $value );
+            if ( $value === '' ) {
+                continue;
+            }
+
+            switch ( $key ) {
+                case 'tag':
+                    if ( $renders_heading_level && preg_match( '/^h[1-6]$/i', $value ) === 1 ) {
+                        self::write( $attrs, "{$font_path}.desktop.value.headingLevel", strtolower( $value ) );
+                    } else {
+                        $unmapped[] = $key;
+                    }
+                    break;
+
+                case 'font_size':
+                case 'line_height':
+                case 'letter_spacing':
+                    $size = self::dfdPixels( $value );
+                    if ( $size === '' ) {
+                        $unmapped[] = $key;
+                        break;
+                    }
+                    self::write( $attrs, "{$font_path}.desktop.value." . self::DFD_FONT_FIELDS[ $key ], $size );
+                    break;
+
+                case 'color':
+                    $color = Color::normalize( $value );
+                    if ( $color === null ) {
+                        $unmapped[] = $key;
+                        break;
+                    }
+                    self::write( $attrs, "{$font_path}.desktop.value.color", $color );
+                    break;
+
+                case 'font_family':
+                    self::write( $attrs, "{$font_path}.desktop.value.family", $value );
+                    break;
+
+                case 'font_style_bold':
+                    self::write( $attrs, "{$font_path}.desktop.value.weight", '700' );
+                    break;
+
+                case 'font_style_italic':
+                    $styles[] = 'italic';
+                    break;
+
+                case 'font_style_underline':
+                    $styles[] = 'underline';
+                    break;
+
+                default:
+                    $unmapped[] = $key;
+            }
+        }
+
+        if ( $styles !== [] ) {
+            self::write( $attrs, "{$font_path}.desktop.value.style", $styles );
+        }
+
+        return $unmapped;
+    }
+
+    /** Ronneby's three numeric font fields ⇒ Divi's font sub-names. */
+    const DFD_FONT_FIELDS = [
+        'font_size'      => 'size',
+        'line_height'    => 'lineHeight',
+        'letter_spacing' => 'letterSpacing',
+    ];
+
+    /**
+     * A Ronneby font number as pixels. `wpb_format_with_css_unit()`'s pattern
+     * has no sign, and Ronneby writes `letter_spacing:-3` — printed verbatim
+     * with `px` appended (`dfd_vc_addons.php:225`).
+     */
+    private static function dfdPixels( string $value ): string {
+        return preg_match( '/^-\d+(?:\.\d+)?$/', $value ) === 1
+            ? $value . 'px'
+            : PackedParams::sizeWithUnit( $value );
+    }
+
     // -------------------------------------------------------------------------
     // Attribute paths per kind
     // -------------------------------------------------------------------------
