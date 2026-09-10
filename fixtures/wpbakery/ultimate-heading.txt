@@ -1,0 +1,1 @@
+[vc_row][vc_column][ultimate_heading main_heading="Static copy heading" heading_tag="h3" alignment="left"]Kept exactly as its own plugin renders it.[/ultimate_heading][/vc_column][/vc_row]

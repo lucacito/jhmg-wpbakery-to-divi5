@@ -2,7 +2,16 @@ import { execFileSync } from 'child_process';
 import path from 'path';
 
 export const rootDir = path.resolve(__dirname, '..', '..');
+/** Committed evidence: the box-model measurement's screenshots live here. */
 export const screenshotsDir = path.join(rootDir, 'tests', 'e2e', 'screenshots');
+
+/**
+ * Where the specs that run on every `npm test` put their screenshots.
+ * `test-results/` is gitignored and wiped at the start of each run, so a
+ * routine run leaves the working tree clean — a screenshot of a passing page is
+ * a debugging aid, not a specification the way the box-model images are.
+ */
+export const runScreenshotsDir = path.join(rootDir, 'test-results', 'screenshots');
 export const BASE = process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:8020';
 
 const KNOWN_DIVI_NOISE = ['Transition was skipped', 'ResizeObserver loop'];
