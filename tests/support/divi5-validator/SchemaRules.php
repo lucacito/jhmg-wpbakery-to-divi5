@@ -82,6 +82,8 @@ class SchemaRules
         // Divi 5.12.1 `map/module.json` declares `childrenName: ["divi/map-pin"]`
         // and `map-pin/module.json` is `category: child-module`.
         'divi/map-pin',
+        // Divi 5.12.1 `charts/module.json`: `category: module`, no children.
+        'divi/charts',
         'divi/contact-field',
         'divi/counter',
         'divi/icon-list-item',
@@ -133,6 +135,8 @@ class SchemaRules
             'divi/circle-counter',
             'divi/countdown-timer',
             'divi/number-counter',
+            // Chart.js chart (charts/module.json, category: module)
+            'divi/charts',
             // Compound structural modules (live inside columns)
             'divi/accordion',
             'divi/contact-form',

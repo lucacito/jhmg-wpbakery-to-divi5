@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_line_chart type="line" style="flat" animation="easeOutBounce" legend="yes" tooltips="yes" x_values="Jan;Feb;Mar" values="%5B%7B%22title%22%3A%22Sales%22%2C%22y_values%22%3A%2210%3B20%3B30%22%2C%22custom_color%22%3A%22%235472d2%22%7D%2C%7B%22title%22%3A%22Costs%22%2C%22y_values%22%3A%225%3B6%3B7%22%7D%5D"][/vc_column][/vc_row]

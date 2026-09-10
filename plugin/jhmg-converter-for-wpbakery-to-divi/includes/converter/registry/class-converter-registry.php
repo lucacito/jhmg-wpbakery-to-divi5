@@ -230,6 +230,23 @@ class ConverterRegistry {
             'vc_tta_pageable'   => [ Handlers\TtaTabsConverter::class, true ],
             // A two-state switch has no Divi module at all.
             'vc_tta_toggle'     => [ Handlers\TtaToggleConverter::class, true ],
+
+            // Galleries and carousels.
+            'vc_gallery'        => [ Handlers\GalleryConverter::class, false ],
+            // A media grid carries a grid-item template Divi's gallery cannot
+            // reproduce, and the masonry one packs the pictures at their own
+            // heights.
+            'vc_media_grid'     => [ Handlers\GalleryConverter::class, true ],
+            'vc_masonry_media_grid' => [ Handlers\GalleryConverter::class, true ],
+            'vc_images_carousel' => [ Handlers\ImagesCarouselConverter::class, false ],
+
+            // Counters and charts.
+            'vc_progress_bar'   => [ Handlers\ProgressBarConverter::class, false ],
+            'vc_pie'            => [ Handlers\PieConverter::class, false ],
+            // Chart.js on both sides, but the stroke, legend and animation
+            // styling is WPBakery's own (task-9-amendments.md §7).
+            'vc_round_chart'    => [ Handlers\ChartConverter::class, true ],
+            'vc_line_chart'     => [ Handlers\ChartConverter::class, true ],
         ];
 
         foreach ( $elements as $tag => [ $class, $approximate ] ) {

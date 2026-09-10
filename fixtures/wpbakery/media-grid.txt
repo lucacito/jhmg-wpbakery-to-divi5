@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_media_grid element_width="4" gap="10" item="mediaGrid_Default" grid_id="vc_gid:1234-abcd" include="7,8,9,10" items_per_page="4" style="load-more" button_style="rounded" button_color="blue" button_size="md" initial_loading_animation="fadeIn"][/vc_column][/vc_row]

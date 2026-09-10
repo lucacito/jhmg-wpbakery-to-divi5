@@ -247,7 +247,9 @@ final class ConverterEngineTest extends TestCase {
         $engine->registry()->registerElement( 'vc_flickr', ThrowingProbeConverter::class );
 
         $result = $engine->convert( [
-            'content' => '[vc_row][vc_column][vc_flickr][vc_gallery][/vc_column][/vc_row]',
+            // The gallery names an image: an empty one converts to nothing at
+            // all (Task 9), and this test needs a second block to look at.
+            'content' => '[vc_row][vc_column][vc_flickr][vc_gallery images="7"][/vc_column][/vc_row]',
         ] );
 
         // The page still converts, and the rest of it is untouched.

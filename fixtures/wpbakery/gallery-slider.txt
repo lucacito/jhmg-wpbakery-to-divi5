@@ -1,0 +1,2 @@
+[vc_row][vc_column][vc_gallery type="flexslider_slide" images="7,8" img_size="full" interval="5" onclick="custom_link" custom_links="https://example.com/a
+https://example.com/b" custom_links_target="_blank"][/vc_column][/vc_row]

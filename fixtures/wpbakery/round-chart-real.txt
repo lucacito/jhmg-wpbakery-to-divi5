@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_round_chart type="doughnut" stroke_width="2" stroke_color="custom" legend="" values="%5B%7B%22title%22%3A%22One%22%2C%22value%22%3A%2260%22%2C%22color%22%3A%22orange%22%7D%2C%7B%22title%22%3A%22Two%22%2C%22value%22%3A%2240%22%2C%22color%22%3A%22sandy-brown%22%7D%5D" custom_stroke_color="#ebebeb"][/vc_column][/vc_row]

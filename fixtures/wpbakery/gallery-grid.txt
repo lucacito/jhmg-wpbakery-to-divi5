@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_gallery type="image_grid" images="7,8,9" img_size="medium" onclick="link_image" title="Our work"][/vc_column][/vc_row]

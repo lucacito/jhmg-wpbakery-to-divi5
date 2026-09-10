@@ -73,6 +73,14 @@ final class ContentHandlersBTest extends TestCase {
             'vc_tta_toggle'     => '[vc_tta_toggle][vc_tta_toggle_section title="A"][vc_column_text]A[/vc_column_text][/vc_tta_toggle_section][/vc_tta_toggle]',
             'vc_accordion'      => '[vc_accordion][vc_accordion_tab title="A"][vc_column_text]A[/vc_column_text][/vc_accordion_tab][/vc_accordion]',
             'vc_tabs'           => '[vc_tabs][vc_tab title="A"][vc_column_text]A[/vc_column_text][/vc_tab][/vc_tabs]',
+            'vc_gallery'        => '[vc_gallery images="7,8" img_size="medium" type="image_grid"]',
+            'vc_media_grid'     => '[vc_media_grid include="7,8" items_per_row="3" gap="10px" item="mediaGrid_Default" grid_id="vc_gid:1"]',
+            'vc_masonry_media_grid' => '[vc_masonry_media_grid include="7,8" items_per_row="3"]',
+            'vc_images_carousel' => '[vc_images_carousel images="7,8" img_size="full" autoplay="yes" speed="4000" slides_per_view="2" mode="horizontal"]',
+            'vc_progress_bar'   => '[vc_progress_bar values="%5B%7B%22label%22%3A%22One%22%2C%22value%22%3A%2260%22%7D%5D" units="%" striped="true"]',
+            'vc_pie'            => '[vc_pie value="70" title="Done" units="%" custom_color="#5472d2"]',
+            'vc_round_chart'    => '[vc_round_chart type="pie" style="flat" animation="easeOutBounce" stroke_width="2" custom_stroke_color="#ffffff" legend="yes" tooltips="yes" legend_position="left" custom_legend_color="#2a2a2a" values="%5B%7B%22title%22%3A%22One%22%2C%22value%22%3A%2260%22%2C%22custom_color%22%3A%22%235472d2%22%7D%5D"]',
+            'vc_line_chart'     => '[vc_line_chart type="bar" x_values="Jan;Feb" legend="yes" values="%5B%7B%22title%22%3A%22One%22%2C%22y_values%22%3A%221%3B2%22%2C%22custom_color%22%3A%22%235472d2%22%7D%5D"]',
         ];
     }
 
@@ -180,7 +188,166 @@ final class ContentHandlersBTest extends TestCase {
         );
     }
 
-    /** Ids are generated from the source position, so two equivalent pages differ only there. */
+    // -------------------------------------------------------------------------
+    // Galleries, carousels, counters and charts
+    // -------------------------------------------------------------------------
+
+    public function test_a_gallery_keeps_its_attachment_ids_in_order(): void {
+        $result = $this->convert( $this->row( '[vc_gallery images="12,7,9" type="image_grid"]' ) );
+
+        $gallery = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/gallery', $gallery['name'] );
+        $this->assertSame( [ '12', '7', '9' ], $this->read( $gallery['settings'], 'image.advanced.galleryIds.desktop.value' ) );
+        $this->assertSame( 'off', $this->read( $gallery['settings'], 'module.advanced.fullwidth.desktop.value' ) );
+    }
+
+    public function test_a_flexslider_gallery_is_a_fullwidth_gallery(): void {
+        $result = $this->convert( $this->row( '[vc_gallery images="12,7" type="flexslider_slide" interval="5"]' ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'on', $this->read( $settings, 'module.advanced.fullwidth.desktop.value' ) );
+        $this->assertSame( 'on', $this->read( $settings, 'module.advanced.auto.desktop.value' ) );
+        $this->assertSame( '5000', $this->read( $settings, 'module.advanced.autoSpeed.desktop.value' ) );
+    }
+
+    public function test_a_media_grid_sets_its_column_count_and_gap(): void {
+        $result = $this->convert( $this->row( '[vc_media_grid include="1,2,3" items_per_row="3" gap="10"]' ) );
+
+        $layout = $this->read( $this->firstModule( $result )['settings'], 'galleryGrid.decoration.layout.desktop.value' );
+
+        $this->assertSame( 'grid', $layout['display'] );
+        $this->assertSame( '3', $layout['gridColumnCount'] );
+        $this->assertSame( '10px', $layout['columnGap'] );
+        $this->assertSame( '10px', $layout['rowGap'] );
+    }
+
+    public function test_an_external_gallery_becomes_a_flexed_row_of_images(): void {
+        $result = $this->convert( $this->row(
+            '[vc_gallery source="external_link" custom_srcs="https://example.com/a.jpg' . "\n" . 'https://example.com/b.jpg"]'
+        ) );
+
+        $row = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/row', $row['name'] );
+        $this->assertSame( 'flex', $this->read( $row['elements'][0]['settings'], 'module.decoration.layout.desktop.value.display' ) );
+        $this->assertCount( 2, $row['elements'][0]['elements'] );
+        $this->assertSame( 'divi/image', $row['elements'][0]['elements'][0]['name'] );
+        $this->assertStringContainsString( 'holds URLs rather than media-library ids', $this->details( $result ) );
+    }
+
+    public function test_a_carousel_is_one_slide_per_image_with_the_picture_behind_it(): void {
+        $result = $this->convert(
+            $this->row( '[vc_images_carousel images="7,8" img_size="full"]' ),
+            [ 'attachments' => [ 7 => [ 'url' => 'https://example.com/a.jpg' ], 8 => [ 'url' => 'https://example.com/b.jpg' ] ] ]
+        );
+
+        $slider = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/slider', $slider['name'] );
+        $this->assertCount( 2, $slider['elements'] );
+        $this->assertSame( 'divi/slide', $slider['elements'][0]['name'] );
+        $this->assertSame(
+            'https://example.com/a.jpg',
+            $this->read( $slider['elements'][0]['settings'], 'module.decoration.background.desktop.value.image.url' )
+        );
+    }
+
+    public function test_a_carousel_reports_the_swiper_options_divi_has_none_of(): void {
+        $result = $this->convert( $this->row( '[vc_images_carousel images="7" slides_per_view="3" partial_view="yes" mode="vertical"]' ) );
+
+        $details = $this->details( $result );
+
+        $this->assertStringContainsString( 'slides_per_view="3"', $details );
+        $this->assertStringContainsString( 'partial_view', $details );
+        $this->assertStringContainsString( 'mode="vertical"', $details );
+    }
+
+    public function test_a_progress_bar_becomes_one_counter_per_values_entry(): void {
+        // values = [{label:"Design",value:"90",customcolor:"#5472d2"},{label:"Code",value:"70"}]
+        $values = rawurlencode( (string) json_encode( [
+            [ 'label' => 'Design', 'value' => '90', 'customcolor' => '#5472d2' ],
+            [ 'label' => 'Code', 'value' => '70' ],
+        ] ) );
+
+        $result   = $this->convert( $this->row( '[vc_progress_bar values="' . $values . '"]' ) );
+        $counters = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/counters', $counters['name'] );
+        $this->assertCount( 2, $counters['elements'] );
+        $this->assertSame( 'divi/counter', $counters['elements'][0]['name'] );
+        $this->assertSame( 'Design', $this->read( $counters['elements'][0]['settings'], 'title.innerContent.desktop.value' ) );
+        $this->assertSame( '90', $this->read( $counters['elements'][0]['settings'], 'barProgress.innerContent.desktop.value' ) );
+        $this->assertSame( '#5472d2', $this->read( $counters['elements'][0]['settings'], 'barProgress.decoration.background.desktop.value.color' ) );
+        $this->assertSame( 'Code', $this->read( $counters['elements'][1]['settings'], 'title.innerContent.desktop.value' ) );
+    }
+
+    public function test_a_pie_is_a_circle_counter_with_its_own_title(): void {
+        $result   = $this->convert( $this->row( '[vc_pie value="70" label_value="70" units="%" custom_color="#5472d2" title="Complete"]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'divi/circle-counter', $this->firstModule( $result )['name'] );
+        $this->assertSame( '70', $this->read( $settings, 'number.innerContent.desktop.value' ) );
+        $this->assertSame( 'on', $this->read( $settings, 'number.advanced.percentSign.desktop.value' ) );
+        $this->assertSame( 'Complete', $this->read( $settings, 'title.innerContent.desktop.value' ) );
+        $this->assertSame( '#5472d2', $this->read( $settings, 'circle.advanced.color.desktop.value' ) );
+        // The pie prints its title under the ring, exactly as Divi's does, so
+        // there is no separate heading block.
+        $this->assertCount( 1, $this->modules( $result ) );
+    }
+
+    public function test_a_round_chart_is_the_category_value_family(): void {
+        $values = rawurlencode( (string) json_encode( [
+            [ 'title' => 'One', 'value' => '60', 'custom_color' => '#5472d2' ],
+            [ 'title' => 'Two', 'value' => '40', 'custom_color' => '#fe6c61' ],
+        ] ) );
+
+        $result   = $this->convert( $this->row( '[vc_round_chart type="doughnut" legend="yes" tooltips="yes" values="' . $values . '"]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'divi/charts', $this->firstModule( $result )['name'] );
+        $this->assertSame( 'doughnut', $this->read( $settings, 'chart.advanced.config.desktop.value.type' ) );
+        $this->assertSame( 'on', $this->read( $settings, 'chart.advanced.config.desktop.value.showLegend' ) );
+
+        $data = $this->read( $settings, 'chart.innerContent.desktop.value.data' );
+
+        $this->assertSame( 'category', $data['columns'][0]['role'] );
+        $this->assertSame( 'value', $data['columns'][1]['role'] );
+        $this->assertSame( [ 'One', '60' ], $data['rows'][0]['cells'] );
+        $this->assertSame( '#5472d2', $data['rows'][0]['color'] );
+        $this->assertSame( '#fe6c61', $data['rows'][1]['color'] );
+    }
+
+    public function test_a_line_chart_is_one_series_column_per_values_entry(): void {
+        $values = rawurlencode( (string) json_encode( [
+            [ 'title' => 'Sales', 'y_values' => '10;20;30', 'custom_color' => '#5472d2' ],
+            [ 'title' => 'Costs', 'y_values' => '5;6;7' ],
+        ] ) );
+
+        $result = $this->convert( $this->row( '[vc_line_chart type="line" x_values="Jan;Feb;Mar" values="' . $values . '"]' ) );
+        $data   = $this->read( $this->firstModule( $result )['settings'], 'chart.innerContent.desktop.value.data' );
+
+        $this->assertSame( 'category', $data['columns'][0]['role'] );
+        $this->assertSame( 'series', $data['columns'][1]['role'] );
+        $this->assertSame( 'Sales', $data['columns'][1]['label'] );
+        $this->assertSame( '#5472d2', $data['columns'][1]['color'] );
+        // A series with no colour of its own gets none: Divi's DefaultPalette fills it.
+        $this->assertArrayNotHasKey( 'color', $data['columns'][2] );
+        $this->assertSame( [ 'Jan', '10', '5' ], $data['rows'][0]['cells'] );
+        $this->assertSame( [ 'Mar', '30', '7' ], $data['rows'][2]['cells'] );
+    }
+
+    public function test_a_chart_reports_the_styling_divi_has_no_key_for(): void {
+        $values  = rawurlencode( (string) json_encode( [ [ 'title' => 'One', 'value' => '60' ] ] ) );
+        $result  = $this->convert( $this->row( '[vc_round_chart style="modern" animation="easeOutBounce" stroke_width="2" custom_stroke_color="#ffffff" values="' . $values . '"]' ) );
+        $details = $this->details( $result );
+
+        $this->assertStringContainsString( 'style="modern"', $details );
+        $this->assertStringContainsString( 'stroke_width="2"', $details );
+    }
+
+        /** Ids are generated from the source position, so two equivalent pages differ only there. */
     private static function withoutIds( array $block ): array {
         unset( $block['id'] );
 

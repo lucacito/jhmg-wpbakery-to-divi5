@@ -1,0 +1,2 @@
+[vc_row][vc_column][vc_images_carousel images="7,8,9" img_size="full" onclick="custom_link" custom_links="https://example.com/one
+https://example.com/two" custom_links_target="_blank" mode="horizontal" speed="4000" slides_per_view="2" autoplay="yes" hide_pagination_control="" hide_prev_next_buttons="yes" partial_view="yes" wrap="yes" title="Partners"][/vc_column][/vc_row]
