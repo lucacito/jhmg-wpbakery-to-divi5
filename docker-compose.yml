@@ -31,7 +31,16 @@ services:
       - ./plugin/jhmg-converter-for-wpbakery-to-divi-pro:/var/www/html/wp-content/plugins/jhmg-converter-for-wpbakery-to-divi-pro:delegated
       - ./references/Divi.zip:/tmp/Divi.zip:ro
       - ./references/js_composer.9.0.1.zip:/tmp/js_composer.zip:ro
+      # A real WPBakery add-on beside Divi, so the e2e suite can convert a theme
+      # element this converter has no handler for while its own plugin renders
+      # it — the static-copy path. Ronneby Core cannot play that part: it
+      # switches itself off unless the DFD Ronneby theme is the active one
+      # (docs/conversion-workflow.md). Optional — setup_wp.sh skips it when absent.
+      - ./references/Ultimate_VC_Addons.zip:/tmp/ultimate-vc-addons.zip:ro
       - ./fixtures:/var/www/html/fixtures:ro
+      # The committed theme exports, so the seed can import one through the
+      # plugin's own WXR path. The directory name really does hold a space.
+      - "./wpbakery templates:/var/www/html/wpbakery-templates:ro"
       - wp_uploads:/var/www/html/wp-content/uploads
     # Wrap the real entrypoint to fix directory ownership before Apache starts,
     # while still passing apache2-foreground so WordPress setup runs.

@@ -5,7 +5,7 @@
     "@playwright/test": "^1.44.0"
   },
   "scripts": {
-    "test": "vendor/bin/phpunit && npx playwright test",
+    "test": "./test.sh",
     "test:php": "vendor/bin/phpunit",
     "test:browser": "npx playwright test",
     "i18n": "npm run i18n:free && npm run i18n:pro",

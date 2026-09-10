@@ -10,7 +10,10 @@ Not committed. The Docker environment and the schema documentation expect these 
   checkbox values) that most live pages still carry.
 - `Ultimate_VC_Addons.zip` — Ultimate Addons for WPBakery 3.19.3, the source for the add-on element
   handlers (`bsf-info-box`, `just_icon`, `stat_counter`, `ultimate_pricing`, `ultimate_video`,
-  `ult_content_box`).
+  `ult_content_box`). `scripts/docker/setup_wp.sh` also installs it when it is here, with only the
+  `ultimate_headings` module switched on, so the e2e suite has a real theme element with no handler
+  to render into a static copy (`docs/conversion-workflow.md`). Optional: the suite skips that case
+  when the archive is absent.
 - `layouts-for-wpbakery.1.1.5.zip` — the free Layouts for WPBakery plugin; its public API is where
   `scripts/fetch-layouts-corpus.php` downloads the 35-layout smoke corpus from.
 - `themeforest-KBeonkGF-the-retailer-…-wordpress-theme.zip` — The Retailer 10.0.13 (Get Bowtied), a
@@ -28,6 +31,9 @@ Not committed. The Docker environment and the schema documentation expect these 
 - `ronneby-core.zip` — the Ronneby Core plugin, downloaded from DFD's update server with the theme's
   purchase code (the theme's TGM screen does the same). It defines every `dfd_*` element and the
   unprefixed Ronneby elements (`announcement`, `new_team_member`, `price_list`, …) the demo exports
-  use, and is the source the Ronneby element handlers are written from.
+  use, and is the source the Ronneby element handlers are written from. A source only: it cannot be
+  installed beside Divi — it fatals without the DFD Ronneby theme's `inc/helpers.php` and registers
+  nothing unless that theme is the active one (`docs/conversion-workflow.md`), so the Docker site
+  does not mount it.
 
 `scripts/docker/setup_wp.sh` stops with instructions when `Divi.zip` or `js_composer.9.0.1.zip` is missing.
