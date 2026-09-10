@@ -1,7 +1,15 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { BASE, convertToNewPage, copyHelperScript, createWPBakeryPage, rootDir, serveExternalRequestsLocally } from './helpers';
+import {
+  BASE,
+  convertToNewPage,
+  copyHelperScript,
+  createWPBakeryPage,
+  rootDir,
+  serveExternalRequestsLocally,
+  trashPages,
+} from './helpers';
 
 /**
  * What actually reaches the page when the converter writes WPBakery's default
@@ -15,8 +23,10 @@ import { BASE, convertToNewPage, copyHelperScript, createWPBakeryPage, rootDir, 
  * lands — and the only way to know which modules those are is to render one of
  * each and read the computed style.
  *
- * The result goes to `test-results/module-spacing.json` and to
- * `docs/module-spacing.json`, which `docs/box-model.md` cites. A module whose
+ * The result is written to `test-results/module-spacing.json` only — a gated
+ * run must leave the working tree clean. `docs/module-spacing.json` is the
+ * reviewed copy `docs/box-model.md` cites: when the measurement changes, copy
+ * the new file over it by hand and say why in the commit. A module whose
  * trailing space measures `0px` while the converter asked for one fails this
  * spec: its handler has to write `padding-bottom` instead.
  *
@@ -88,14 +98,24 @@ const MODULE_CLASSES: Record<string, string> = {
 const MAX_FIXTURES_PER_TYPE = 3;
 
 type Written = { marginBottom: string; paddingBottom: string };
-type Result = {
+type Measured = { marginBottom: string; paddingBottom: string; drawnOn: string };
+type Result = Measured & {
   fixture: string;
   written: Written;
-  marginBottom: string;
-  paddingBottom: string;
   found: boolean;
+  /** Whether the fixture measured writes a default trailing space for this type. */
+  gated: boolean;
   fixturesTried: string[];
 };
+
+/** Module types no fixture in the corpus renders on this site. */
+const KNOWN_NOT_RENDERED = [
+  // Contact Form 7 is not installed here, so the module renders nothing.
+  'contact-form-7',
+  // The gallery fixtures name attachment ids that only exist as an import-time
+  // media map; this site's media library has no such attachments.
+  'gallery',
+];
 
 function read(node: any, dotPath: string): any {
   return dotPath.split('.').reduce((carry, key) => (carry == null ? undefined : carry[key]), node);
@@ -122,7 +142,42 @@ function writtenSpacing(elements: any[], into: Map<string, Written>): void {
   }
 }
 
-/** module type ⇒ the fixtures that emit it, most focused first. */
+const expectedFor = new Map<string, Map<string, Written>>();
+
+/** The spacing an expected fixture writes, per module type, read once. */
+function writtenFor(fixture: string): Map<string, Written> {
+  if (!expectedFor.has(fixture)) {
+    const written = new Map<string, Written>();
+    writtenSpacing(
+      JSON.parse(fs.readFileSync(path.join(rootDir, 'fixtures', 'divi', `${fixture}.json`), 'utf8')).divi?.elements ?? [],
+      written
+    );
+    expectedFor.set(fixture, written);
+  }
+  return expectedFor.get(fixture)!;
+}
+
+/** Does this fixture's golden give that module type a default trailing space? */
+function writesDefault(fixture: string, type: string): boolean {
+  const written = writtenFor(fixture).get(type);
+  return !!written && (written.marginBottom !== '' || written.paddingBottom !== '');
+}
+
+/**
+ * module type ⇒ the fixtures that emit it, best first.
+ *
+ * **A fixture that writes a default for the type comes first**, whatever else
+ * is true of it. Sorting by size alone silently defeats the whole measurement:
+ * `image` is emitted by both `single-image` (which writes the 35px default) and
+ * `ronneby-single-image` (whose handler passes `'none'` and writes nothing), and
+ * the alphabet picked the second — so `divi/image`, which is exactly the shape
+ * that loses its margin (no `styleProps.spacing` in its `module.json`), would
+ * have been measured on a page where there was nothing to lose. The same tie
+ * decided `blurb`, `divider`, `map`, `accordion` and `heading`.
+ *
+ * Within that, the most focused fixture wins, so the page stays small and the
+ * module is easy to find.
+ */
 function candidateFixtures(): Map<string, string[]> {
   const dir = path.join(rootDir, 'fixtures', 'divi');
   const typesPerFixture = new Map<string, string[]>();
@@ -146,7 +201,12 @@ function candidateFixtures(): Map<string, string[]> {
     candidates.set(
       type,
       fixtures
-        .sort((a, b) => typesPerFixture.get(a)!.length - typesPerFixture.get(b)!.length || a.localeCompare(b))
+        .sort(
+          (a, b) =>
+            Number(writesDefault(b, type)) - Number(writesDefault(a, type)) ||
+            typesPerFixture.get(a)!.length - typesPerFixture.get(b)!.length ||
+            a.localeCompare(b)
+        )
         .slice(0, MAX_FIXTURES_PER_TYPE)
     );
   }
@@ -155,19 +215,6 @@ function candidateFixtures(): Map<string, string[]> {
 }
 
 const candidates = candidateFixtures();
-const expectedFor = new Map<string, Map<string, Written>>();
-
-function writtenFor(fixture: string): Map<string, Written> {
-  if (!expectedFor.has(fixture)) {
-    const written = new Map<string, Written>();
-    writtenSpacing(
-      JSON.parse(fs.readFileSync(path.join(rootDir, 'fixtures', 'divi', `${fixture}.json`), 'utf8')).divi?.elements ?? [],
-      written
-    );
-    expectedFor.set(fixture, written);
-  }
-  return expectedFor.get(fixture)!;
-}
 
 test.describe.serial('WPBakery default element spacing, per Divi module type', () => {
   test.skip(!ENABLED, 'Set BOX_MODEL=1 to run the module spacing measurement.');
@@ -175,6 +222,8 @@ test.describe.serial('WPBakery default element spacing, per Divi module type', (
 
   const results: Record<string, Result> = {};
   const converted = new Map<string, string>();
+  /** Everything this file made, trashed at the end so the picker stays short. */
+  const created: string[] = [];
 
   test.beforeAll(() => {
     fs.mkdirSync(path.join(rootDir, 'test-results'), { recursive: true });
@@ -182,11 +231,15 @@ test.describe.serial('WPBakery default element spacing, per Divi module type', (
     copyHelperScript('convert-to-new-page.php');
   });
 
+  test.afterAll(() => trashPages(created));
+
   /** Converts a fixture once per run and returns the converted page id. */
   function pageFor(fixture: string): string {
     if (!converted.has(fixture)) {
       const sourceId = createWPBakeryPage(`wpbakery/${fixture}`, `Spacing ${fixture} (WPBakery)`);
-      converted.set(fixture, convertToNewPage(sourceId));
+      const pageId = convertToNewPage(sourceId);
+      created.push(sourceId, pageId);
+      converted.set(fixture, pageId);
     }
     return converted.get(fixture)!;
   }
@@ -203,23 +256,46 @@ test.describe.serial('WPBakery default element spacing, per Divi module type', (
         await page.waitForSelector('div.et_builder_inner_content', { timeout: 30000 });
         await page.waitForLoadState('networkidle');
 
-        const measured = await page.evaluate((className: string) => {
-          const pattern = new RegExp(`^${className}(_\\d+)?$`);
-          const el = Array.from(document.querySelectorAll('div.et_builder_inner_content *')).find((node) =>
-            Array.from(node.classList).some((c) => pattern.test(c))
-          );
-          if (!el) return null;
+        const wanted = writtenFor(fixture).get(type);
+        const measured = await page.evaluate(
+          ({ className, want }: { className: string; want: string }) => {
+            const pattern = new RegExp(`^${className}(_\\d+)?$`);
+            const el = Array.from(document.querySelectorAll('div.et_builder_inner_content *')).find((node) =>
+              Array.from(node.classList).some((c) => pattern.test(c))
+            );
+            if (!el) return null;
 
-          // Divi puts a module's own spacing on its wrapper when it renders one
-          // (`et_pb_button_module_wrapper`), so the element to read is the
-          // outermost one the module produced.
-          let root: Element = el;
-          while (root.parentElement && /_module_wrapper\b/.test(root.parentElement.className)) {
-            root = root.parentElement;
-          }
-          const style = getComputedStyle(root);
-          return { marginBottom: style.marginBottom, paddingBottom: style.paddingBottom };
-        }, MODULE_CLASSES[type]);
+            // Divi puts a module's own spacing on its wrapper when it renders one
+            // (`et_pb_button_module_wrapper`), so the element to read is the
+            // outermost one the module produced.
+            let root: Element = el;
+            while (root.parentElement && /_module_wrapper\b/.test(root.parentElement.className)) {
+              root = root.parentElement;
+            }
+            const style = getComputedStyle(root);
+
+            // Some modules route their own spacing onto inner elements through
+            // `propertySelectors` in their `module.json` — `divi/pricing-tables`
+            // puts its padding on `.et_pb_pricing_heading` and its siblings — so
+            // "nothing on the module box" is not the same as "nothing on the
+            // page". When the box has none, the value the converter asked for is
+            // looked for inside before calling it lost.
+            const near = (a: string, b: string) => Math.abs(parseFloat(a) - parseFloat(b)) < 0.5;
+            let drawnOn = '';
+            if (want && style.marginBottom === '0px' && style.paddingBottom === '0px') {
+              const inner = Array.from(root.querySelectorAll('*')).find((node) => {
+                const s = getComputedStyle(node);
+                return near(s.paddingBottom, want) || near(s.marginBottom, want);
+              });
+              if (inner) {
+                drawnOn = '.' + (inner.className || inner.tagName.toLowerCase()).toString().trim().split(/\s+/)[0];
+              }
+            }
+
+            return { marginBottom: style.marginBottom, paddingBottom: style.paddingBottom, drawnOn };
+          },
+          { className: MODULE_CLASSES[type], want: wanted?.paddingBottom || wanted?.marginBottom || '' }
+        );
 
         if (measured) {
           results[type] = {
@@ -227,8 +303,14 @@ test.describe.serial('WPBakery default element spacing, per Divi module type', (
             written: writtenFor(fixture).get(type) ?? { marginBottom: '', paddingBottom: '' },
             ...measured,
             found: true,
+            gated: writesDefault(fixture, type),
             fixturesTried: tried,
           };
+
+          // A computed style, not an empty string: proof the element really was
+          // found and read rather than defaulted past.
+          expect(measured.marginBottom, `${type} margin-bottom is a computed length`).toMatch(/^-?[\d.]+px$/);
+          expect(measured.paddingBottom, `${type} padding-bottom is a computed length`).toMatch(/^-?[\d.]+px$/);
           return;
         }
       }
@@ -238,20 +320,26 @@ test.describe.serial('WPBakery default element spacing, per Divi module type', (
         written: writtenFor(fixtures[0]).get(type) ?? { marginBottom: '', paddingBottom: '' },
         marginBottom: '',
         paddingBottom: '',
+        drawnOn: '',
         found: false,
+        gated: false,
         fixturesTried: tried,
       };
-      expect(results[type].found, `${type} did not render on any of ${tried.join(', ')}`).toBe(false);
+
+      // Not rendering is a real answer for a handful of modules and a
+      // regression for any other, so it is asserted rather than recorded.
+      // Soft, so the run still reaches the summary and writes the table.
+      expect
+        .soft(KNOWN_NOT_RENDERED, `${type} rendered on none of ${tried.join(', ')} — see docs/conversion-workflow.md`)
+        .toContain(type);
     });
   }
 
-  test('every module the converter gives a default margin keeps it on the page', () => {
+  test('every module the converter gives a default trailing space keeps it on the page', () => {
+    // test-results/ only: a gated run must leave the working tree clean.
+    // docs/module-spacing.json is updated by hand from this file.
     fs.writeFileSync(
       path.join(rootDir, 'test-results', 'module-spacing.json'),
-      JSON.stringify({ viewport: 1280, results }, null, 2)
-    );
-    fs.writeFileSync(
-      path.join(rootDir, 'docs', 'module-spacing.json'),
       JSON.stringify({ viewport: 1280, results }, null, 2)
     );
 
@@ -263,14 +351,42 @@ test.describe.serial('WPBakery default element spacing, per Divi module type', (
       );
     }
 
+    // A type no fixture in the corpus gives a default to has nothing to lose,
+    // so it is reported rather than gated — naming it, because "no finding"
+    // and "nothing was looked at" are different answers.
+    const ungated = Object.entries(results).filter(([, r]) => r.found && !r.gated);
+    if (ungated.length > 0) {
+      console.log(
+        `module-spacing: measured but not gated (no fixture writes a default trailing space for them): ${ungated
+          .map(([type]) => type)
+          .join(', ')}`
+      );
+    }
+
     // The finding the Task 2 ruling asked for: a module whose default trailing
-    // space is dropped by Divi has to write padding-bottom instead.
+    // space is dropped by Divi has to write padding-bottom instead. Padding as
+    // well as margin, so a module that loses the padding too is caught.
+    const routed = Object.entries(results).filter(([, r]) => r.gated && r.drawnOn !== '');
+    if (routed.length > 0) {
+      console.log(
+        `module-spacing: drawn on an inner element, not the module box: ${routed
+          .map(([type, r]) => `${type} → ${r.drawnOn}`)
+          .join(', ')}`
+      );
+    }
+
     const dropped = Object.entries(results).filter(
-      ([, r]) => r.found && r.written.marginBottom !== '' && r.marginBottom === '0px' && r.paddingBottom === '0px'
+      ([, r]) => r.gated && r.marginBottom === '0px' && r.paddingBottom === '0px' && r.drawnOn === ''
     );
     expect(
-      dropped.map(([type, r]) => `${type}: wrote margin-bottom ${r.written.marginBottom}, measured 0px`),
+      dropped.map(
+        ([type, r]) =>
+          `${type} (${r.fixture}): wrote margin-bottom "${r.written.marginBottom}" padding-bottom "${r.written.paddingBottom}", measured 0px on both`
+      ),
       'Divi kept every default trailing space the converter wrote'
     ).toEqual([]);
+
+    // And the measurement actually covered the corpus.
+    expect(Object.keys(results).length, 'every module type in the corpus was measured').toBe(candidates.size);
   });
 });

@@ -57,6 +57,23 @@ export function convertToNewPage(sourceId: string): string {
   return id;
 }
 
+/**
+ * Moves the posts a spec created to the trash.
+ *
+ * Every spec here makes pages, and left behind they pile up in the picker the
+ * Tools screen renders twenty rows at a time — so a later run's assertion on
+ * "the page I just made" would depend on it still being on page one. Each spec
+ * keeps its own list and empties it in `afterAll`; the list is per spec rather
+ * than shared, so one file's cleanup can never reach into another's pages.
+ * Trash, not delete: the picker ignores trashed posts, and a failed run's
+ * evidence is still there to look at.
+ */
+export function trashPages(ids: string[]): void {
+  const real = ids.filter((id) => /^\d+$/.test(id));
+  if (real.length === 0) return;
+  wp(`wp post delete ${real.join(' ')} --allow-root`);
+}
+
 /** The conversion report the exporter stamped on a converted post. */
 export function conversionReport(postId: string): any {
   const raw = wp(`wp post meta get ${shellEscape(postId)} _wbdc_conversion_report --allow-root`).trim();

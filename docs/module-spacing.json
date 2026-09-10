@@ -2,16 +2,18 @@
   "viewport": 1280,
   "results": {
     "accordion": {
-      "fixture": "ronneby-accordion",
+      "fixture": "tta-accordion-legacy",
       "written": {
-        "marginBottom": "",
+        "marginBottom": "21.74px",
         "paddingBottom": ""
       },
-      "marginBottom": "0px",
+      "marginBottom": "21.74px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "ronneby-accordion"
+        "tta-accordion-legacy"
       ]
     },
     "accordion-item": {
@@ -22,7 +24,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "20px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-accordion"
       ]
@@ -35,22 +39,26 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "35px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "basic-grid"
       ]
     },
     "blurb": {
-      "fixture": "hoverbox-real",
+      "fixture": "ult-info-box",
       "written": {
-        "marginBottom": "",
+        "marginBottom": "35px",
         "paddingBottom": ""
       },
-      "marginBottom": "0px",
+      "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "hoverbox-real"
+        "ult-info-box"
       ]
     },
     "button": {
@@ -61,7 +69,9 @@
       },
       "marginBottom": "22px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "btn-custom-hover",
         "btn-flat"
@@ -75,7 +85,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "35px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "line-chart"
       ]
@@ -88,7 +100,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "35px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "pie"
       ]
@@ -101,7 +115,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "gmaps-real",
         "gutenberg"
@@ -115,7 +131,9 @@
       },
       "marginBottom": "",
       "paddingBottom": "",
+      "drawnOn": "",
       "found": false,
+      "gated": false,
       "fixturesTried": [
         "contact-form-7",
         "contact-form-7-real"
@@ -129,7 +147,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "40.9531px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-countdown"
       ]
@@ -142,7 +162,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "progress-bar-real"
       ]
@@ -155,7 +177,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "progress-bar-real"
       ]
@@ -168,22 +192,26 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "28px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "cta"
       ]
     },
     "divider": {
-      "fixture": "empty-space",
+      "fixture": "separator",
       "written": {
-        "marginBottom": "",
+        "marginBottom": "35px",
         "paddingBottom": ""
       },
-      "marginBottom": "0px",
+      "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "empty-space"
+        "separator"
       ]
     },
     "gallery": {
@@ -194,7 +222,9 @@
       },
       "marginBottom": "",
       "paddingBottom": "",
+      "drawnOn": "",
       "found": false,
+      "gated": false,
       "fixturesTried": [
         "gallery-real",
         "gallery-slider",
@@ -209,22 +239,26 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "grid-container"
       ]
     },
     "heading": {
-      "fixture": "custom-heading",
+      "fixture": "toggle-real",
       "written": {
         "marginBottom": "",
-        "paddingBottom": ""
+        "paddingBottom": "10px"
       },
       "marginBottom": "0px",
-      "paddingBottom": "0px",
+      "paddingBottom": "10px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "custom-heading"
+        "toggle-real"
       ]
     },
     "icon": {
@@ -235,7 +269,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "icon"
       ]
@@ -248,7 +284,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-icon-list"
       ]
@@ -261,35 +299,41 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-icon-list"
       ]
     },
     "image": {
-      "fixture": "ronneby-single-image",
+      "fixture": "single-image",
       "written": {
-        "marginBottom": "",
-        "paddingBottom": ""
+        "marginBottom": "35px",
+        "paddingBottom": "6px"
       },
-      "marginBottom": "0px",
-      "paddingBottom": "0px",
+      "marginBottom": "35px",
+      "paddingBottom": "6px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "ronneby-single-image"
+        "single-image"
       ]
     },
     "map": {
-      "fixture": "ronneby-google-map",
+      "fixture": "goo-maps",
       "written": {
-        "marginBottom": "",
+        "marginBottom": "35px",
         "paddingBottom": ""
       },
-      "marginBottom": "0px",
+      "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "ronneby-google-map"
+        "goo-maps"
       ]
     },
     "map-pin": {
@@ -300,7 +344,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-google-map"
       ]
@@ -313,7 +359,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "wp-custommenu"
       ]
@@ -326,7 +374,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "ult-stat-counter"
       ]
@@ -339,7 +389,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "posts-slider"
       ]
@@ -352,7 +404,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "30px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "pricing-table"
       ]
@@ -365,7 +419,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": ".et_pb_pricing_table_0",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "pricing-table"
       ]
@@ -378,7 +434,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "wp-search"
       ]
@@ -391,7 +449,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "widget-sidebar"
       ]
@@ -404,7 +464,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "images-carousel-real"
       ]
@@ -417,7 +479,9 @@
       },
       "marginBottom": "35px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "images-carousel-real"
       ]
@@ -430,7 +494,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-new-social-accounts"
       ]
@@ -443,7 +509,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-new-social-accounts"
       ]
@@ -456,22 +524,26 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-tta-tabs"
       ]
     },
     "tabs": {
-      "fixture": "ronneby-tta-tabs",
+      "fixture": "tta-toggle",
       "written": {
-        "marginBottom": "",
+        "marginBottom": "21.74px",
         "paddingBottom": ""
       },
-      "marginBottom": "0px",
+      "marginBottom": "21.74px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
-        "ronneby-tta-tabs"
+        "tta-toggle"
       ]
     },
     "team-member": {
@@ -482,7 +554,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-new-team-member"
       ]
@@ -495,7 +569,9 @@
       },
       "marginBottom": "0px",
       "paddingBottom": "30px",
+      "drawnOn": "",
       "found": true,
+      "gated": false,
       "fixturesTried": [
         "ronneby-new-testimonials"
       ]
@@ -508,7 +584,9 @@
       },
       "marginBottom": "10px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "column-text"
       ]
@@ -521,7 +599,9 @@
       },
       "marginBottom": "21.74px",
       "paddingBottom": "20px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "toggle"
       ]
@@ -534,7 +614,9 @@
       },
       "marginBottom": "20px",
       "paddingBottom": "0px",
+      "drawnOn": "",
       "found": true,
+      "gated": true,
       "fixturesTried": [
         "ult-video"
       ]

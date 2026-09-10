@@ -335,6 +335,71 @@ final class ContentHandlersBTest extends TestCase {
         $this->assertCount( 1, $this->modules( $result ) );
     }
 
+    /**
+     * Divi ignores a margin on `divi/blog`, `divi/charts` and
+     * `divi/circle-counter` whatever the converter writes
+     * (`GlobalSettingsResolver::PADDING_BOTTOM_MODULES`, measured in
+     * `tests/e2e/module-spacing.spec.ts`). The default trailing space is
+     * written as padding; so is an author's own vertical margin, when padding
+     * puts the same empty space in the same place.
+     */
+    public function test_an_author_margin_on_a_module_divi_ignores_margins_on_becomes_padding(): void {
+        $result   = $this->convert( $this->row(
+            '[vc_pie value="70" title="T" css=".vc_custom_1{margin-top: 12px !important;margin-bottom: 40px !important;}"]'
+        ) );
+        $spacing = $this->read( $this->firstModule( $result )['settings'], 'module.decoration.spacing.desktop.value' );
+
+        $this->assertSame( '12px', $spacing['padding']['top'] );
+        $this->assertSame( '40px', $spacing['padding']['bottom'] );
+        $this->assertSame( '', $spacing['margin']['top'], 'the margin Divi would drop is not left behind' );
+        $this->assertSame( '', $spacing['margin']['bottom'] );
+        $this->assertSame( [], $result['report']['not_carried_over'], 'nothing was lost, so nothing is reported' );
+    }
+
+    /**
+     * With a background or a border of its own, padding would stretch that
+     * background into the gap WPBakery left empty — a different page. The
+     * margin stays as written and the report says Divi will not draw it.
+     */
+    public function test_an_author_margin_stays_a_margin_when_padding_would_move_the_background(): void {
+        $result  = $this->convert( $this->row(
+            '[vc_pie value="70" title="T" css=".vc_custom_2{margin-bottom: 40px !important;background-color: #eeeeee !important;}"]'
+        ) );
+        $spacing = $this->read( $this->firstModule( $result )['settings'], 'module.decoration.spacing.desktop.value' );
+
+        $this->assertSame( '40px', $spacing['margin']['bottom'] );
+        $this->assertArrayNotHasKey( 'padding', $spacing, 'the author margin was not turned into padding' );
+        $this->assertStringContainsString( 'Divi ignores margins on this module type', $this->details( $result ) );
+        $this->assertSame(
+            [ 'layout' ],
+            array_values( array_unique( array_column( $result['report']['not_carried_over'], 'kind' ) ) )
+        );
+    }
+
+    /** Same, when the author already used the padding side the margin would move to. */
+    public function test_an_author_margin_stays_a_margin_when_that_padding_side_is_already_used(): void {
+        $result  = $this->convert( $this->row(
+            '[vc_pie value="70" title="T" css=".vc_custom_3{margin-bottom: 40px !important;padding-bottom: 9px !important;}"]'
+        ) );
+        $spacing = $this->read( $this->firstModule( $result )['settings'], 'module.decoration.spacing.desktop.value' );
+
+        $this->assertSame( '40px', $spacing['margin']['bottom'] );
+        $this->assertSame( '9px', $spacing['padding']['bottom'], "the author's own padding is untouched" );
+        $this->assertStringContainsString( 'Divi ignores margins on this module type', $this->details( $result ) );
+    }
+
+    /** A module Divi does honour margins on is left exactly as it was. */
+    public function test_an_author_margin_on_an_ordinary_module_is_still_a_margin(): void {
+        $result  = $this->convert( $this->row(
+            '[vc_column_text css=".vc_custom_4{margin-bottom: 40px !important;}"]Hello[/vc_column_text]'
+        ) );
+        $spacing = $this->read( $this->firstModule( $result )['settings'], 'module.decoration.spacing.desktop.value' );
+
+        $this->assertSame( '40px', $spacing['margin']['bottom'] );
+        $this->assertArrayNotHasKey( 'padding', $spacing );
+        $this->assertSame( [], $result['report']['not_carried_over'] );
+    }
+
     public function test_a_round_chart_is_the_category_value_family(): void {
         $values = rawurlencode( (string) json_encode( [
             [ 'title' => 'One', 'value' => '60', 'custom_color' => '#5472d2' ],

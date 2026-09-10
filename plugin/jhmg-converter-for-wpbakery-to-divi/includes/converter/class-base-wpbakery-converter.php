@@ -523,7 +523,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         $attrs = $result['divi_attrs'];
 
         if ( $margin_kind !== 'none' && ! in_array( $kind, [ 'section', 'row', 'column', 'group' ], true ) && empty( $node['delegated'] ) ) {
-            $attrs = $this->fillModuleMarginBottom( $kind, $attrs, $margin_kind, $divi_module );
+            $attrs = $this->fillModuleMarginBottom( $kind, $attrs, $margin_kind, $divi_module, $node_id );
         }
 
         return [ 'divi_attrs' => $attrs, 'handled_keys' => $result['handled_keys'] ];
@@ -551,7 +551,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
     }
 
     /** WPBakery's per-element bottom margin, at the path that element's module reads. */
-    private function fillModuleMarginBottom( string $kind, array $attrs, string $margin_kind, string $divi_module = '' ): array {
+    private function fillModuleMarginBottom( string $kind, array $attrs, string $margin_kind, string $divi_module = '', string $node_id = '' ): array {
         // `divi/image` reads its spacing from module.advanced, everything else
         // from module.decoration (docs/box-model.md, "Additional findings").
         $path = $kind === 'image' ? 'module.advanced.spacing' : 'module.decoration.spacing';
@@ -559,7 +559,15 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         // A few modules never keep a margin Divi's own stylesheet zeroes, so
         // their default trailing space is padding instead — measured, and
         // listed in GlobalSettingsResolver::PADDING_BOTTOM_MODULES.
-        $side = in_array( $divi_module, GlobalSettingsResolver::PADDING_BOTTOM_MODULES, true ) ? 'padding' : 'margin';
+        $is_padding_module = in_array( $divi_module, GlobalSettingsResolver::PADDING_BOTTOM_MODULES, true );
+        $side              = $is_padding_module ? 'padding' : 'margin';
+
+        // On those same modules the author's *own* vertical margin is dropped
+        // by Divi too, so it is moved to padding where that renders the same
+        // and reported where it cannot be.
+        if ( $is_padding_module ) {
+            $attrs = $this->authorMarginOnPaddingModule( $path, $attrs, $divi_module, $node_id );
+        }
 
         // The element's own design options win either way: WPBakery writes them
         // `!important`, and a margin it set is the author's spacing even on a
@@ -583,6 +591,97 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         ) );
 
         return $attrs;
+    }
+
+    /**
+     * A vertical margin the page's author set in the element's own design
+     * options, on one of the modules whose margin Divi ignores.
+     *
+     * The default trailing space on those modules is already written as padding
+     * (`PADDING_BOTTOM_MODULES`); an author's `margin-top`/`margin-bottom` from
+     * `css` has exactly the same problem and cannot simply be left where Divi
+     * will not draw it.
+     *
+     * - **No background and no border of its own** — padding and margin put the
+     *   same empty space in the same place, so the value moves to padding and
+     *   the page looks like the WPBakery one.
+     * - **Otherwise** — padding would extend the module's own background or
+     *   border into the gap, which is a different page. The margin is kept as
+     *   the author wrote it and the report says Divi will not draw it, so the
+     *   loss is named rather than silent.
+     *
+     * A side whose padding the author already set is in the second case too:
+     * moving the margin there would overwrite the author's own padding.
+     */
+    private function authorMarginOnPaddingModule( string $path, array $attrs, string $divi_module, string $node_id ): array {
+        $margin = $this->read( $attrs, $path . '.desktop.value.margin' );
+        if ( ! is_array( $margin ) ) {
+            return $attrs;
+        }
+
+        $sides = array_filter(
+            [ 'top' => (string) ( $margin['top'] ?? '' ), 'bottom' => (string) ( $margin['bottom'] ?? '' ) ],
+            static fn( string $value ): bool => $value !== ''
+        );
+        if ( $sides === [] ) {
+            return $attrs;
+        }
+
+        $padding  = $this->read( $attrs, $path . '.desktop.value.padding' );
+        $padding  = is_array( $padding ) ? $padding : [];
+        $occupied = array_filter(
+            array_keys( $sides ),
+            static fn( string $side ): bool => (string) ( $padding[ $side ] ?? '' ) !== ''
+        );
+
+        if ( $occupied !== [] || $this->hasOwnSurface( $path, $attrs ) ) {
+            $this->engine->logNotCarriedOver( 'layout', $node_id, sprintf(
+                /* translators: 1: Divi module name, 2: the margin sides and values the element set */
+                '%1$s: Divi ignores margins on this module type, so %2$s will not be drawn; it was kept as written rather than turned into padding, which would have moved the module\'s own background or padding with it',
+                $divi_module,
+                implode( ', ', array_map(
+                    static fn( string $side, string $value ): string => "margin-{$side} {$value}",
+                    array_keys( $sides ),
+                    $sides
+                ) )
+            ) );
+
+            return $attrs;
+        }
+
+        foreach ( $sides as $side => $value ) {
+            $padding[ $side ] = $value;
+            $margin[ $side ]  = '';
+        }
+
+        StyleMapper::write( $attrs, $path . '.desktop.value.padding', array_merge(
+            [ 'top' => '', 'right' => '', 'bottom' => '', 'left' => '' ],
+            $padding,
+            [ 'syncVertical' => 'off', 'syncHorizontal' => 'off' ]
+        ) );
+        StyleMapper::write( $attrs, $path . '.desktop.value.margin', $margin );
+
+        return $attrs;
+    }
+
+    /**
+     * Does the module draw anything of its own where padding would show?
+     *
+     * The three modules this is asked about are never mapped as `image` or
+     * `button`, whose background and border live under their own keys
+     * (`StyleMapper`'s table), so the module paths are the ones to read.
+     */
+    private function hasOwnSurface( string $path, array $attrs ): bool {
+        $prefix = str_starts_with( $path, 'module.advanced' ) ? 'module.advanced' : 'module.decoration';
+
+        foreach ( [ $prefix . '.background', 'module.decoration.background', 'module.decoration.border' ] as $candidate ) {
+            $value = $this->read( $attrs, $candidate );
+            if ( is_array( $value ) && $value !== [] ) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /** Reads a dot path out of a settings array, or null. */

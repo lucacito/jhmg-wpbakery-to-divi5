@@ -54,25 +54,44 @@ if ( ! class_exists( ShortcodeParser::class ) ) {
 const WBDC_PARITY_EXPORTS = [ '04_pages_demo.xml', '15_tenth.xml', '23_eighteenth.xml' ];
 
 /**
- * Every document to compare, as label ⇒ content.
+ * Every document to compare, as label ⇒ content, and how many came from where.
  *
+ * A corpus that is not mounted is **said out loud**, not passed over: a shorter
+ * run that still printed `parity ok` would be the one way this script could
+ * lie about its own coverage.
+ *
+ * @param array<string,int> $counts Filled with corpus ⇒ number of documents.
  * @return array<string,string>
  */
-function wbdc_parity_documents(): array {
+function wbdc_parity_documents( array &$counts ): array {
     $documents = [];
 
     foreach ( [ 'wpbakery-templates', 'wpbakery-layouts' ] as $dir ) {
-        $root = ABSPATH . 'fixtures/' . $dir;
-        foreach ( glob( $root . '/*.txt' ) ?: [] as $file ) {
+        $root  = ABSPATH . 'fixtures/' . $dir;
+        $files = glob( $root . '/*.txt' ) ?: [];
+
+        if ( [] === $files ) {
+            echo "corpus not mounted: {$root}/*.txt\n";
+        }
+
+        foreach ( $files as $file ) {
             $documents[ $dir . '/' . basename( $file ) ] = (string) file_get_contents( $file );
         }
+
+        $counts[ $dir ] = count( $files );
     }
+
+    $counts['ronneby exports']      = 0;
+    $counts['ronneby export pages'] = 0;
 
     foreach ( WBDC_PARITY_EXPORTS as $name ) {
         $file = ABSPATH . 'wpbakery-templates/ronneby/' . $name;
         if ( ! is_readable( $file ) ) {
+            echo "export not mounted: {$file}\n";
             continue;
         }
+
+        ++$counts['ronneby exports'];
 
         // One export holds many posts; each one is a document of its own, so a
         // divergence names the page it is in rather than the whole file.
@@ -81,6 +100,7 @@ function wbdc_parity_documents(): array {
             $content = (string) ( $post['content'] ?? '' );
             if ( WPBakeryDocumentParser::isWPBakeryContent( $content ) ) {
                 $documents[ 'ronneby/' . $name . '#' . $index++ ] = $content;
+                ++$counts['ronneby export pages'];
             }
         }
     }
@@ -212,7 +232,8 @@ function wbdc_parity_excerpt( string $document, int $offset ): string {
 
 // ---------------------------------------------------------------------------
 
-$documents = wbdc_parity_documents();
+$counts    = [];
+$documents = wbdc_parity_documents( $counts );
 if ( [] === $documents ) {
     fwrite( STDERR, "No corpus found: fixtures/ is not mounted.\n" );
     exit( 1 );
@@ -300,4 +321,14 @@ if ( [] !== $bracket_tokens ) {
     }
 }
 
-echo sprintf( "parity ok: %d files, %d shortcodes\n", $files, $pairs );
+$breakdown = [];
+foreach ( $counts as $corpus => $count ) {
+    $breakdown[] = sprintf( '%d %s', $count, $corpus );
+}
+
+echo sprintf(
+    "parity ok: %d documents (%s), %d shortcodes\n",
+    $files,
+    implode( ', ', $breakdown ),
+    $pairs
+);

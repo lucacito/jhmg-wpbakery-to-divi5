@@ -11,6 +11,7 @@ import {
   login,
   runScreenshotsDir,
   serveExternalRequestsLocally,
+  trashPages,
   wp,
 } from './helpers';
 
@@ -25,7 +26,18 @@ import {
  * meant; this says Divi agrees.
  */
 
-type Fixture = { name: string; title: string; selector: string; note: string };
+type Fixture = {
+  name: string;
+  title: string;
+  selector: string;
+  note: string;
+  /**
+   * Counts the page has to reach independently of the report — the brief's
+   * "images and buttons present", stated as a number rather than derived from
+   * what the converter said it produced.
+   */
+  atLeast?: Record<string, number>;
+};
 
 const fixtures: Fixture[] = [
   {
@@ -55,12 +67,14 @@ const fixtures: Fixture[] = [
     title: 'External Image Fixture (WPBakery)',
     selector: '.et_pb_image img[src="https://cdn.example.com/hero.png"]',
     note: 'the image source reaches the page',
+    atLeast: { '.et_pb_image': 1, '.et_pb_image img': 1 },
   },
   {
     name: 'wpbakery/btn-flat',
     title: 'Button Fixture (WPBakery)',
     selector: 'a.et_pb_button[href="/shop"]:has-text("Order now")',
     note: 'the button keeps its text and its link',
+    atLeast: { '.et_pb_button': 1 },
   },
   {
     name: 'wpbakery/two-columns',
@@ -75,6 +89,7 @@ const fixtures: Fixture[] = [
     title: 'Inline Buttons Fixture (WPBakery)',
     selector: '.et_pb_row_nested a.et_pb_button:has-text("Learn more")',
     note: 'inline buttons sit together in a nested row',
+    atLeast: { '.et_pb_button': 2, '.et_pb_row_nested': 1 },
   },
   {
     // Divi opens an accordion by position, so the first section is the open
@@ -95,11 +110,16 @@ const fixtures: Fixture[] = [
 ];
 
 test.describe.serial('Divi 5 renders converted WPBakery elements', () => {
+  /** Everything this file made, trashed at the end so the picker stays short. */
+  const created: string[] = [];
+
   test.beforeAll(() => {
     fs.mkdirSync(runScreenshotsDir, { recursive: true });
     copyHelperScript('set-wpbakery-content.php');
     copyHelperScript('convert-to-new-page.php');
   });
+
+  test.afterAll(() => trashPages(created));
 
   for (const fixture of fixtures) {
     test(`${fixture.name}: ${fixture.note}`, async ({ page }) => {
@@ -108,6 +128,7 @@ test.describe.serial('Divi 5 renders converted WPBakery elements', () => {
 
       const sourceId = createWPBakeryPage(fixture.name, fixture.title);
       const pageId = convertToNewPage(sourceId);
+      created.push(sourceId, pageId);
 
       // Divi's own verdict: its block placeholder in the editor says whether
       // it recognises the post as one of its layouts. The editor canvas is an
@@ -123,6 +144,13 @@ test.describe.serial('Divi 5 renders converted WPBakery elements', () => {
       await page.goto(`${BASE}/?page_id=${pageId}`);
       await page.waitForSelector('.et_pb_section', { timeout: 20000 });
       await expect(page.locator(fixture.selector).first()).toBeVisible();
+
+      for (const [selector, minimum] of Object.entries(fixture.atLeast ?? {})) {
+        expect(
+          await page.locator(`.et_builder_inner_content ${selector}`).count(),
+          `${selector} on the page`
+        ).toBeGreaterThanOrEqual(minimum);
+      }
 
       // Divi's stylesheets have to be on the page, or the layout is markup
       // with no design at all.
@@ -149,9 +177,10 @@ test.describe.serial('Divi 5 renders converted WPBakery elements', () => {
  */
 test.describe('The Visual Builder opens a converted real-world page', () => {
   test('every section of the Ronneby export renders in the builder, with no console errors', async ({ page }) => {
-    // The builder is a whole React application over a real page; it needs
-    // longer than a front-end render.
-    test.setTimeout(180 * 1000);
+    // The builder is a whole React application over a real page, and on a cold
+    // site it builds Divi's assets first; it needs longer than a front-end
+    // render, so it is marked slow rather than given a hand-picked timeout.
+    test.slow();
 
     const pageId = wp(
       `wp post list --post_type=page --post_status=any --name=ten-layout --field=ID --allow-root`
@@ -174,9 +203,19 @@ test.describe('The Visual Builder opens a converted real-world page', () => {
     await page.setViewportSize({ width: 1400, height: 900 });
     await page.goto(`${BASE}/?page_id=${pageId}&et_fb=1&PageSpeed=off`);
 
+    // Three readiness signals in order, none of them a sleep: the builder's own
+    // app frame exists, it has painted a section, and the number of sections has
+    // stopped changing (the builder mounts them as it goes).
+    await page.locator('iframe#et-vb-app-frame, iframe[name="et-vb-app-frame"]').first().waitFor({ state: 'attached' });
+
     const builder = page.frameLocator('iframe#et-vb-app-frame, iframe[name="et-vb-app-frame"]');
-    await expect(builder.locator('.et_pb_section').first()).toBeVisible({ timeout: 150000 });
-    await expect(builder.locator('.et_pb_section')).toHaveCount(sections);
+    await expect(builder.locator('.et_pb_section').first()).toBeVisible();
+    await expect
+      .poll(() => builder.locator('.et_pb_section').count(), {
+        message: 'the builder finished mounting every section the report counted',
+        intervals: [500, 1000, 2000, 4000],
+      })
+      .toBe(sections);
 
     await page.screenshot({ path: path.join(runScreenshotsDir, 'ronneby-visual-builder.png') });
     expect(errors, 'Visual Builder JavaScript errors').toEqual([]);

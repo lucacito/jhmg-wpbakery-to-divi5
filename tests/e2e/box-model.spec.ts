@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { BASE, copyHelperScript, createWPBakeryPage, rootDir, screenshotsDir, shellEscape, wp } from './helpers';
+import { BASE, copyHelperScript, createWPBakeryPage, rootDir, runScreenshotsDir, shellEscape, trashPages, wp } from './helpers';
 
 /**
  * Measures WPBakery's box model against three hand-written Divi 5 candidates, so
@@ -9,6 +9,12 @@ import { BASE, copyHelperScript, createWPBakeryPage, rootDir, screenshotsDir, sh
  * The numbers land in test-results/box-model.json and in docs/box-model.md.
  *
  * Opt-in: BOX_MODEL=1 npx playwright test tests/e2e/box-model.spec.ts
+ *
+ * Everything it writes goes to `test-results/` — a gated run has to leave the
+ * working tree clean. `docs/box-model.json` and the `box-model-*.png` in
+ * `tests/e2e/screenshots/` are the reviewed copies this file's prose cites:
+ * when the measurement changes, copy the new ones over them by hand and say why
+ * in the commit.
  */
 const ENABLED = process.env.BOX_MODEL === '1';
 
@@ -164,13 +170,19 @@ test.describe.serial('WPBakery box model versus three Divi 5 candidates', () => 
   const results: Record<string, Measured> = {};
   const pages: Record<string, string> = {};
 
+  /** Everything this file made, trashed at the end so the picker stays short. */
+  const created: string[] = [];
+
+  test.afterAll(() => trashPages(created));
+
   test.beforeAll(() => {
-    fs.mkdirSync(screenshotsDir, { recursive: true });
+    fs.mkdirSync(runScreenshotsDir, { recursive: true });
     fs.mkdirSync(path.join(rootDir, 'test-results'), { recursive: true });
     copyHelperScript('set-wpbakery-content.php');
     copyHelperScript('set-divi-content.php');
 
     pages.wpbakery = createWPBakeryPage('wpbakery/box-model', 'Box Model Source (WPBakery)');
+    created.push(pages.wpbakery);
     // Divi gives builder pages no sidebar; give the WPBakery page the same
     // template so both measure against the identical theme container.
     wp(`wp post meta update ${shellEscape(pages.wpbakery)} _et_pb_page_layout et_no_sidebar --allow-root`);
@@ -183,6 +195,7 @@ test.describe.serial('WPBakery box model versus three Divi 5 candidates', () => 
         `HTML_PATH=/var/www/html/fixtures/box-model/divi-candidate-${candidate}.html PAGE_ID=${shellEscape(id)} wp eval-file /tmp/set-divi-content.php --allow-root`
       );
       pages[`divi-${candidate}`] = id;
+      created.push(id);
     }
   });
 
@@ -199,7 +212,7 @@ test.describe.serial('WPBakery box model versus three Divi 5 candidates', () => 
       await page.waitForSelector(subject.ready, { timeout: 30000 });
       await page.waitForLoadState('networkidle');
       results[subject.key] = await measure(page, subject.kind);
-      await page.screenshot({ path: path.join(screenshotsDir, `box-model-${subject.key}.png`), fullPage: true });
+      await page.screenshot({ path: path.join(runScreenshotsDir, `box-model-${subject.key}.png`), fullPage: true });
 
       const measured = results[subject.key];
       expect(measured.rows.length, 'all three rows were found').toBe(3);
@@ -216,9 +229,9 @@ test.describe.serial('WPBakery box model versus three Divi 5 candidates', () => 
       }
     }
     const payload = JSON.stringify({ pages, viewport: 1280, results }, null, 2);
-    // test-results/ is wiped at the start of every Playwright run; docs/box-model.json
-    // is the committed copy docs/box-model.md cites.
+    // test-results/ only, so a gated run leaves the working tree clean;
+    // docs/box-model.json is the reviewed copy docs/box-model.md cites and is
+    // updated from this file by hand.
     fs.writeFileSync(path.join(rootDir, 'test-results', 'box-model.json'), payload);
-    fs.writeFileSync(path.join(rootDir, 'docs', 'box-model.json'), payload);
   });
 });

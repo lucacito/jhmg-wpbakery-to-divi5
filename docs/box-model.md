@@ -232,13 +232,46 @@ that three modules never keep the default bottom margin the converter writes, an
 | `divi/circle-counter` | `margin-bottom: 35px` | `0px` | It *does* declare `important: {desktop.value.margin: true}`, and still loses: `.et_flex_column:not(.et_pb_flex_align_items_stretch) .et_pb_circle_counter{margin:0!important}` is `!important` too and more specific. |
 
 Every one of those Divi rules sets `margin` only, so `padding-bottom` lands — measured `35px` after
-the change. Every other module the corpus emits keeps what the converter wrote (`button` 22px,
-`toggle` 21.74px, `video` 20px, `text`/`icon`/`menu`/`search`/`sidebar`/`slider`/`post-slider`/
-`counters`/`code`/`cta` 35px).
+the change. Every other module the corpus emits keeps what the converter wrote: `accordion`/`tabs`
+21.74px, `button` 22px, `toggle` 21.74px, `video` 20px, `image` 35px (through
+`module.advanced.spacing`), and `blurb`/`divider`/`map`/`code`/`counters`/`cta`/`icon`/`menu`/
+`number-counter`/`post-slider`/`search`/`sidebar`/`slider` 35px.
+
+**The fixture a module is measured on has to be one that writes a default**, or the measurement
+proves nothing: `divi/image` is emitted by both `single-image` (which writes the 35px default) and
+`ronneby-single-image` (whose handler passes `'none'`), and picking the second would have measured a
+module with nothing to lose — on exactly the module shape that loses margins. The spec sorts a
+type's candidates by "writes a default" first. A type no fixture writes a default for
+(`accordion-item`, `countdown-timer`, `counter`, `group`, `icon-list`, `icon-list-item`, `map-pin`,
+`pricing-table`, `slide`, `social-media-follow`, `social-media-follow-network`, `tab`, `team-member`,
+`testimonial`) is measured and named but not gated.
+
+**One module draws its spacing somewhere else rather than losing it.** `divi/pricing-tables` declares
+`propertySelectors` in its `module.json` that route `padding-bottom` onto `.et_pb_pricing_heading`,
+`.et_pb_pricing_content_top` and `.et_pb_pricing_content` inside it, so the module box measures `0px`
+while `.et_pb_pricing_tables_0 .et_pb_pricing_content{padding-bottom:30px!important}` is on the page.
+The spec looks for the value inside the module before calling it lost, and records where it found it.
 
 Two module types could not be measured on this site and are recorded as such rather than passed
 over: `divi/contact-form-7` (Contact Form 7 is not installed) and `divi/gallery` (the fixture's
 attachments are not in this site's media library).
+
+### The trade-off padding buys, and what it costs
+
+Padding is not margin, and on the three modules above the difference is visible in one case: a module
+with a **background or a border of its own**. WPBakery's margin sat *outside* the background;
+padding is *inside* it, so the background would stretch into the gap. Divi drops the margin either
+way, so there is no arrangement that keeps both the space and the edge of the background.
+
+The converter takes the side that is right in each case (`BaseWPBakeryConverter`):
+
+- **No background and no border** — padding and margin put the same empty space in the same place, so
+  the default *and* an author's own `margin-top`/`margin-bottom` from the element's `css` are written
+  as padding. The page looks like the WPBakery one.
+- **With a background or border** (or when the author already used that padding side) — the author's
+  margin is kept exactly as written and the conversion report says, under `not_carried_over` kind
+  `layout`, that Divi will not draw it. The space is lost, but it is named rather than lost quietly,
+  and the module's own background keeps the shape the author gave it.
 
 Two fixtures never reach the database intact, which is WPBakery's own doing rather than the
 converter's: `wpb_remove_custom_html` (`js_composer/include/helpers/helpers.php`) strips a `vc_btn`

@@ -14,6 +14,7 @@ import {
   runScreenshotsDir,
   serveExternalRequestsLocally,
   shellEscape,
+  trashPages,
   wp,
 } from './helpers';
 
@@ -51,6 +52,8 @@ function expectedCounts(converted: Record<string, number>): Map<string, number> 
 
 test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', () => {
   let sourceId: string;
+  /** Everything this file made, trashed at the end so the picker stays short. */
+  const created: string[] = [];
 
   test.beforeAll(() => {
     fs.mkdirSync(runScreenshotsDir, { recursive: true });
@@ -59,7 +62,10 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
     copyHelperScript('set-wpbakery-content.php');
     sourceId = wp(`TEMPLATE=about-section wp eval-file /tmp/import-wpb-template.php --allow-root`).trim();
     expect(sourceId).toMatch(/^\d+$/);
+    created.push(sourceId);
   });
+
+  test.afterAll(() => trashPages(created));
 
   test('the Tools screen lists the page, checks it, converts it, publishes it and records the run', async ({ page }) => {
     await login(page);
@@ -88,6 +94,12 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
     await expect(page.locator('.wbdc-status--converted').first()).toBeVisible();
     await page.screenshot({ path: path.join(runScreenshotsDir, 'workflow-results.png'), fullPage: true });
 
+    // The id of *this* run, so the Undo assertion below cannot be satisfied by
+    // a run someone made yesterday.
+    const importId = new URL(page.url()).searchParams.get('import_id') ?? '';
+    expect(importId, 'the result screen names the run it just made').not.toBe('');
+    created.push(convertedPageFor(sourceId));
+
     // A direct conversion lands as a draft; the result screen offers to
     // publish it, and that is the button a reader actually presses.
     await page.click('a.button:has-text("Publish")');
@@ -98,9 +110,13 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
     const sourceContent = wp(`wp post get ${shellEscape(sourceId)} --field=content --allow-root`);
     expect(sourceContent).toContain('[vc_row]');
 
-    // And the run can be undone from the landing page.
+    // And *this* run can be undone from the landing page: the Undo link carries
+    // the run's own id (`ImportRollback::QUERY_ACTION`).
     await page.goto(TOOLS);
-    await expect(page.locator('a.button:has-text("Undo")').first()).toBeVisible();
+    const undo = page.locator(`a.button[href*="wbdc_rollback=${importId}"]`);
+    await expect(undo).toHaveCount(1);
+    await expect(undo).toBeVisible();
+    await expect(undo).toHaveText('Undo');
   });
 
   test('the converted page renders every module the report counted, without JS errors', async ({ page }) => {
@@ -127,6 +143,13 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
       await expect(page.locator(`.et_builder_inner_content ${selector}`), `${selector} count`).toHaveCount(count);
     }
 
+    // Two absolute expectations beside the report-derived ones, so a report
+    // that counted nothing could not agree with a page that rendered nothing.
+    // (This template carries no button; `btn-flat` and `btn-inline-group` in
+    // divi-integration.spec.ts hold the `.et_pb_button` floor.)
+    expect(await page.locator('.et_builder_inner_content .et_pb_image').count(), 'images on the page').toBeGreaterThanOrEqual(1);
+    expect(await page.locator('.et_builder_inner_content .et_pb_text').count(), 'text blocks on the page').toBeGreaterThanOrEqual(1);
+
     await page.screenshot({ path: path.join(runScreenshotsDir, 'about-section-frontend.png'), fullPage: true });
     expect(errors, 'front-end JavaScript errors').toEqual([]);
   });
@@ -149,12 +172,16 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
 test.describe.serial('A theme element with no handler: static copy here, placeholder from a file', () => {
   const FIXTURE = 'wpbakery/ultimate-heading';
   const uploadPath = path.join(rootDir, 'fixtures', 'wpbakery', 'ultimate-heading.txt');
+  /** Everything this describe made, trashed at the end. */
+  const created: string[] = [];
 
   test.beforeAll(() => {
     fs.mkdirSync(runScreenshotsDir, { recursive: true });
     copyHelperScript('set-wpbakery-content.php');
     copyHelperScript('convert-to-new-page.php');
   });
+
+  test.afterAll(() => trashPages(created));
 
   test('on this site the element is rendered and kept as a static copy', async ({ page }) => {
     const active = wp(`wp plugin list --field=name --status=active --allow-root`).includes('Ultimate_VC_Addons');
@@ -165,6 +192,7 @@ test.describe.serial('A theme element with no handler: static copy here, placeho
 
     const sourceId = createWPBakeryPage(FIXTURE, 'Theme Element (WPBakery)');
     const newId = convertToNewPage(sourceId);
+    created.push(sourceId, newId);
 
     const report = conversionReport(newId);
     expect(report.theme_elements, 'the family is named, not the tag').toEqual({ 'Ultimate Addons': 1 });
@@ -204,6 +232,7 @@ test.describe.serial('A theme element with no handler: static copy here, placeho
       .split('\n')[0]
       .trim();
     expect(importedId).toMatch(/^\d+$/);
+    created.push(importedId);
 
     const report = conversionReport(importedId);
     expect(report.theme_elements).toEqual({ 'Ultimate Addons': 1 });

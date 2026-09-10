@@ -49,7 +49,11 @@
   modules take that default as **`padding-bottom`** instead — `divi/blog`, `divi/charts`,
   `divi/circle-counter` (`GlobalSettingsResolver::PADDING_BOTTOM_MODULES`): Divi's own flex reset
   zeroes their margin at a specificity this converter's declaration cannot beat, measured by
-  `BOX_MODEL=1 npx playwright test tests/e2e/module-spacing.spec.ts` (`docs/module-spacing.json`).
+  `BOX_MODEL=1 npx playwright test tests/e2e/module-spacing.spec.ts` (`docs/module-spacing.json`,
+  updated by hand from `test-results/`). On those three an **author's** own vertical margin from
+  `css` moves to padding too when the module has no background or border of its own; when it has one,
+  padding would stretch that background into the gap, so the margin is kept as written and reported
+  under `not_carried_over` kind `layout` — never dropped in silence.
   Blocks built by a handler's `delegate()` are pieces of one element and get no default margins.
   All of it sits behind `wbdc_layout_defaults` (`GlobalSettingsResolver`).
 - Expected fixtures are a reviewed specification, not a snapshot: run
