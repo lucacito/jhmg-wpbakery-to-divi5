@@ -1,4 +1,100 @@
-# The conversion workflow, and what the Docker site can prove about it
+# Conversion workflow
+
+```
+WPBakery post (post_content + 3 metas)           upload (.xml WXR / .txt / .html)
+        │  InstalledPostSource                            │  WPBakeryImportParser
+        └──────────────────────┬─────────────────────────┘
+                               ▼
+                     ConversionPreflight  ── writes nothing; one fresh ConverterEngine per item
+                               │             (capped at `wbdc_direct_conversion_limit`)
+                          ConversionPlan  ── blocks, serialized content, report, outline
+                               │  (the "Check this page" screen renders this)
+                               ▼
+                     ConversionCommitter  ── the only class that creates posts
+                               │
+                     DiviExporter.save()  ── block content + Divi meta, both wp_slash()ed
+                               │
+                       ImportHistory      ── recorded per run, undoable via ImportRollback
+```
+
+The source post is never modified: a conversion always creates a new post. Nothing is rendered or
+scraped — the engine reads the shortcode string and the three WPBakery metas
+(`_wpb_shortcodes_custom_css`, `_wpb_post_custom_css`, `_wpb_vc_js_status`).
+
+`WPBakeryImportParser` accepts two upload formats, because there are two ways a WPBakery page leaves
+the site it was built on: a **WordPress export (WXR)** — Tools → Export, or a theme's demo content —
+whose attachments become the item's media map, and a **`.txt` / `.html`** file holding the
+shortcodes themselves. There is no third format: WPBakery has no layout export of its own. One
+upload parses at most `WPBakeryImportParser::MAX_ITEMS` (500) items, and reaching that ceiling is
+recorded in the warnings rather than passed over.
+
+## In the admin
+
+Tools → **WPBakery → Divi 5** (`tools.php?page=wbdc-converter`, `manage_options`):
+
+- **Convert a page already on this site** — pick a page from the picker, **Check this page**
+  (`wbdc_direct_check`) → the report → **Convert to Divi 5** (`wbdc_direct_convert`) → results
+  (Edit / View / Publish) → Recent conversions (Undo). Every submitted post ID is re-verified
+  server-side as an existing post that really holds WPBakery content, and the selection is capped at
+  `wbdc_direct_conversion_limit` (default **1** in free) — the rendered picker is never trusted on
+  the way back in.
+- **Upload a file** — `wbdc_import` → the options screen → `wbdc_import_convert` → the same results
+  screen. Upload results are kept for one hour.
+
+Pro adds Tools → **WPBakery → Divi 5 Pro** (`tools.php?page=wbdcp-pro`) with the Divi Library
+templates tab and the licence tab.
+
+## From the command line (Docker)
+
+```bash
+scripts/docker/setup_wp.sh                      # boot everything, seed and convert two pages
+WP=$(docker compose ps -q wordpress)
+docker exec -i $WP bash -lc "TEMPLATE=about-section wp eval-file /tmp/import-wpb-template.php --allow-root"   # → source id
+docker exec -i $WP bash -lc "SOURCE_PAGE_ID=<id> wp eval-file /tmp/convert-to-new-page.php --allow-root"      # → new id
+```
+
+Other helpers under `scripts/docker/`: `set-wpbakery-content.php` (write a fixture onto a page),
+`set-divi-content.php` (write a hand-written Divi document), `convert-run.php` (convert in place),
+`import-wpb-template.php` (also takes `WXR=<file>` to seed a page from an export),
+`parser-parity.php` (check the shortcode parser against WordPress's own regex).
+
+## Output post
+
+| Key | Value |
+|---|---|
+| `post_content` | `<!-- wp:divi/placeholder -->…` block markup |
+| `_et_pb_use_builder`, `_et_pb_use_divi_5` | `on` |
+| `_et_builder_version` | `VB\|Divi\|<version>` |
+| `_wbdc_divi_data` | the intermediate block tree (JSON) |
+| `_wbdc_conversion_report` | the report plus `unsupported` (JSON) |
+| `_wbdc_import_source` | `direct` or `file_upload` |
+| `_wbdc_source_post_id` | the WPBakery post it came from (direct conversions) |
+
+`ImportRollback` only touches posts still carrying `_wbdc_import_source`, so it can never delete a
+page the converter did not create.
+
+## Pro and free: what couples them
+
+Pro is an add-on, not a fork. It depends on the free plugin at four named points, and a change to
+any of them affects Pro:
+
+| Free | Pro uses it for |
+|---|---|
+| filter `wbdc_pro_active` | Pro returns true; the free admin screens drop their upsell and unlock the Pro-only copy |
+| filter `wbdc_direct_conversion_limit` | Pro raises the per-run cap to `PHP_INT_MAX` |
+| filter `wbdc_library_exporter( null, array $item, array $options )` | `ConversionCommitter` asks it once **per item**, so Pro's `DiviLibraryExporter` can answer null for one (a lapsed licence, a template type it does not handle) and let the free path take over. A library item that falls through gets a warning saying so |
+| `Admin\WPBakeryPageRepository::filter_where()` + `::QUERY_FLAG` | Pro's `Admin\TemplatesRepository` reuses them rather than repeating the content-match SQL, so the "is this a WPBakery layout?" query has one source of truth |
+
+`ConversionCommitter`'s `convert_templates` option is the other half: when it is `false` a library
+item is **skipped with a reason** (`'skipped' => true` and `template_type => 'library'` on the
+result) rather than converted silently. Pro's templates screen sets it to `true`, because every item
+on that screen is a WPBakery template.
+
+The licence client (`Pro\Licensing\LicenseClient`) is the canonical divi5lab client with the
+namespace and the six text-domain literals changed and nothing else — `RELEASE.md` records the
+`diff` that proves it.
+
+## The Docker site, and what it can prove
 
 `scripts/docker/setup_wp.sh` builds the site the Playwright suite drives:
 WordPress with **Divi 5.12.1** as the theme and **WPBakery Page Builder 9.0.1** as a plugin, both
@@ -48,6 +144,14 @@ So on a Divi site nothing of Ronneby's renders, and its `ronneby-core.zip` mount
 conversion, which reads shortcodes rather than rendered HTML — a Ronneby export converts identically
 either way, and its unhandled elements simply take the placeholder path, which is the correct one for
 a page that arrived as a file.
+
+What a Ronneby site actually gets, then, is this: the **23 tags with handlers of their own**
+(`ConverterRegistry::registerRonneby()`, listed in `docs/conversion-map.md`) become real Divi
+modules in either mode, because they are converted from the shortcode and need nothing rendered.
+The rest take the two paths in the table above — **static copies** when the conversion runs on the
+Ronneby site itself, where the theme is active and `do_shortcode()` renders them; **labelled
+placeholders** from an export, where nothing can. The Docker site does not install Ronneby Core, so
+the e2e static-copy case uses Ultimate Addons instead.
 
 **Ultimate Addons for WPBakery** (`references/Ultimate_VC_Addons.zip`) is used instead. It is a real
 WPBakery add-on that runs under any theme, `setup_wp.sh` installs it when the archive is present and
