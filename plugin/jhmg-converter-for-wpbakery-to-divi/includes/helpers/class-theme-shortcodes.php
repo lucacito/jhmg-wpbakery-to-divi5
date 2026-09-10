@@ -141,12 +141,21 @@ final class ThemeShortcodes {
      * they are reported under `addon`, with the family named, instead
      * (`BaseWPBakeryConverter::logUnmappedSettings()`).
      *
-     * Source: Ronneby Core 1.5.74,
-     * `inc/vc_custom/dfd_vc_addons.php:901-1729` — every live `vc_add_param()`
-     * call it makes, by the tag it makes it on. The four it makes on
-     * `vc_single_image` (lines 1730-1776, `image_opacity`, `onclick`,
-     * `link_one_page_value`, `item_animation`) are commented out in 1.5.74 and
-     * are deliberately absent.
+     * Sources, each named again against the block of names it produced:
+     * Ronneby Core 1.5.74 — `inc/vc_custom/dfd_vc_addons.php:901-1729`,
+     * `inc/vc_custom/dfd_vc_background/**` and
+     * `inc/vc_custom/dfd_vc_addons/old_modules/Dfd_Override_Parallax.php`;
+     * Ultimate VC Addons 3.19.3 — `modules/ultimate_parallax.php`. Every live
+     * `vc_add_param()` / `vc_add_params()` call they make, by the tag they make
+     * it on. A registration that is commented out is deliberately absent: the
+     * four Ronneby makes on `vc_single_image` (dfd_vc_addons.php:1730-1776,
+     * `image_opacity`, `onclick`, `link_one_page_value`, `item_animation`) and
+     * `dfd_fadeout_row` / `dfd_fadeout_start_effect` on `vc_row`, and
+     * `dfd_oembed_start_time` / `dfd_oembed_stop_time` / `dfd_in_viewport` in
+     * `dfd_vc_background/admin_templates/video.php:86,97,108`. A demo export
+     * written by an older build still carries some of those, and they are
+     * reported as skipped settings — which is the truth about them: 1.5.74 does
+     * not offer the field.
      *
      * The table is keyed by param name, not by what the page proves is
      * installed: an export carries no plugin list, and gating it on a Ronneby
@@ -155,6 +164,10 @@ final class ThemeShortcodes {
      * therefore attributed by name, which is why the report says the field
      * *matches* this theme's table rather than asserting the theme is the one
      * that added it.
+     *
+     * The add-on families are here for the same reason the theme ones are: a
+     * page that used Ultimate Addons' row backgrounds carries those fields on
+     * every `vc_row` long after the element that came with the plugin is gone.
      *
      * `wbdc_theme_params` lets a site add another theme's table.
      *
@@ -170,6 +183,33 @@ final class ThemeShortcodes {
                 'one_page_title', 'responsive_styles', 'row_delimiter', 'row_effect',
                 'row_parallax_limit', 'row_parallax_sense', 'row_prebuilt_classes',
                 'row_responsive_mobile_classes', 'row_responsive_mobile_resolutions', 'sizing',
+                // The row background panel: `inc/vc_custom/dfd_vc_background/dfd_vc_bg.php`
+                // (`vc_add_params( 'vc_row', $row_params )`, line 188) and the five
+                // per-style field sets it folds in from `admin_templates/` —
+                // animated.php, canvas.php, gradient.php, image.php, video.php.
+                'bg_main', 'bg_check', 'dfd_bg_style', 'bg_overlay', 'dfd_enable_overlay',
+                'dfd_overlay_color', 'dfd_overlay_pattern', 'dfd_overlay_pattern_opacity',
+                'dfd_overlay_pattern_size',
+                'dfd_bg_colors', 'dfd_bg_single_color', 'dfd_anim_bg_duration',
+                'dfd_canvas_style', 'dfd_canvas_size', 'dfd_bg_color_value', 'dfd_canvas_color',
+                'dfd_bg_image_canvas', 'dfd_bg_image_repeat_canvas', 'dfd_bg_image_size_canvas',
+                'dfd_bg_grad', 'dfd_bg_grad_animate', 'dfd_bg_grad_anim_duration',
+                'dfd_parallax_style', 'dfd_bg_image_new', 'dfd_layer_image',
+                'dfd_multi_parallax_direction', 'dfd_bg_image_repeat', 'dfd_bg_image_size',
+                'dfd_bg_image_manual_size', 'dfd_image_bg_color', 'dfd_bg_img_attach',
+                'dfd_parallax_sense', 'dfd_parallax_offset', 'dfd_bg_image_position',
+                'dfd_animation_direction', 'bg_mobile_main', 'dfd_mobile_enable',
+                'dfd_bg_image_new_responsive', 'dfd_bg_resolution', 'dfd_bg_image_position_mobile',
+                'dfd_bg_image_repeat_mobile', 'dfd_bg_image_size_mobile',
+                'dfd_bg_image_manual_size_mobile',
+                'dfd_video_variant', 'dfd_video_url_mp4', 'dfd_video_url_webm',
+                'dfd_youtube_video_id', 'dfd_vimeo_video_id', 'dfd_video_opts',
+                'dfd_video_poster', 'dfd_enable_controls', 'dfd_controls_color',
+                // The five fields `inc/vc_custom/dfd_vc_addons/old_modules/Dfd_Override_Parallax.php`
+                // adds that Ultimate Addons' own row panel does not (its canvas
+                // background, and a parallax offset); the sixty-five it shares with
+                // that panel are under 'ultimate-addons' below, whose names they are.
+                'canvas_style', 'canvas_size', 'canvas_color', 'bg_image_canvas', 'parallax_offset',
             ],
             'vc_row_inner'    => [
                 'dfd_row_responsive_enable', 'extra_features', 'inner_row_bg_position',
@@ -193,6 +233,36 @@ final class ThemeShortcodes {
             'vc_video'        => [
                 'description', 'icon_color', 'label_background', 'module_alignment', 'video_id',
                 'video_module_mode', 'video_source', 'video_thumb_image', 'video_title',
+            ],
+        ],
+        'ultimate-addons' => [
+            // "Ultimate Row Backgrounds": Ultimate VC Addons 3.19.3,
+            // `modules/ultimate_parallax.php`, every live `vc_add_param( 'vc_row', … )`
+            // it makes (68). It is the most widely installed WPBakery add-on there
+            // is, so these names are on the rows of a great many pages that have
+            // nothing else of the plugin left on them; Ronneby re-registers all but
+            // three of them from `Dfd_Override_Parallax.php` when the add-on is
+            // active, which is why the demo exports carry them too.
+            'vc_row' => [
+                'bg_type', 'bg_grad', 'bg_color_value', 'parallax_style', 'bg_image_new',
+                'layer_image', 'bg_image_repeat', 'bg_image_size', 'bg_cstm_size', 'bg_img_attach',
+                'parallax_sense', 'bg_image_posiiton', 'animation_direction', 'animation_repeat',
+                'video_url', 'video_url_2', 'u_video_url', 'video_opts', 'video_poster',
+                'u_start_time', 'u_stop_time', 'viewport_vdo', 'enable_controls', 'controls_color',
+                'bg_override', 'disable_on_mobile_img_parallax', 'parallax_content',
+                'parallax_content_sense', 'fadeout_row', 'fadeout_start_effect', 'enable_overlay',
+                'overlay_color', 'overlay_pattern', 'overlay_pattern_opacity',
+                'overlay_pattern_size', 'overlay_pattern_attachment', 'multi_color_overlay',
+                'multi_color_overlay_opacity', 'seperator_enable', 'seperator_type',
+                'seperator_position', 'seperator_shape_size', 'seperator_svg_height',
+                'seperator_shape_background', 'seperator_shape_border',
+                'seperator_shape_border_color', 'seperator_shape_border_width', 'icon_type',
+                'icon', 'icon_size', 'icon_color', 'icon_style', 'icon_color_bg',
+                'icon_border_style', 'icon_color_border', 'icon_border_size', 'icon_border_radius',
+                'icon_border_spacing', 'icon_img', 'img_width', 'ult_hide_row',
+                'ult_hide_row_large_screen', 'ult_hide_row_desktop', 'ult_hide_row_tablet',
+                'ult_hide_row_tablet_small', 'ult_hide_row_mobile', 'ult_hide_row_mobile_large',
+                'notification',
             ],
         ],
     ];

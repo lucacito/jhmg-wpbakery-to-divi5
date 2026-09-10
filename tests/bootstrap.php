@@ -400,11 +400,18 @@ if ( ! function_exists( 'et_core_page_resource_get_the_ID' ) ) { function et_cor
 
 // --- escaping / i18n / sanitising -----------------------------------------------
 
-if ( ! function_exists( 'esc_html' ) ) { function esc_html( $text ) { return htmlspecialchars( (string) $text, ENT_QUOTES ); } }
-if ( ! function_exists( 'esc_html__' ) ) { function esc_html__( $text, $domain = 'default' ) { return htmlspecialchars( (string) $text, ENT_QUOTES ); } }
+// `esc_html()` and `esc_attr()` are `_wp_specialchars( $text, ENT_QUOTES )`, whose
+// $double_encode defaults to **false**: an entity the source already carried is
+// left alone rather than escaped again. PHP's own default is the opposite, and
+// with it a placeholder built from `D&amp;G` renders as the literal text
+// `D&amp;G` in the test suite and as `D&G` on a real site. Verified against the
+// Docker container: esc_html('&notanentity; & <b> &amp; &#039;') is byte-identical
+// to htmlspecialchars( …, ENT_QUOTES, 'UTF-8', false ).
+if ( ! function_exists( 'esc_html' ) ) { function esc_html( $text ) { return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8', false ); } }
+if ( ! function_exists( 'esc_html__' ) ) { function esc_html__( $text, $domain = 'default' ) { return esc_html( $text ); } }
 if ( ! function_exists( 'esc_html_e' ) ) { function esc_html_e( string $text, string $domain = 'default' ): void { echo esc_html( $text ); } }
-if ( ! function_exists( 'esc_attr' ) ) { function esc_attr( $t ): string { return htmlspecialchars( (string) $t, ENT_QUOTES ); } }
-if ( ! function_exists( 'esc_attr__' ) ) { function esc_attr__( $t, $d = 'default' ): string { return htmlspecialchars( (string) $t, ENT_QUOTES ); } }
+if ( ! function_exists( 'esc_attr' ) ) { function esc_attr( $t ): string { return htmlspecialchars( (string) $t, ENT_QUOTES, 'UTF-8', false ); } }
+if ( ! function_exists( 'esc_attr__' ) ) { function esc_attr__( $t, $d = 'default' ): string { return esc_attr( $t ); } }
 if ( ! function_exists( 'esc_attr_e' ) ) { function esc_attr_e( $t, $d = 'default' ): void { echo esc_attr( $t ); } }
 if ( ! function_exists( 'esc_url' ) ) { function esc_url( $u ): string { return (string) $u; } }
 if ( ! function_exists( '__' ) ) { function __( string $text, string $domain = 'default' ): string { return $text; } }

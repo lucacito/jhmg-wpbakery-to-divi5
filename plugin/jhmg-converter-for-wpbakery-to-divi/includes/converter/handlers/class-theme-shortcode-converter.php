@@ -98,6 +98,7 @@ class ThemeShortcodeConverter extends BaseWPBakeryConverter {
         $source = $this->originalShortcode( $node );
 
         $this->engine->logWarning( 'bracketed text kept: ' . $source );
+        $this->engine->logBracketedText();
         $this->engine->logTextNode();
         $this->engine->logConverted( 'text' );
 

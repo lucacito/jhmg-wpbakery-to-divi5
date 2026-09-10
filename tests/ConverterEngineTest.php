@@ -56,7 +56,7 @@ final class ConverterEngineTest extends TestCase {
         foreach ( [
             'converted', 'approximate', 'approximate_matches', 'warnings', 'skipped_settings',
             'unresolved_globals', 'not_carried_over', 'theme_elements', 'static_copies',
-            'custom_css_carried', 'unresolved_media', 'text_nodes', 'quality',
+            'custom_css_carried', 'unresolved_media', 'text_nodes', 'bracketed_text', 'quality',
         ] as $key ) {
             $this->assertArrayHasKey( $key, $result['report'], "report is missing '{$key}'" );
         }
@@ -118,6 +118,25 @@ final class ConverterEngineTest extends TestCase {
         $html   = (string) $column['elements'][0]['settings']['content']['innerContent']['desktop']['value'];
         $this->assertStringContainsString( 'wbdc-unconverted-element', $html, 'an unregistered tag falls back to the labelled placeholder' );
         $this->assertStringContainsString( 'nectar_btn', $html );
+    }
+
+    /**
+     * A placeholder is built with `esc_html()`, and core's `esc_html()` does
+     * not double-encode: an entity the source already carried survives as
+     * itself. Escaping it again would put the literal text `D&amp;G` on the
+     * page where the WPBakery original read `D&G`.
+     */
+    public function test_a_placeholder_does_not_escape_an_entity_the_source_already_carried(): void {
+        $result = $this->convert(
+            '[vc_row][vc_column][nectar_btn]It was a pleasure to work for D&amp;G. We&#039;re done.[/nectar_btn][/vc_column][/vc_row]'
+        );
+
+        $column = $result['divi']['elements'][0]['elements'][0]['elements'][0];
+        $html   = (string) $column['elements'][0]['settings']['content']['innerContent']['desktop']['value'];
+
+        $this->assertStringContainsString( 'D&amp;G', $html );
+        $this->assertStringNotContainsString( '&amp;amp;', $html );
+        $this->assertStringContainsString( 'We&#039;re', $html );
     }
 
     public function test_mode_defaults_to_import(): void {

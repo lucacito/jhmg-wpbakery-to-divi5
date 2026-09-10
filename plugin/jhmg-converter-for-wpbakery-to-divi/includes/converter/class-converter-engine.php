@@ -63,6 +63,7 @@ class ConverterEngine {
     /** @var array<int, array{node_id: string, attachment_id: int}> */
     private array $unresolvedMedia = [];
     private int $textNodes = 0;
+    private int $bracketedText = 0;
 
     private bool $countingApproximate = false;
 
@@ -444,6 +445,20 @@ class ConverterEngine {
         $this->textNodes++;
     }
 
+    /**
+     * A `[1]`-style token the default converter re-emitted as text.
+     *
+     * Not a shortcode anybody registered and not a theme's element: a footnote
+     * marker, a citation, a stray bracket, which WordPress prints as it stands
+     * and only this converter's parser ever read as a tag (task-7
+     * amendments §5). The report counts them so a page full of them reads as
+     * "12 bracketed tokens kept as text" rather than as twelve warnings the
+     * reader has to recognise one by one.
+     */
+    public function logBracketedText(): void {
+        $this->bracketedText++;
+    }
+
     /** @return array<int, array{id: ?string, tag: ?string}> */
     public function getUnsupported(): array {
         return $this->unsupported;
@@ -476,6 +491,7 @@ class ConverterEngine {
             'custom_css_carried'  => $this->customCssCarried,
             'unresolved_media'    => $this->unresolvedMedia,
             'text_nodes'          => $this->textNodes,
+            'bracketed_text'      => $this->bracketedText,
             'quality'             => [
                 'module_coverage' => $all > 0 ? (int) round( $converted / $all * 100 ) : 100,
                 'settings_issues' => count( $this->skippedSettings ),

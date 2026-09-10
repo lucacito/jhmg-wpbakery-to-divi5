@@ -976,9 +976,21 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * selected, an editor-only row label, a tab's generated id — and a field a
      * theme added to a WPBakery element with `vc_add_param()`, which is filed
      * under `addon` with the theme named instead (`isThemeParam()`).
+     *
+     * A sixth thing is not a skipped setting either but must not be silent: an
+     * attribute with a **numeric** key (`reportMalformedAttributes()`). Those
+     * are what `shortcode_parse_atts()` produces when the shortcode's attribute
+     * string cannot be read as `key="value"` pairs — most often an unescaped
+     * `"` inside a value, as in `text="A FEW WORDS <span style="…">ABOUT</span>"`,
+     * which one page of the layouts corpus really does carry. WordPress reads it
+     * the same way, so the live WPBakery page has lost the value too and this
+     * converter must not invent it back; but the reader has to be told, because
+     * what they will see is an element that came out blank.
      */
     protected function logUnmappedSettings( string $node_id, array $atts, array $consumed = [], string $tag = '' ): void {
         $theme_params = [];
+
+        $this->reportMalformedAttributes( $node_id, $atts, $tag );
 
         static $always_ignore = [
             // The StyleMapper owns these five and reports what it could not
@@ -1016,6 +1028,38 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         }
 
         $this->reportThemeParams( $node_id, $theme_params );
+    }
+
+    /**
+     * The attribute string WordPress could not read.
+     *
+     * `shortcode_parse_atts()` falls back to numbered keys for anything that is
+     * not a `key="value"` pair, so a numeric key is never a field a handler
+     * could have claimed — it is the wreckage of one. The fragments go into a
+     * warning naming the element, rather than into `skipped_settings`: nothing
+     * here ignored a setting, the source never held a readable one.
+     *
+     * @param array<string|int, mixed> $atts
+     */
+    private function reportMalformedAttributes( string $node_id, array $atts, string $tag ): void {
+        $fragments = [];
+
+        foreach ( $atts as $key => $value ) {
+            if ( ! is_string( $key ) && is_scalar( $value ) && trim( (string) $value ) !== '' ) {
+                $fragments[] = trim( (string) $value );
+            }
+        }
+
+        if ( $fragments === [] ) {
+            return;
+        }
+
+        $this->engine->logWarning( sprintf(
+            '%s: %s has an attribute string WordPress cannot read — an unescaped quote, most likely. These fragments were not attributes and could not be converted, and WPBakery renders them no better: %s',
+            $node_id,
+            $tag !== '' ? $tag : 'the element',
+            implode( ' ', $fragments )
+        ) );
     }
 
     /**

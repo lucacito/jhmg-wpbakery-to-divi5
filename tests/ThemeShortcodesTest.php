@@ -89,4 +89,42 @@ final class ThemeShortcodesTest extends TestCase {
         // A `vc_`-prefixed tag WPBakery does not ship is a theme's, not core.
         $this->assertFalse( ThemeShortcodes::isCore( 'vc_theme_widget' ) );
     }
+
+    /**
+     * `themeParam()` returns the first family whose table holds the name, so a
+     * name in two tables would be attributed to whichever happens to be listed
+     * first — a report that says "Ronneby" about a field Ultimate Addons added.
+     * Ronneby's `Dfd_Override_Parallax` really does re-register 65 of Ultimate
+     * Addons' row fields, and the table keeps them on one side only.
+     */
+    public function test_no_param_is_claimed_by_two_families_for_the_same_element(): void {
+        $claims = [];
+
+        foreach ( ThemeShortcodes::THEME_PARAMS as $family => $tags ) {
+            foreach ( $tags as $tag => $params ) {
+                $this->assertSame(
+                    array_values( array_unique( $params ) ),
+                    array_values( $params ),
+                    "{$family}/{$tag} lists a param twice"
+                );
+
+                foreach ( $params as $param ) {
+                    $claims[ $tag . '|' . $param ][] = $family;
+                }
+            }
+        }
+
+        $this->assertNotEmpty( $claims );
+
+        foreach ( $claims as $key => $families ) {
+            $this->assertCount( 1, $families, "{$key} is claimed by " . implode( ', ', $families ) );
+        }
+    }
+
+    /** Every family a param table names has to be a family the report can label. */
+    public function test_every_theme_param_family_is_a_known_family(): void {
+        foreach ( array_keys( ThemeShortcodes::THEME_PARAMS ) as $family ) {
+            $this->assertArrayHasKey( $family, ThemeShortcodes::FAMILIES, "'{$family}' has a param table but no family entry" );
+        }
+    }
 }
