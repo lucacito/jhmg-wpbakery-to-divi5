@@ -67,8 +67,15 @@ class DiviExporter {
             return false;
         }
 
+        // `update_metadata()` unslashes what it is given, exactly as
+        // `wp_update_post()` does, so a value that is not slashed on the way in
+        // comes back with its backslashes gone. For the two JSON metas that
+        // means every `\"` inside `_wbdc_divi_data` and
+        // `_wbdc_conversion_report` is eaten and the stored string is no longer
+        // valid JSON — a report whose only crime was quoting a WPBakery
+        // attribute value cannot be read back at all.
         foreach ( $meta as $key => $value ) {
-            update_post_meta( $post_id, $key, $value );
+            update_post_meta( $post_id, $key, wp_slash( $value ) );
         }
 
         if ( $source_post_id > 0 ) {

@@ -49,6 +49,27 @@ final class DiviExporterTest extends TestCase {
         $this->assertSame( 1, json_decode( get_post_meta( $post_id, '_wbdc_conversion_report', true ), true )['converted']['section'] );
     }
 
+    public function test_save_keeps_the_json_meta_readable_when_the_report_quotes_a_value(): void {
+        // `update_metadata()` unslashes what it is handed, so a JSON string
+        // that is not wp_slash()ed loses every `\"` and stops being JSON. The
+        // heading's link carries a title and a rel Divi's link has nowhere to
+        // put, so this report quotes them — which is all it takes.
+        $converted = ( new ConverterEngine() )->convert( [
+            'content' => (string) file_get_contents( __DIR__ . '/../fixtures/wpbakery/custom-heading.txt' ),
+        ] );
+        $post_id = wp_insert_post( [ 'post_type' => 'page', 'post_content' => '' ] );
+
+        $this->assertTrue( ( new DiviExporter() )->save( $post_id, $converted ) );
+
+        $report = json_decode( (string) get_post_meta( $post_id, '_wbdc_conversion_report', true ), true );
+        $this->assertIsArray( $report, 'the stored conversion report is still valid JSON' );
+        $this->assertStringContainsString( '"About us"', (string) $report['not_carried_over'][0]['detail'] );
+        $this->assertIsArray(
+            json_decode( (string) get_post_meta( $post_id, '_wbdc_divi_data', true ), true ),
+            'the stored block tree is still valid JSON'
+        );
+    }
+
     public function test_save_fails_without_writing_meta_when_the_post_cannot_be_updated(): void {
         $converted = ( new ConverterEngine() )->convert( [ 'content' => '[vc_row][vc_column][/vc_column][/vc_row]' ] );
 

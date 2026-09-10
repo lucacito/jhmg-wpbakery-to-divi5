@@ -102,9 +102,13 @@ if ( ! function_exists( '__return_true' ) ) {
 if ( ! function_exists( 'update_post_meta' ) ) {
     $GLOBALS['__test_postmeta'] = [];
 
+    // WordPress's update_metadata()/add_metadata() unslash what they are
+    // given — the same rule as wp_update_post() — so a caller that does not
+    // wp_slash() a JSON string loses its escapes. The stubs model that, or a
+    // test would happily read back a value the database never held.
     function update_post_meta( $post_id, $meta_key, $meta_value ) {
         $id = (int) $post_id;
-        $GLOBALS['__test_postmeta'][ $id ][ $meta_key ] = [ $meta_value ];
+        $GLOBALS['__test_postmeta'][ $id ][ $meta_key ] = [ wp_unslash( $meta_value ) ];
         return true;
     }
     function add_post_meta( $post_id, $meta_key, $meta_value, $unique = false ) {
@@ -112,7 +116,7 @@ if ( ! function_exists( 'update_post_meta' ) ) {
         if ( $unique && ! empty( $GLOBALS['__test_postmeta'][ $id ][ $meta_key ] ) ) {
             return false;
         }
-        $GLOBALS['__test_postmeta'][ $id ][ $meta_key ][] = $meta_value;
+        $GLOBALS['__test_postmeta'][ $id ][ $meta_key ][] = wp_unslash( $meta_value );
         return true;
     }
     function get_post_meta( $post_id, $meta_key = '', $single = false ) {
