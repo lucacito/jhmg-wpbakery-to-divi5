@@ -134,7 +134,7 @@
                                                     "spacing": {
                                                         "desktop": {
                                                             "value": {
-                                                                "margin": {
+                                                                "padding": {
                                                                     "top": "",
                                                                     "right": "",
                                                                     "bottom": "35px",

@@ -45,9 +45,13 @@
   (`.vc_do_btn`, which overrides the stylesheet's 21.74px), 21.74 px `.vc_message_box`/
   `.vc_toggle_content`, none on inner rows or `vc_custom_heading`), written at the path that module
   reads — `module.advanced.spacing` for `divi/image`, `module.decoration.spacing` elsewhere; check
-  the module's own source before choosing, the same rule as every other attribute path. Blocks built
-  by a handler's `delegate()` are pieces of one element and get no default margins. All of it sits
-  behind `wbdc_layout_defaults` (`GlobalSettingsResolver`).
+  the module's own source before choosing, the same rule as every other attribute path. Three
+  modules take that default as **`padding-bottom`** instead — `divi/blog`, `divi/charts`,
+  `divi/circle-counter` (`GlobalSettingsResolver::PADDING_BOTTOM_MODULES`): Divi's own flex reset
+  zeroes their margin at a specificity this converter's declaration cannot beat, measured by
+  `BOX_MODEL=1 npx playwright test tests/e2e/module-spacing.spec.ts` (`docs/module-spacing.json`).
+  Blocks built by a handler's `delegate()` are pieces of one element and get no default margins.
+  All of it sits behind `wbdc_layout_defaults` (`GlobalSettingsResolver`).
 - Expected fixtures are a reviewed specification, not a snapshot: run
   `php scripts/render-fixture.php fixtures/wpbakery/<name>.txt --report`, read the output, then
   `php scripts/update-expected.php <name>`.

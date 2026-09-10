@@ -1,0 +1,543 @@
+{
+  "viewport": 1280,
+  "results": {
+    "accordion": {
+      "fixture": "ronneby-accordion",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-accordion"
+      ]
+    },
+    "accordion-item": {
+      "fixture": "ronneby-accordion",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "20px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-accordion"
+      ]
+    },
+    "blog": {
+      "fixture": "basic-grid",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": "35px"
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "35px",
+      "found": true,
+      "fixturesTried": [
+        "basic-grid"
+      ]
+    },
+    "blurb": {
+      "fixture": "hoverbox-real",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "hoverbox-real"
+      ]
+    },
+    "button": {
+      "fixture": "btn-flat",
+      "written": {
+        "marginBottom": "22px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "22px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "btn-custom-hover",
+        "btn-flat"
+      ]
+    },
+    "charts": {
+      "fixture": "line-chart",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": "35px"
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "35px",
+      "found": true,
+      "fixturesTried": [
+        "line-chart"
+      ]
+    },
+    "circle-counter": {
+      "fixture": "pie",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": "35px"
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "35px",
+      "found": true,
+      "fixturesTried": [
+        "pie"
+      ]
+    },
+    "code": {
+      "fixture": "gutenberg",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "gmaps-real",
+        "gutenberg"
+      ]
+    },
+    "contact-form-7": {
+      "fixture": "",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "",
+      "paddingBottom": "",
+      "found": false,
+      "fixturesTried": [
+        "contact-form-7",
+        "contact-form-7-real"
+      ]
+    },
+    "countdown-timer": {
+      "fixture": "ronneby-countdown",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "40.9531px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-countdown"
+      ]
+    },
+    "counter": {
+      "fixture": "progress-bar-real",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "progress-bar-real"
+      ]
+    },
+    "counters": {
+      "fixture": "progress-bar-real",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "progress-bar-real"
+      ]
+    },
+    "cta": {
+      "fixture": "cta",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": "28px"
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "28px",
+      "found": true,
+      "fixturesTried": [
+        "cta"
+      ]
+    },
+    "divider": {
+      "fixture": "empty-space",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "empty-space"
+      ]
+    },
+    "gallery": {
+      "fixture": "",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "",
+      "paddingBottom": "",
+      "found": false,
+      "fixturesTried": [
+        "gallery-real",
+        "gallery-slider",
+        "media-grid"
+      ]
+    },
+    "group": {
+      "fixture": "grid-container",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "grid-container"
+      ]
+    },
+    "heading": {
+      "fixture": "custom-heading",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "custom-heading"
+      ]
+    },
+    "icon": {
+      "fixture": "icon",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "icon"
+      ]
+    },
+    "icon-list": {
+      "fixture": "ronneby-icon-list",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-icon-list"
+      ]
+    },
+    "icon-list-item": {
+      "fixture": "ronneby-icon-list",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-icon-list"
+      ]
+    },
+    "image": {
+      "fixture": "ronneby-single-image",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-single-image"
+      ]
+    },
+    "map": {
+      "fixture": "ronneby-google-map",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-google-map"
+      ]
+    },
+    "map-pin": {
+      "fixture": "ronneby-google-map",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-google-map"
+      ]
+    },
+    "menu": {
+      "fixture": "wp-custommenu",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "wp-custommenu"
+      ]
+    },
+    "number-counter": {
+      "fixture": "ult-stat-counter",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ult-stat-counter"
+      ]
+    },
+    "post-slider": {
+      "fixture": "posts-slider",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "posts-slider"
+      ]
+    },
+    "pricing-table": {
+      "fixture": "pricing-table",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "30px",
+      "found": true,
+      "fixturesTried": [
+        "pricing-table"
+      ]
+    },
+    "pricing-tables": {
+      "fixture": "pricing-table",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": "30px"
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "pricing-table"
+      ]
+    },
+    "search": {
+      "fixture": "wp-search",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "wp-search"
+      ]
+    },
+    "sidebar": {
+      "fixture": "widget-sidebar",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "widget-sidebar"
+      ]
+    },
+    "slide": {
+      "fixture": "images-carousel-real",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "images-carousel-real"
+      ]
+    },
+    "slider": {
+      "fixture": "images-carousel-real",
+      "written": {
+        "marginBottom": "35px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "35px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "images-carousel-real"
+      ]
+    },
+    "social-media-follow": {
+      "fixture": "ronneby-new-social-accounts",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-new-social-accounts"
+      ]
+    },
+    "social-media-follow-network": {
+      "fixture": "ronneby-new-social-accounts",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-new-social-accounts"
+      ]
+    },
+    "tab": {
+      "fixture": "ronneby-tta-tabs",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-tta-tabs"
+      ]
+    },
+    "tabs": {
+      "fixture": "ronneby-tta-tabs",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-tta-tabs"
+      ]
+    },
+    "team-member": {
+      "fixture": "ronneby-new-team-member",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-new-team-member"
+      ]
+    },
+    "testimonial": {
+      "fixture": "ronneby-new-testimonials",
+      "written": {
+        "marginBottom": "",
+        "paddingBottom": ""
+      },
+      "marginBottom": "0px",
+      "paddingBottom": "30px",
+      "found": true,
+      "fixturesTried": [
+        "ronneby-new-testimonials"
+      ]
+    },
+    "text": {
+      "fixture": "column-text",
+      "written": {
+        "marginBottom": "10px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "10px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "column-text"
+      ]
+    },
+    "toggle": {
+      "fixture": "toggle",
+      "written": {
+        "marginBottom": "21.74px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "21.74px",
+      "paddingBottom": "20px",
+      "found": true,
+      "fixturesTried": [
+        "toggle"
+      ]
+    },
+    "video": {
+      "fixture": "ult-video",
+      "written": {
+        "marginBottom": "20px",
+        "paddingBottom": ""
+      },
+      "marginBottom": "20px",
+      "paddingBottom": "0px",
+      "found": true,
+      "fixturesTried": [
+        "ult-video"
+      ]
+    }
+  }
+}

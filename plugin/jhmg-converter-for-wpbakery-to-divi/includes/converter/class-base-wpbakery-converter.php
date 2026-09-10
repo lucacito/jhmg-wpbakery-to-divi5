@@ -504,9 +504,13 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      *                            (`none` skips the default outright — the element carries no
      *                            WPBakery margin of its own, distinct from an unset `css` side,
      *                            which still takes the per-kind default)
+     * @param string $divi_module The block this handler is about to emit, e.g. `divi/blog`. Only
+     *                            consulted for the handful of modules whose margin Divi overrides
+     *                            (`GlobalSettingsResolver::PADDING_BOTTOM_MODULES`); everything
+     *                            else takes the same path whatever is passed.
      * @return array{divi_attrs: array, handled_keys: string[]}
      */
-    protected function mapStyle( string $kind, array $node, string $margin_kind = 'content' ): array {
+    protected function mapStyle( string $kind, array $node, string $margin_kind = 'content', string $divi_module = '' ): array {
         $atts    = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
         $node_id = (string) ( $node['id'] ?? '' );
 
@@ -519,7 +523,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         $attrs = $result['divi_attrs'];
 
         if ( $margin_kind !== 'none' && ! in_array( $kind, [ 'section', 'row', 'column', 'group' ], true ) && empty( $node['delegated'] ) ) {
-            $attrs = $this->fillModuleMarginBottom( $kind, $attrs, $margin_kind );
+            $attrs = $this->fillModuleMarginBottom( $kind, $attrs, $margin_kind, $divi_module );
         }
 
         return [ 'divi_attrs' => $attrs, 'handled_keys' => $result['handled_keys'] ];
@@ -547,22 +551,34 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
     }
 
     /** WPBakery's per-element bottom margin, at the path that element's module reads. */
-    private function fillModuleMarginBottom( string $kind, array $attrs, string $margin_kind ): array {
+    private function fillModuleMarginBottom( string $kind, array $attrs, string $margin_kind, string $divi_module = '' ): array {
         // `divi/image` reads its spacing from module.advanced, everything else
         // from module.decoration (docs/box-model.md, "Additional findings").
-        $path   = $kind === 'image' ? 'module.advanced.spacing' : 'module.decoration.spacing';
-        $margin = $this->read( $attrs, $path . '.desktop.value.margin' );
-        $margin = is_array( $margin ) ? $margin : [];
+        $path = $kind === 'image' ? 'module.advanced.spacing' : 'module.decoration.spacing';
 
-        if ( isset( $margin['bottom'] ) && $margin['bottom'] !== '' ) {
-            return $attrs;
+        // A few modules never keep a margin Divi's own stylesheet zeroes, so
+        // their default trailing space is padding instead — measured, and
+        // listed in GlobalSettingsResolver::PADDING_BOTTOM_MODULES.
+        $side = in_array( $divi_module, GlobalSettingsResolver::PADDING_BOTTOM_MODULES, true ) ? 'padding' : 'margin';
+
+        // The element's own design options win either way: WPBakery writes them
+        // `!important`, and a margin it set is the author's spacing even on a
+        // module whose default goes to padding.
+        foreach ( array_unique( [ 'margin', $side ] ) as $existing_side ) {
+            $existing = $this->read( $attrs, $path . '.desktop.value.' . $existing_side );
+            if ( is_array( $existing ) && ( $existing['bottom'] ?? '' ) !== '' ) {
+                return $attrs;
+            }
         }
 
-        $margin['bottom'] = GlobalSettingsResolver::moduleMarginBottom( $margin_kind );
+        $box = $this->read( $attrs, $path . '.desktop.value.' . $side );
+        $box = is_array( $box ) ? $box : [];
 
-        StyleMapper::write( $attrs, $path . '.desktop.value.margin', array_merge(
+        $box['bottom'] = GlobalSettingsResolver::moduleMarginBottom( $margin_kind );
+
+        StyleMapper::write( $attrs, $path . '.desktop.value.' . $side, array_merge(
             [ 'top' => '', 'right' => '', 'bottom' => '', 'left' => '' ],
-            $margin,
+            $box,
             [ 'syncVertical' => 'off', 'syncHorizontal' => 'off' ]
         ) );
 

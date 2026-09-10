@@ -36,7 +36,9 @@ class PieConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_pie_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'counter', $node );
+        // divi/circle-counter never keeps a bottom margin: Divi's flex reset
+        // zeroes it, so the default trailing space goes to padding.
+        $style    = $this->mapStyle( 'counter', $node, 'content', 'divi/circle-counter' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [ 'value', 'label_value', 'units', 'custom_color', 'title' ] );
 

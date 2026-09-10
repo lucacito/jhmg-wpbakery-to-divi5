@@ -159,7 +159,7 @@
                                                     "spacing": {
                                                         "desktop": {
                                                             "value": {
-                                                                "margin": {
+                                                                "padding": {
                                                                     "top": "",
                                                                     "right": "",
                                                                     "bottom": "35px",
@@ -173,6 +173,33 @@
                                                 }
                                             },
                                             "chart": {
+                                                "advanced": {
+                                                    "config": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "showLegend": "on",
+                                                                "showTooltip": "on",
+                                                                "type": "doughnut"
+                                                            }
+                                                        }
+                                                    },
+                                                    "legend": {
+                                                        "layout": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "position": "left"
+                                                                }
+                                                            }
+                                                        },
+                                                        "markers": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "color": "#2a2a2a"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                                 "innerContent": {
                                                     "desktop": {
                                                         "value": {
@@ -205,33 +232,6 @@
                                                                         "color": "#fe6c61"
                                                                     }
                                                                 ]
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                "advanced": {
-                                                    "config": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "type": "doughnut",
-                                                                "showLegend": "on",
-                                                                "showTooltip": "on"
-                                                            }
-                                                        }
-                                                    },
-                                                    "legend": {
-                                                        "layout": {
-                                                            "desktop": {
-                                                                "value": {
-                                                                    "position": "left"
-                                                                }
-                                                            }
-                                                        },
-                                                        "markers": {
-                                                            "desktop": {
-                                                                "value": {
-                                                                    "color": "#2a2a2a"
-                                                                }
                                                             }
                                                         }
                                                     }

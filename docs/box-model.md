@@ -216,3 +216,32 @@ content. Both are kept in `fixtures/box-model/` as the documented rejected paths
   WPBakery page clears it (y = 342) through the page template's `.container{padding-top:58px}` and
   the printed page title. WPBakery contributes no section padding of its own, so the converter adds
   no top offset.
+
+## Per-module measurement: which modules keep the default margin (Task 14)
+
+`BOX_MODEL=1 npx playwright test tests/e2e/module-spacing.spec.ts` converts one fixture per Divi
+module type the corpus emits, renders it on the Docker site and records the module's computed
+`margin-bottom` and `padding-bottom`. The full table is `docs/module-spacing.json`; the finding is
+that three modules never keep the default bottom margin the converter writes, and so take it as
+`padding-bottom` instead (`GlobalSettingsResolver::PADDING_BOTTOM_MODULES`):
+
+| module | wrote | measured margin | why |
+|---|---|---|---|
+| `divi/blog` | `margin-bottom: 35px` | `0px` | `module.json` declares no `attributes.module.styleProps.spacing.important`, so Divi emits `.et_pb_blog_0{margin-bottom:35px}` with no `!important`; `.et_pb_section .et_pb_row .et_flex_column > .et_pb_module{margin-bottom:0}` (four classes) wins. |
+| `divi/charts` | `margin-bottom: 35px` | `0px` | Same: no `styleProps.spacing.important` in `charts/module.json`. |
+| `divi/circle-counter` | `margin-bottom: 35px` | `0px` | It *does* declare `important: {desktop.value.margin: true}`, and still loses: `.et_flex_column:not(.et_pb_flex_align_items_stretch) .et_pb_circle_counter{margin:0!important}` is `!important` too and more specific. |
+
+Every one of those Divi rules sets `margin` only, so `padding-bottom` lands — measured `35px` after
+the change. Every other module the corpus emits keeps what the converter wrote (`button` 22px,
+`toggle` 21.74px, `video` 20px, `text`/`icon`/`menu`/`search`/`sidebar`/`slider`/`post-slider`/
+`counters`/`code`/`cta` 35px).
+
+Two module types could not be measured on this site and are recorded as such rather than passed
+over: `divi/contact-form-7` (Contact Form 7 is not installed) and `divi/gallery` (the fixture's
+attachments are not in this site's media library).
+
+Two fixtures never reach the database intact, which is WPBakery's own doing rather than the
+converter's: `wpb_remove_custom_html` (`js_composer/include/helpers/helpers.php`) strips a `vc_btn`
+carrying `custom_onclick` and every element of `wpb_get_elements_with_custom_html()` (`vc_gmaps`,
+`vc_raw_html`, …) from `post_content` on save unless the saving user has `unfiltered_html` — and
+WP-CLI saves as no user at all. The measurement tries the next fixture for that module type.

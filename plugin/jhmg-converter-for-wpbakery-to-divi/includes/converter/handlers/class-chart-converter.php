@@ -85,7 +85,9 @@ class ChartConverter extends BaseWPBakeryConverter {
         $tag  = (string) ( $node['tag'] ?? '' );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'generic', $node );
+        // divi/charts never keeps a bottom margin: Divi's flex reset zeroes
+        // it, so the default trailing space goes to padding.
+        $style    = $this->mapStyle( 'generic', $node, 'content', 'divi/charts' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], self::CONSUMED, [ 'title' ] );
 

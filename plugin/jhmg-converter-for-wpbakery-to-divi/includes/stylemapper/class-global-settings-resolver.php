@@ -50,6 +50,27 @@ final class GlobalSettingsResolver {
 
     const FILTER = 'wbdc_layout_defaults';
 
+    /**
+     * Divi modules whose default trailing space has to be `padding-bottom`,
+     * because Divi's own stylesheet zeroes their margin at a specificity this
+     * converter's declaration cannot beat.
+     *
+     * Measured, not reasoned about (`tests/e2e/module-spacing.spec.ts`,
+     * `docs/module-spacing.json`), on Divi 5.12.1:
+     *
+     * - `divi/blog` and `divi/charts` declare no
+     *   `attributes.module.styleProps.spacing.important` in their `module.json`,
+     *   so Divi writes their margin without `!important` and
+     *   `.et_pb_section .et_pb_row .et_flex_column > .et_pb_module{margin-bottom:0}`
+     *   (four classes) beats `.et_pb_blog_0` (one).
+     * - `divi/circle-counter` does declare it, and still loses:
+     *   `.et_flex_column:not(.et_pb_flex_align_items_stretch) .et_pb_circle_counter{margin:0!important}`
+     *   is `!important` too, and more specific.
+     *
+     * Every one of those rules sets `margin` only, so padding lands.
+     */
+    const PADDING_BOTTOM_MODULES = [ 'divi/blog', 'divi/charts', 'divi/circle-counter' ];
+
     /** The measured box model, before the filter. */
     const DEFAULTS = [
         'section_padding'           => '0px',

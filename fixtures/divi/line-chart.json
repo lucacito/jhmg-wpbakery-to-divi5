@@ -134,7 +134,7 @@
                                                     "spacing": {
                                                         "desktop": {
                                                             "value": {
-                                                                "margin": {
+                                                                "padding": {
                                                                     "top": "",
                                                                     "right": "",
                                                                     "bottom": "35px",
@@ -148,6 +148,17 @@
                                                 }
                                             },
                                             "chart": {
+                                                "advanced": {
+                                                    "config": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "showLegend": "on",
+                                                                "showTooltip": "on",
+                                                                "type": "line"
+                                                            }
+                                                        }
+                                                    }
+                                                },
                                                 "innerContent": {
                                                     "desktop": {
                                                         "value": {
@@ -193,17 +204,6 @@
                                                                         ]
                                                                     }
                                                                 ]
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                                "advanced": {
-                                                    "config": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "type": "line",
-                                                                "showLegend": "on",
-                                                                "showTooltip": "on"
                                                             }
                                                         }
                                                     }
