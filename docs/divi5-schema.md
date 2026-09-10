@@ -158,13 +158,14 @@ Divi 5 stores dynamic content as a token it resolves wherever it appears inside 
 $variable({"type":"content","value":{"name":"post_title","settings":{}}})$
 ```
 
-`Helpers\DynamicContent::token( $name, $settings )` builds it. The three the converter emits:
+`Helpers\DynamicContent::token( $name, $settings )` builds it. The four the converter emits:
 
-| WPBakery | Token |
-|---|---|
-| `vc_custom_heading source="post_title"` | `post_title` |
-| `vc_copyright` (the current year) | `current_date` with `{date_format: "custom", custom_date_format: "Y"}` |
-| `vc_custom_field field_name="x"` | `post_meta_key` with `{meta_key: "x"}` |
+| WPBakery | Token | Written to |
+|---|---|---|
+| `vc_custom_heading source="post_title"` | `post_title` | `title.innerContent.desktop.value` |
+| `vc_single_image source="featured_image"`, `dfd_single_image image_type="featured_image"` | `post_featured_image` | `image.innerContent.desktop.value.src` |
+| `vc_copyright` (the current year) | `current_date` with `{date_format: "custom", custom_date_format: "Y"}` | `content.innerContent.desktop.value` |
+| `vc_custom_field field_name="x"` | `post_meta_key` with `{meta_key: "x"}` | `content.innerContent.desktop.value` |
 
 ## Modules and their content keys
 
@@ -198,7 +199,7 @@ declares it.
 | `divi/counters` › `divi/counter` | parent: `barProgress.advanced.usePercentages`, `barCounter.decoration.background.desktop.value.color` (the track), `title.decoration.font.font`, `barProgress.decoration.font.font`; counter: `title.innerContent`, `barProgress.innerContent` (percent), `barProgress.decoration.background.desktop.value.color` (the fill) | `VB/{counters,counter}/module.json` |
 | `divi/charts` | `chart.innerContent.desktop.value.data` (`{columns, rows}`), `chart.advanced.config.desktop.value.{type,showLegend,showTooltip}`, `chart.advanced.legend.layout.desktop.value.position`, `chart.advanced.legend.markers.desktop.value.color` | `VB/charts/module.json`; `SRV/ModuleLibrary/Charts/ChartsModule.php` — see [the data shape](#divicharts-data-shape) |
 | `divi/pricing-tables` › `divi/pricing-table` | parent: module decoration only; item: `title.innerContent`, `subtitle.innerContent`, `price.innerContent`, `currencyFrequency.innerContent.desktop.value.{currency,per}`, `content.innerContent` (`<ul>`), `content.advanced.bulletColor`, `button.innerContent.desktop.value.{text,linkUrl,linkTarget}`, `module.advanced.featured`, and the five font paths | `VB/{pricing-tables,pricing-table}/module.json`; `PricingTablesItemModule.php:418-500` |
-| `divi/blog` | `post.advanced.{type,number,offset,categories,showExcerpt}`, `meta.advanced.{showAuthor,showCategories,showDate,showComments}`, `readMore.advanced.enable`, `pagination.advanced.enable`, `blogGrid.decoration.layout.desktop.value.{display,gridColumnWidths,gridColumnCount,columnGap,rowGap}`, `title.decoration.font.font` | `VB/blog/module.json`; `BlogModule.php` |
+| `divi/blog` | `post.advanced.{type,number,offset,categories,showExcerpt}`, `meta.advanced.{showAuthor,showCategories,showDate,showComments}`, `readMore.advanced.enable`, `pagination.advanced.enable`, `blogGrid.decoration.layout.desktop.value.{display,gridColumnWidths,gridColumnCount,columnGap,rowGap}`, `title.decoration.font.font` | `VB/blog/module.json`; `BlogModule.php`. `image.advanced.enable` shows or hides the thumbnail, which is not what Ronneby's `enabled_link_thumb` ("wrap the thumbnail in a link") means, so nothing is written to it and the source field is reported instead |
 | `divi/post-slider` | `post.advanced.{number,categories,orderby,contentSource}`, `module.advanced.{auto,autoSpeed}` | `VB/post-slider/module.json`. `content.advanced.showOnMobile` is a mobile-visibility toggle, not a content switch, so nothing is written to it |
 | `divi/map` › `divi/map-pin` | map: `map.innerContent.desktop.value.{address,zoom,lat,lng}`; pin: `pin.innerContent.desktop.value.{address,lat,lng}`, `title.innerContent.desktop.value` | `VB/map/module.json` declares `"childrenName": ["divi/map-pin"]`; `VB/map-pin/module.json` is `"category": "child-module"`; `MapModule.php:162-165, 220-226`, `MapItem/MapItemModule.php:56-58, 156` |
 | `divi/social-media-follow` › `divi/social-media-follow-network` | `socialNetwork.innerContent.desktop.value.{title,link}`, `icon.advanced.{color,size}`, `module.decoration.{background.color,border.radius,border.styles.all}`, `module.advanced.text.text.orientation` | the child block is declared by the **`social-media-follow-item/`** folder (`SocialMediaFollowItemModule.php:77, 355-560`); the field's `link` has `defaultValue: '#'` |

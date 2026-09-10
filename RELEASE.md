@@ -98,7 +98,8 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
 
 8. **Free — build and submit.** Build the wordpress.org submission zip with
    `scripts/build-submission-zip.sh`; the listing assets it goes with (icon, banners, screenshots)
-   live in `wporg-assets/`. Then:
+   will live in `wporg-assets/`. *Both are added in Task 17 and do not exist yet — until then,
+   zip `plugin/jhmg-converter-for-wpbakery-to-divi/` by hand.* Then:
 
    ```bash
    rsync -a --delete --exclude='.DS_Store' --exclude='.svn' \

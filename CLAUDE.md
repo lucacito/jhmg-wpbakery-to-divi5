@@ -15,21 +15,20 @@
   (`references/Divi.zip` is Divi 5.12.1): unzip it and check
   `Divi/includes/builder-5/visual-builder/packages/module-library/src/components/<module>/module.json`
   and `server/Packages/StyleLibrary/Declarations/`. Do not invent block types or attribute shapes.
-- Paths Divi 5.12.1 rejects, learned the hard way — all four are in `docs/divi5-schema.md`:
-  leftover custom CSS is `css.desktop.value.mainElement`, never `css.desktop.value.main` (5.12.1
-  defines `before`/`mainElement`/`after`/`freeForm` only; `main` was the 5.7.4 name in the Beaver
-  repo); there is no gradient `type` of `radial` (`GradientUtils` knows `linear`, `conic`,
-  `elliptical`, `circular` and silently falls through to `linear`); `divi/image` reads spacing and
-  sizing from `module.advanced.*`, not `module.decoration.*`, and has no `module.decoration.border`;
-  `divi/button` has neither `module.decoration.border` nor `module.decoration.background`.
+- Four paths Divi 5.12.1 rejects (all in `docs/divi5-schema.md`): leftover custom CSS goes to
+  `css.desktop.value.mainElement`, never `.main` (5.7.4's name); a gradient `type` is never
+  `radial` — `GradientUtils` knows `linear`, `conic`, `elliptical`, `circular` and silently falls
+  through to `linear`; `divi/image` reads spacing and sizing from `module.advanced.*` and has no
+  `module.decoration.border`; `divi/button` has neither `module.decoration.border` nor
+  `module.decoration.background`.
 - Divi 5.12.1 accepts a non-preset `columnStructure`: `5_12,7_12` was driven in the Visual Builder
   and measured at 41.67 % / 58.33 % with the right `et_flex_column_{10,14}_24` classes and no
   console errors. No preset fallback is needed — write the real structure.
-- Documentation of record: `docs/wpbakery-schema.md` (source parameters, colour/size tables, the
-  normaliser), `docs/divi5-schema.md` (every Divi path written), `docs/conversion-map.md` (tag →
-  module, with fidelity), `docs/conversion-workflow.md` (pipeline, admin, Pro↔free coupling),
-  `docs/conversion-reporting.md` (every report key), `docs/box-model.md` (the measurements). A new
-  handler updates the map and the schema in the same commit.
+- A new or changed handler updates its docs in the same commit — `docs/conversion-map.md` (tag →
+  module + fidelity) and `docs/divi5-schema.md` (every Divi path written). The others are
+  `wpbakery-schema.md` (source parameters, colour/size tables, the normaliser),
+  `conversion-workflow.md` (pipeline, admin, Pro↔free coupling), `conversion-reporting.md` (every
+  report key), `box-model.md` (the measurements).
 - Divi appends the unit to gradient stop positions itself: write `position: "23"`, never `"23%"`, or
   the whole background declaration (image included) is dropped.
 - Icon settings are written `unicode, type, weight` in that order: Divi's asset detector regex

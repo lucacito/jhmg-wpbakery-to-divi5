@@ -259,13 +259,24 @@ The seven slugs `vc_btn`'s classic style uses: `default` `#f7f7f7`/`#333`, `prim
 `#0088cc`/`#fff`, `info` `#58b9da`/`#fff`, `success` `#6ab165`/`#fff`, `warning` `#ff9900`/`#fff`,
 `danger` `#ff675b`/`#fff`, `inverse` `#555555`/`#fff`.
 
-### `Color::BUTTON_MIGRATION` / `Color::CTA_MIGRATION`
+### `Color::BUTTON_MIGRATION`
 
-The rows WPBakery's own 9.0 migration writes when it turns a legacy `color` dropdown into
+The rows WPBakery's own 9.0 migration writes when it turns a legacy **button** `color` dropdown into
 colorpicker attributes: `bg`, `text`, `hover_bg`, `hover_text` from
-`VcSharedLibrary::$btn_solid_colors`, plus `shadow` from `$btn_3d_colors` (a `darken(@bg, 11%)`).
-Keys are the 17 palette names plus the 7 classic slugs. `$btn_outline_colors` needs no table: every
-row is `[text = bg, border = bg, hover text = text]` of the row here, checked against all 24 slugs.
+`VcSharedLibrary::$btn_solid_colors`, plus `shadow` from `$btn_3d_colors` (a `darken(@bg, 11%)` of
+the same background). **24 rows** — the 17 palette names plus the 7 classic Bootstrap-2 slugs.
+`$btn_outline_colors` needs no table of its own: every one of its rows is
+`[text = bg, border = bg, hover text = text]` of the row here, checked against all 24 slugs.
+
+### `Color::CTA_MIGRATION`
+
+A different table with a different shape, for `vc_cta`'s own `color` dropdown: `text`, `bg`,
+`heading`, `shadow` — **no hover pair** — read from `VcSharedLibrary::$cta_colors`, which is what
+`Wpb_Attributes_Migration_Abstract::apply_cta_flat_color()`, `apply_cta_3d_color()` and
+`apply_cta_outline_color()` consume. `text` is the box's body text (the `text_color` attribute
+`WPBakeryShortCode_Vc_Cta` still honours), `bg` its background, `heading` its `custom_text`, and
+`shadow` the 3d style's box shadow. **18 rows** — the 17 palette names plus `classic`, the style's
+own default, which is not a palette colour (`#f0f0f0` background, `#666` heading).
 
 ### `Color::MESSAGE_BOX` — 25 text/border/background triples
 
@@ -374,8 +385,8 @@ WPBakery emits it `!important`.
 | `tta` | `21.74px` | `.vc_tta-container{margin-bottom:21.73913043px}` in `assets/css/js_composer_tta.min.css` — the tta family carries no `.wpb_content_element` at all | `vc_tta_accordion`, `_tabs`, `_tour`, `_pageable`, `_toggle` |
 | `social` | `21.74px` | `.entry-content .twitter-share-button,.fb_like,…,.wpb_googleplus,.wpb_pinterest,…{margin-bottom:21.73913043px}` at byte 103390 — after the 35px rule, equal specificity, so it wins where it matches | `vc_facebook` (`fb_like`), `vc_pinterest`, `vc_googleplus` only — `vc_tweetmeme`'s wrapper is `vc_tweetmeme-element` and `vc_flickr`'s is `wpb_flickr_widget` |
 | `ult_video` | `20px` | Ultimate Addons `assets/css/video_module.css` `.ult-video{margin:20px}` (all four sides; the handler writes the other three) | `ultimate_video` |
-| `inner_row` | `0px` | measured 0px | `vc_row_inner`, `vc_custom_heading` |
-| *(none)* | — | no rule on the wrapper | `vc_pricing_table` (`$default_values` has no `margin-bottom`), `vc_hoverbox` (`.vc-hoverbox-wrapper`), `contact-form-7`, `just_icon` (`.ult-just-icon-wrapper`), `ult_content_box`, the containers, **and every Ronneby element** |
+| `inner_row` | `0px` | measured 0px on the nested row | **No handler passes this kind.** It is the constant's record of the measurement, kept so a site can raise it through `wbdc_layout_defaults`; a `vc_row_inner` never reaches `fillModuleMarginBottom()` at all, because `mapStyle()` skips the kinds `section`, `row`, `column` and `group` before it. |
+| *(none)* | — | no rule on the wrapper | The handler passes `'none'` to `mapStyle()`, which skips the default outright: `vc_pricing_table` (`$default_values` has no `margin-bottom`), `vc_hoverbox` (`.vc-hoverbox-wrapper`), `contact-form-7`, `vc_custom_heading`, `vc_zigzag`, `vc_empty_space`, `vc_copyright`, `vc_custom_field`, `vc_raw_js` (`shortcode-vc-raw-js.php` has no `element_default_class` and no Design Options tab, unlike `vc_raw_html`), `just_icon` (`.ult-just-icon-wrapper`), **and every Ronneby element**. `vc_flexbox_container`, `vc_grid_container` and `ult_content_box` get none for the other reason: they are the `group` kind, which `mapStyle()` skips. |
 
 `moduleMarginBottom()` with an unknown kind returns the `content` value. All of it sits behind the
 `wbdc_layout_defaults` filter (`array_replace_recursive`, so a site can override one key).

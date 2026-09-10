@@ -119,5 +119,6 @@ Coverage
 
 ## Release
 
-`RELEASE.md`. The free plugin's gate is `scripts/plugin-check.sh free`;
-`scripts/build-submission-zip.sh` builds the wordpress.org submission zip from `wporg-assets/`.
+`RELEASE.md`. The free plugin's gate is `scripts/plugin-check.sh free`.
+`scripts/build-submission-zip.sh` will build the wordpress.org submission zip and `wporg-assets/`
+will hold the listing assets — both are added in Task 17 and do not exist yet.

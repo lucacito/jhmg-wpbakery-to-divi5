@@ -29,7 +29,7 @@ becomes a `divi/heading` (h2) before the module, `el_id`/`el_class` go to `htmlA
 |---|---|---|
 | `vc_column_text` | `divi/text` | exact; content through `wpautop` exactly as WPBakery renders it |
 | `vc_custom_heading` | `divi/heading` | exact; `font_container` → level/align/size/line-height/colour, `google_fonts` → family/weight/italic, `source=post_title` → the `post_title` dynamic-content token |
-| `vc_single_image` | `divi/image` (+ `divi/text` caption, + `divi/heading` title) | exact; `style` → radius/border/box-shadow, `onclick` → link or lightbox |
+| `vc_single_image` | `divi/image` (+ `divi/text` caption, + `divi/heading` title) | exact; `style` → radius/border/box-shadow, `onclick` → link or lightbox, `source=featured_image` → the `post_featured_image` dynamic-content token |
 | `vc_btn` | `divi/button` | exact incl. the FA icon; hover colours reported |
 | `vc_button`, `vc_button2` | `divi/button` | exact — normalised to `vc_btn` first |
 | `vc_icon` | `divi/icon` | exact; `background_style` → module background + radius, other icon libraries reported |
