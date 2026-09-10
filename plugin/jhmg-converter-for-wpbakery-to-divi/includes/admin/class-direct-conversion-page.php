@@ -116,10 +116,6 @@ class DirectConversionPage {
         return $post !== null && WPBakeryDocumentParser::isWPBakeryContent( (string) ( $post->post_content ?? '' ) );
     }
 
-    public function has_wpbakery_content(): bool {
-        return $this->repo->has_any();
-    }
-
     /**
      * The page picker. Renders, never echoes.
      *
@@ -246,15 +242,13 @@ class DirectConversionPage {
                 $ids[] = (int) $item['source_ref']['post_id'];
             }
 
-            $converted = array_sum( (array) ( $item['report']['converted'] ?? [] ) );
-            $html     .= '<p>' . esc_html( sprintf(
-                /* translators: %d: number of Divi modules the conversion produced */
-                _n( '%d Divi module will be created.', '%d Divi modules will be created.', (int) $converted, 'jhmg-converter-for-wpbakery-to-divi' ),
-                (int) $converted
-            ) ) . '</p>';
-
+            $html .= ReportRenderer::summary( (array) ( $item['report'] ?? [] ), (array) ( $item['unsupported'] ?? [] ) );
             $html .= OutlineRenderer::render( (array) ( $item['outline'] ?? [] ) );
-            $html .= self::report_block( (array) ( $item['report'] ?? [] ), (array) ( $item['unsupported'] ?? [] ), (string) ( $item['mode'] ?? 'import' ) );
+            $html .= ReportRenderer::details(
+                (array) ( $item['report'] ?? [] ),
+                (array) ( $item['unsupported'] ?? [] ),
+                (string) ( $item['mode'] ?? 'import' )
+            );
         }
 
         if ( ! empty( $ids ) ) {
@@ -268,149 +262,6 @@ class DirectConversionPage {
         }
 
         return $html . '</div>';
-    }
-
-    /**
-     * Everything one conversion has to say, in one block.
-     *
-     * Every key of the engine's report reaches a reader here
-     * (task-12-amendments §2): nothing it counted is hidden, and the two kinds
-     * of "not handled" are kept apart — `skipped_settings` is this converter's
-     * gap on a WPBakery field, the theme and add-on block is not.
-     *
-     * @param array<string,mixed> $report
-     * @param array<int, array<string,mixed>> $unsupported
-     */
-    public static function report_block( array $report, array $unsupported = [], string $mode = 'import' ): string {
-        $html = '';
-
-        $names = array_values( array_unique( array_filter( array_map(
-            static fn( $entry ): string => is_array( $entry ) ? (string) ( $entry['tag'] ?? $entry['module'] ?? $entry['type'] ?? '' ) : '',
-            $unsupported
-        ) ) ) );
-
-        if ( ! empty( $names ) ) {
-            $html .= '<p class="wbdc-direct-unsupported"><strong>' . esc_html__( 'Could not be converted:', 'jhmg-converter-for-wpbakery-to-divi' ) . '</strong> '
-                . esc_html( implode( ', ', $names ) ) . '</p>';
-        }
-
-        $html .= NotCarriedOverRenderer::render(
-            (array) ( $report['not_carried_over'] ?? [] ),
-            (array) ( $report['approximate_matches'] ?? [] ),
-            (array) ( $report['unresolved_globals'] ?? [] ),
-            (array) ( $report['theme_elements'] ?? [] ),
-            (array) ( $report['unresolved_media'] ?? [] ),
-            $mode
-        );
-
-        $notes = self::kept_as_is_notes( $report );
-        if ( ! empty( $notes ) ) {
-            $html .= '<ul class="wbdc-report-notes">';
-            foreach ( $notes as $note ) {
-                $html .= '<li>' . esc_html( $note ) . '</li>';
-            }
-            $html .= '</ul>';
-        }
-
-        $skipped = (array) ( $report['skipped_settings'] ?? [] );
-        if ( ! empty( $skipped ) ) {
-            $html .= '<details class="wbdc-skipped-settings"><summary>'
-                . esc_html( sprintf(
-                    /* translators: %d: number of WPBakery settings the converter did not map */
-                    _n( '%d WPBakery setting this converter did not map', '%d WPBakery settings this converter did not map', count( $skipped ), 'jhmg-converter-for-wpbakery-to-divi' ),
-                    count( $skipped )
-                ) )
-                . '</summary><ul class="wbdc-not-carried-list">';
-            foreach ( $skipped as $setting ) {
-                $html .= '<li><code>' . esc_html( (string) $setting ) . '</code></li>';
-            }
-            $html .= '</ul></details>';
-        }
-
-        $warnings = (array) ( $report['warnings'] ?? [] );
-        if ( ! empty( $warnings ) ) {
-            $html .= '<details class="wbdc-report-warnings"><summary>'
-                . esc_html( sprintf(
-                    /* translators: %d: number of warnings the conversion recorded */
-                    _n( '%d note from the conversion', '%d notes from the conversion', count( $warnings ), 'jhmg-converter-for-wpbakery-to-divi' ),
-                    count( $warnings )
-                ) )
-                . '</summary><ul class="wbdc-not-carried-list">';
-            foreach ( $warnings as $warning ) {
-                $html .= '<li>' . esc_html( (string) $warning ) . '</li>';
-            }
-            $html .= '</ul></details>';
-        }
-
-        return $html;
-    }
-
-    /**
-     * The counters that describe something kept rather than something lost.
-     *
-     * @param array<string,mixed> $report
-     * @return string[]
-     */
-    private static function kept_as_is_notes( array $report ): array {
-        $notes = [];
-
-        $static = count( (array) ( $report['static_copies'] ?? [] ) );
-        if ( $static > 0 ) {
-            $notes[] = sprintf(
-                /* translators: %d: number of elements copied as static HTML */
-                _n(
-                    '%d element was rendered on this site and kept as static HTML. It will not change when its plugin does.',
-                    '%d elements were rendered on this site and kept as static HTML. They will not change when their plugins do.',
-                    $static,
-                    'jhmg-converter-for-wpbakery-to-divi'
-                ),
-                $static
-            );
-        }
-
-        $css = count( (array) ( $report['custom_css_carried'] ?? [] ) );
-        if ( $css > 0 ) {
-            $notes[] = sprintf(
-                /* translators: %d: number of elements whose design options were carried as custom CSS */
-                _n(
-                    "%d element's design options had no Divi setting and were carried as custom CSS on the module.",
-                    "%d elements' design options had no Divi setting and were carried as custom CSS on the modules.",
-                    $css,
-                    'jhmg-converter-for-wpbakery-to-divi'
-                ),
-                $css
-            );
-        }
-
-        $text = (int) ( $report['text_nodes'] ?? 0 );
-        if ( $text > 0 ) {
-            $notes[] = sprintf(
-                /* translators: %d: number of loose runs of text kept as text modules */
-                _n(
-                    '%d run of text sat between elements and was kept as a text module.',
-                    '%d runs of text sat between elements and were kept as text modules.',
-                    $text,
-                    'jhmg-converter-for-wpbakery-to-divi'
-                ),
-                $text
-            );
-        }
-
-        $bracketed = (int) ( $report['bracketed_text'] ?? 0 );
-        if ( $bracketed > 0 ) {
-            $notes[] = sprintf(
-                /* translators: %d: number of bracketed tokens kept as text */
-                _n(
-                    '%d bracketed token was not a shortcode at all and was kept as the text it was.',
-                    '%d bracketed tokens were not shortcodes at all and were kept as the text they were.',
-                    $bracketed,
-                    'jhmg-converter-for-wpbakery-to-divi'
-                ),
-                $bracketed
-            );
-        }
-
-        return $notes;
     }
 
     public function maybe_handle_request(): void {

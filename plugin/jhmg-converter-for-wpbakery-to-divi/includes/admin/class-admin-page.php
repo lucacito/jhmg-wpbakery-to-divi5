@@ -59,9 +59,7 @@ class AdminPage {
             return;
         }
 
-        wp_register_style( 'wbdc-admin', false, [], WBDC_PLUGIN_VERSION );
-        wp_enqueue_style( 'wbdc-admin' );
-        wp_add_inline_style( 'wbdc-admin', $this->inline_css() );
+        wp_enqueue_style( 'wbdc-admin', WBDC_PLUGIN_URL . 'assets/css/admin.css', [], WBDC_PLUGIN_VERSION );
     }
 
     protected function hook_is_styled( string $hook ): bool {
@@ -147,7 +145,7 @@ class AdminPage {
      * helper so that both a reader and the static analysers can see, on the
      * lines above the superglobal, that they were checked before it was read.
      */
-    private function handle_import(): void {
+    protected function handle_import(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi' ) );
         }
@@ -214,11 +212,14 @@ class AdminPage {
         $selection = self::select_items( $items, $post_types );
 
         $results = ( new BatchImporter() )->import( $selection['items'], [
-            'post_status'       => $post_status,
+            'post_status' => $post_status,
+            // The unticked templates are already out of the plan; this keeps
+            // the committer's own guard in step for anything reaching it by
+            // another route (the Pro add-on's whole-site action, say).
             'convert_templates' => (bool) array_intersect( InstalledPostSource::LIBRARY_POST_TYPES, $post_types ),
         ] );
 
-        foreach ( self::dropped_results( $selection['dropped'] ) as $row ) {
+        foreach ( array_merge( self::not_selected_results( $selection['templates'] ), self::dropped_results( $selection['dropped'] ) ) as $row ) {
             $results[] = $row;
         }
 
@@ -324,20 +325,27 @@ class AdminPage {
     /**
      * Which of a file's items the reader asked for.
      *
-     * A WPBakery template is never dropped, only deferred to the end of the
-     * list: leaving it out entirely would lose the one signal that the file
-     * held a template at all, and the committer has a result for exactly this
-     * — "WPBakery template not selected for conversion". Items of a type
-     * nobody ticked are dropped and counted, so the result screen can say so.
+     * A WPBakery template the reader did not tick comes out of the plan
+     * altogether rather than being deferred to the end of it. Deferring meant
+     * the free limit — one item, taken from the front — reached the template
+     * only on a file that held nothing else, so "WPBakery template not selected
+     * for conversion" was almost never the wording anybody saw; the template
+     * fell into the generic "N more pages in this file were not converted"
+     * instead, which does not say what it was or why it was left. Out of the
+     * plan, it is reported by name every time, and the limit counts only items
+     * that were actually asked for.
+     *
+     * Items of a type nobody ticked are dropped and counted the same way, so
+     * nothing in the file disappears without a word.
      *
      * @param array[]  $items
      * @param string[] $post_types
-     * @return array{items: array[], dropped: array<string,int>}
+     * @return array{items: array[], templates: array[], dropped: array<string,int>}
      */
     public static function select_items( array $items, array $post_types ): array {
-        $selected = [];
-        $deferred = [];
-        $dropped  = [];
+        $selected  = [];
+        $templates = [];
+        $dropped   = [];
 
         foreach ( $items as $item ) {
             $type = self::source_type_of( $item );
@@ -348,14 +356,40 @@ class AdminPage {
             }
 
             if ( ( $item['template_type'] ?? '' ) === 'library' ) {
-                $deferred[] = $item;
+                $templates[] = $item;
                 continue;
             }
 
             $dropped[ $type ] = ( $dropped[ $type ] ?? 0 ) + 1;
         }
 
-        return [ 'items' => array_merge( $selected, $deferred ), 'dropped' => $dropped ];
+        return [ 'items' => $selected, 'templates' => $templates, 'dropped' => $dropped ];
+    }
+
+    /**
+     * One result row per WPBakery template the reader left unticked, in the
+     * committer's own words so both paths say the same thing.
+     *
+     * @param array[] $templates
+     * @return array[]
+     */
+    public static function not_selected_results( array $templates ): array {
+        $rows = [];
+
+        foreach ( $templates as $item ) {
+            $rows[] = [
+                'title'         => (string) ( $item['title'] ?? 'Imported Template' ),
+                'post_id'       => 0,
+                'template_type' => 'library',
+                'success'       => false,
+                'skipped'       => true,
+                'error'         => ConversionCommitter::LIBRARY_NOT_SELECTED,
+                'report'        => [],
+                'unsupported'   => [],
+            ];
+        }
+
+        return $rows;
     }
 
     /**
@@ -388,7 +422,7 @@ class AdminPage {
         return $rows;
     }
 
-    private function handle_publish(): void {
+    protected function handle_publish(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
             wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi' ) );
         }
@@ -449,12 +483,13 @@ class AdminPage {
 
             <div class="wbdc-card wbdc-card--direct">
                 <h2><?php esc_html_e( 'Convert a page already on this site', 'jhmg-converter-for-wpbakery-to-divi' ); ?></h2>
-                <?php if ( $direct->has_wpbakery_content() ) : ?>
-                    <p class="description"><?php esc_html_e( 'Pick a WPBakery page, check what the conversion will produce, then convert it. Your original page is never modified.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
-                    <?php echo $direct->render_picker( [ 'search' => $search, 'paged' => $paged ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in render_picker() ?>
-                <?php else : ?>
-                    <p class="description"><?php esc_html_e( 'No WPBakery pages were found on this site. Upload an export below to convert pages from another site.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
-                <?php endif; ?>
+                <p class="description"><?php esc_html_e( 'Pick a WPBakery page, check what the conversion will produce, then convert it. Your original page is never modified.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+                <?php
+                // One query, not two: the picker renders its own empty state,
+                // and the content LIKE behind it is not cheap enough to run
+                // twice just to decide whether to call it.
+                echo $direct->render_picker( [ 'search' => $search, 'paged' => $paged ] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in render_picker()
+                ?>
             </div>
 
             <div class="wbdc-card">
@@ -666,13 +701,19 @@ class AdminPage {
             $html .= '</td>';
 
             $html .= '<td class="column-issues">';
-            if ( ! empty( $result['success'] ) && $issues > 0 ) {
-                $html .= '<details class="wbdc-issues-details"><summary class="wbdc-issues-summary"><span class="wbdc-badge wbdc-badge--warn">' . (int) $issues . '</span> '
-                    . esc_html__( 'notes', 'jhmg-converter-for-wpbakery-to-divi' ) . '</summary>'
-                    . DirectConversionPage::report_block( $report, (array) ( $result['unsupported'] ?? [] ), (string) ( $result['mode'] ?? 'import' ) )
-                    . '</details>';
-            } elseif ( ! empty( $result['success'] ) ) {
-                $html .= '<span class="wbdc-status--clean">&#10003; ' . esc_html__( 'Clean', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+            if ( ! empty( $result['success'] ) ) {
+                // The coverage fact is not a finding, so it is stated rather
+                // than hidden behind the disclosure.
+                $html .= ReportRenderer::summary( $report, (array) ( $result['unsupported'] ?? [] ) );
+
+                if ( $issues > 0 ) {
+                    $html .= '<details class="wbdc-issues-details"><summary class="wbdc-issues-summary"><span class="wbdc-badge wbdc-badge--warn">' . (int) $issues . '</span> '
+                        . esc_html__( 'notes', 'jhmg-converter-for-wpbakery-to-divi' ) . '</summary>'
+                        . ReportRenderer::details( $report, (array) ( $result['unsupported'] ?? [] ), (string) ( $result['mode'] ?? 'import' ) )
+                        . '</details>';
+                } else {
+                    $html .= '<span class="wbdc-status--clean">&#10003; ' . esc_html__( 'Clean', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                }
             } else {
                 $html .= '&mdash;';
             }
@@ -776,74 +817,5 @@ class AdminPage {
     protected function redirect( string $location ): void {
         wp_safe_redirect( $location );
         exit;
-    }
-
-    // ------------------------------------------------------------------
-    // Styles
-    // ------------------------------------------------------------------
-
-    private function inline_css(): string {
-        return '
-.wbdc-wrap { max-width: 1200px; }
-.wbdc-wrap h1 { font-size: 26px; font-weight: 700; color: #1e293b; }
-.wbdc-subtitle { color: #475569; font-size: 15px; margin: 4px 0 20px; }
-.wbdc-card { background: #fff; border: 1px solid #dcdcde; border-radius: 10px; padding: 20px 24px; margin: 0 0 20px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
-.wbdc-card h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #1e293b; }
-.wbdc-card > p.description { margin: 0 0 14px; color: #64748b; }
-.wbdc-card--direct { border-top: 4px solid #22c55e; }
-.wbdc-card--pro { border-top: 4px solid #7c3aed; }
-.wbdc-card--success { border-left: 4px solid #2e7d32; }
-.wbdc-badge-pro { display: inline-block; background: #ede9fe; color: #6d28d9; border-radius: 99px; padding: 2px 10px; font-size: 10px; font-weight: 700; letter-spacing: .07em; }
-.wbdc-features { margin: 8px 0 12px 18px; list-style: disc; color: #334155; }
-.wbdc-direct-search { margin-bottom: 12px; }
-.wbdc-direct-search input[type="search"] { min-width: 240px; margin-right: 6px; }
-.wbdc-direct-table td { padding: 10px 12px; }
-.wbdc-direct-meta { color: #64748b; font-size: 12px; margin-left: 6px; }
-.wbdc-badge-converted { display: inline-block; background: #dcfce7; color: #15803d; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-.wbdc-badge-flag { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-.wbdc-badge-template { display: inline-block; background: #e0e7ff; color: #3730a3; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-.wbdc-direct-pager a { margin-right: 6px; }
-.wbdc-direct-empty { color: #64748b; }
-.wbdc-direct-report h3 { margin: 20px 0 6px; }
-.wbdc-direct-unsupported { color: #7a4f00; }
-.wbdc-outline { list-style: none; margin: 0 0 10px; padding-left: 16px; }
-.wbdc-outline .wbdc-outline { margin-top: 4px; }
-.wbdc-outline-node { margin-bottom: 4px; font-size: 13px; }
-.wbdc-outline-node--placeholder > .wbdc-outline-label { color: #c62828; }
-.wbdc-outline-empty { color: #64748b; }
-.wbdc-import-fields { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
-.wbdc-import-field { display: flex; flex-direction: column; gap: 4px; }
-.wbdc-import-field .description { margin: 4px 0 0; font-size: 11px; color: #757575; }
-.wbdc-import-types { margin: 0 0 12px; }
-.wbdc-import-types p { margin: 4px 0; }
-.wbdc-free-notice { color: #946f00; margin-top: 10px; }
-.wbdc-batch-summary { display: flex; gap: 12px; margin: 16px 0 20px; flex-wrap: wrap; }
-.wbdc-summary-stat { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 3px; font-weight: 600; font-size: 13px; }
-.wbdc-summary-stat--total { background: #f0f0f1; color: #3c434a; }
-.wbdc-summary-stat--ok { background: #d1e7dd; color: #0a3622; }
-.wbdc-summary-stat--fail { background: #f8d7da; color: #58151c; }
-.wbdc-batch-table .column-status { width: 160px; }
-.wbdc-batch-table .column-issues { width: 300px; }
-.wbdc-batch-table .column-actions { width: 220px; }
-.wbdc-status { font-weight: 600; }
-.wbdc-status--converted, .wbdc-status--clean { color: #2e7d32; }
-.wbdc-status--error { color: #c62828; }
-.wbdc-status--skipped { color: #946f00; }
-.wbdc-error-msg { color: #c62828; font-size: 11px; }
-.wbdc-badge { display: inline-block; background: #f0b429; color: #7a4f00; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; vertical-align: middle; }
-.wbdc-issues-details summary, .wbdc-skipped-settings summary, .wbdc-report-warnings summary { cursor: pointer; }
-.wbdc-report-notes { margin: 8px 0 0; padding-left: 16px; font-size: 12px; color: #334155; }
-.wbdc-not-carried { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid #c62828; background: #fdf6f6; }
-.wbdc-not-carried h3 { margin: 0 0 6px; font-size: 13px; }
-.wbdc-not-carried-label { margin: 8px 0 2px; font-size: 12px; font-weight: 400; }
-.wbdc-not-carried-list { margin: 0 0 6px; padding-left: 16px; font-size: 12px; }
-.wbdc-addon-block { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid #2271b1; background: #f6f9fd; }
-.wbdc-addon-block h3 { margin: 0 0 6px; font-size: 13px; }
-.wbdc-addon-block .description { margin: 0 0 6px; font-size: 12px; }
-.wbdc-theme-elements { margin: 6px 0; font-size: 12px; }
-.wbdc-published-label { color: #2e7d32; font-size: 12px; font-weight: 600; }
-.wbdc-result-actions { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }
-.wbdc-review-prompt { border-left: 4px solid #2271b1; }
-        ';
     }
 }

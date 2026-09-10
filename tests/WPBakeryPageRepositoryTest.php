@@ -109,9 +109,34 @@ final class WPBakeryPageRepositoryTest extends TestCase {
         $this->assertTrue( $rows[0]['flag_missing'] );
     }
 
-    public function test_has_any_answers_from_one_row(): void {
-        $this->assertFalse( ( new WPBakeryPageRepository( fn(): array => [] ) )->has_any() );
-        $this->assertTrue( ( new WPBakeryPageRepository( fn(): array => [ $this->post( 8, 'One' ) ] ) )->has_any() );
+    public function test_an_empty_page_of_rows_asks_no_badge_questions_at_all(): void {
+        $GLOBALS['__test_get_posts_calls'] = 0;
+
+        $this->assertSame( [], ( new WPBakeryPageRepository( fn(): array => [] ) )->find() );
+        $this->assertSame( 0, $GLOBALS['__test_get_posts_calls'], 'no rows, no reverse lookup' );
+    }
+
+    /**
+     * Twenty rows used to mean twenty `get_posts()` calls and twenty meta
+     * reads. Both badges are now answered once for the whole page.
+     */
+    public function test_the_badges_cost_one_query_however_many_rows_there_are(): void {
+        $posts = [];
+        for ( $id = 10; $id < 30; $id++ ) {
+            $posts[] = $this->post( $id, 'Page ' . $id );
+            update_post_meta( $id, '_wpb_vc_js_status', 'true' );
+        }
+
+        $copy = wp_insert_post( [ 'post_type' => 'page', 'post_title' => 'Copy of 12' ] );
+        update_post_meta( $copy, '_wbdc_source_post_id', 12 );
+
+        $GLOBALS['__test_get_posts_calls'] = 0;
+        $rows = ( new WPBakeryPageRepository( fn(): array => $posts ) )->find();
+
+        $this->assertCount( 20, $rows );
+        $this->assertSame( 1, $GLOBALS['__test_get_posts_calls'], 'one reverse lookup for the whole page of rows' );
+        $this->assertSame( [ 12 ], array_column( array_filter( $rows, static fn( array $r ): bool => $r['converted'] ), 'id' ) );
+        $this->assertSame( [], array_filter( $rows, static fn( array $r ): bool => $r['flag_missing'] ) );
     }
 
     public function test_a_row_without_an_id_is_skipped_rather_than_listed_as_zero(): void {

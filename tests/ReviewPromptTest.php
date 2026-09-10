@@ -73,14 +73,23 @@ final class ReviewPromptTest extends TestCase {
         );
     }
 
-    public function test_the_response_handler_needs_a_valid_nonce(): void {
+    public function test_the_response_handler_needs_the_capability_and_a_valid_nonce(): void {
         $prompt = new ReviewPrompt( '2026-09-08' );
 
         $_GET = [ ReviewPrompt::QUERY_ACTION => 'done', '_wpnonce' => 'wrong' ];
         $prompt->maybe_handle_response();
         $this->assertSame( '', get_user_meta( get_current_user_id(), ReviewPrompt::USER_META_KEY, true ) );
 
-        $_GET['_wpnonce'] = wp_create_nonce( ReviewPrompt::NONCE_ACTION );
+        $GLOBALS['__test_caps'] = false;
+        $_GET['_wpnonce']       = wp_create_nonce( ReviewPrompt::NONCE_ACTION );
+        $prompt->maybe_handle_response();
+        $this->assertSame(
+            '',
+            get_user_meta( get_current_user_id(), ReviewPrompt::USER_META_KEY, true ),
+            'without manage_options nothing is written, nonce or no nonce'
+        );
+
+        $GLOBALS['__test_caps'] = true;
         $prompt->maybe_handle_response();
         $this->assertSame( ReviewPrompt::STATE_DONE, get_user_meta( get_current_user_id(), ReviewPrompt::USER_META_KEY, true ) );
 

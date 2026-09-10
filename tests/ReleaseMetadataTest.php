@@ -130,6 +130,10 @@ final class ReleaseMetadataTest extends TestCase {
 
     /** The classification the readme is checked against is the one the script prints. */
     public function test_the_test_and_the_coverage_script_classify_identically(): void {
+        if ( ! function_exists( 'shell_exec' ) ) {
+            $this->markTestSkipped( 'shell_exec is disabled, so the script cannot be run for comparison' );
+        }
+
         $raw  = json_decode( (string) shell_exec( 'php ' . escapeshellarg( __DIR__ . '/../scripts/element-coverage.php' ) . ' --json 2>/dev/null' ), true );
         $live = is_array( $raw['summary'] ?? null ) ? $raw['summary'] : [];
 
@@ -149,18 +153,42 @@ final class ReleaseMetadataTest extends TestCase {
         }
     }
 
-    /** Whatever else this file does, it does not change the repository. */
+    /**
+     * Whatever else this file does, it does not change the repository.
+     *
+     * `git status` returning nothing is both "clean" and "git could not run",
+     * so the comparison is only worth making once the command has been shown
+     * to work: `git status` on a repository always prints a branch line with
+     * `--porcelain=v2 --branch`, so an empty answer there means git could not
+     * run and the test says so rather than passing on a blank.
+     */
     public function test_this_test_writes_nothing(): void {
-        $before = (string) shell_exec( 'git -C ' . escapeshellarg( dirname( __DIR__ ) ) . ' status --porcelain 2>/dev/null' );
+        $probe = $this->git( 'status --porcelain=v2 --branch' );
 
+        if ( $probe === null || ! str_contains( $probe, 'branch.oid' ) ) {
+            $this->markTestSkipped( 'git is unavailable here, so "the tree did not change" cannot be observed' );
+        }
+
+        $before = $this->git( 'status --porcelain' );
+
+        // Everything this file does that could conceivably write: the coverage
+        // helper, the readme read, and the sibling test's shell-out.
         $this->coverage();
         $this->readme();
+        shell_exec( 'php ' . escapeshellarg( __DIR__ . '/../scripts/element-coverage.php' ) . ' --json 2>/dev/null' );
 
-        $this->assertSame(
-            $before,
-            (string) shell_exec( 'git -C ' . escapeshellarg( dirname( __DIR__ ) ) . ' status --porcelain 2>/dev/null' ),
-            'a test must never write to the repository'
-        );
+        $this->assertSame( $before, $this->git( 'status --porcelain' ), 'a test must never write to the repository' );
+    }
+
+    /** @return string|null The command's output, or null when git could not run. */
+    private function git( string $args ): ?string {
+        if ( ! function_exists( 'shell_exec' ) ) {
+            return null;
+        }
+
+        $out = shell_exec( 'git -C ' . escapeshellarg( dirname( __DIR__ ) ) . ' ' . $args . ' 2>/dev/null' );
+
+        return is_string( $out ) ? $out : null;
     }
 
     public function test_readme_says_what_happens_to_what_it_cannot_convert(): void {

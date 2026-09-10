@@ -1,0 +1,68 @@
+/*
+ * Tools → WPBakery → Divi 5.
+ *
+ * Enqueued by `AdminPage::enqueue_admin_styles()` on this plugin's screens and
+ * on the Pro add-on's, which renders with the same class names.
+ */
+
+.wbdc-wrap { max-width: 1200px; }
+.wbdc-wrap h1 { font-size: 26px; font-weight: 700; color: #1e293b; }
+.wbdc-subtitle { color: #475569; font-size: 15px; margin: 4px 0 20px; }
+.wbdc-card { background: #fff; border: 1px solid #dcdcde; border-radius: 10px; padding: 20px 24px; margin: 0 0 20px; box-shadow: 0 1px 6px rgba(0,0,0,.05); }
+.wbdc-card h2 { margin: 0 0 8px; font-size: 16px; font-weight: 700; color: #1e293b; }
+.wbdc-card > p.description { margin: 0 0 14px; color: #64748b; }
+.wbdc-card--direct { border-top: 4px solid #22c55e; }
+.wbdc-card--pro { border-top: 4px solid #7c3aed; }
+.wbdc-card--success { border-left: 4px solid #2e7d32; }
+.wbdc-badge-pro { display: inline-block; background: #ede9fe; color: #6d28d9; border-radius: 99px; padding: 2px 10px; font-size: 10px; font-weight: 700; letter-spacing: .07em; }
+.wbdc-features { margin: 8px 0 12px 18px; list-style: disc; color: #334155; }
+.wbdc-direct-search { margin-bottom: 12px; }
+.wbdc-direct-search input[type="search"] { min-width: 240px; margin-right: 6px; }
+.wbdc-direct-table td { padding: 10px 12px; }
+.wbdc-direct-meta { color: #64748b; font-size: 12px; margin-left: 6px; }
+.wbdc-badge-converted { display: inline-block; background: #dcfce7; color: #15803d; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.wbdc-badge-flag { display: inline-block; background: #fef3c7; color: #92400e; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.wbdc-badge-template { display: inline-block; background: #e0e7ff; color: #3730a3; border-radius: 10px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px; }
+.wbdc-direct-pager a { margin-right: 6px; }
+.wbdc-direct-empty { color: #64748b; }
+.wbdc-direct-report h3 { margin: 20px 0 6px; }
+.wbdc-direct-unsupported { color: #7a4f00; }
+.wbdc-outline { list-style: none; margin: 0 0 10px; padding-left: 16px; }
+.wbdc-outline .wbdc-outline { margin-top: 4px; }
+.wbdc-outline-node { margin-bottom: 4px; font-size: 13px; }
+.wbdc-outline-node--placeholder > .wbdc-outline-label { color: #c62828; }
+.wbdc-outline-empty { color: #64748b; }
+.wbdc-import-fields { display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-end; }
+.wbdc-import-field { display: flex; flex-direction: column; gap: 4px; }
+.wbdc-import-field .description { margin: 4px 0 0; font-size: 11px; color: #757575; }
+.wbdc-import-types { margin: 0 0 12px; }
+.wbdc-import-types p { margin: 4px 0; }
+.wbdc-free-notice { color: #946f00; margin-top: 10px; }
+.wbdc-batch-summary { display: flex; gap: 12px; margin: 16px 0 20px; flex-wrap: wrap; }
+.wbdc-summary-stat { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 3px; font-weight: 600; font-size: 13px; }
+.wbdc-summary-stat--total { background: #f0f0f1; color: #3c434a; }
+.wbdc-summary-stat--ok { background: #d1e7dd; color: #0a3622; }
+.wbdc-summary-stat--fail { background: #f8d7da; color: #58151c; }
+.wbdc-batch-table .column-status { width: 160px; }
+.wbdc-batch-table .column-issues { width: 300px; }
+.wbdc-batch-table .column-actions { width: 220px; }
+.wbdc-status { font-weight: 600; }
+.wbdc-status--converted, .wbdc-status--clean { color: #2e7d32; }
+.wbdc-status--error { color: #c62828; }
+.wbdc-status--skipped { color: #946f00; }
+.wbdc-error-msg { color: #c62828; font-size: 11px; }
+.wbdc-badge { display: inline-block; background: #f0b429; color: #7a4f00; border-radius: 10px; padding: 1px 7px; font-size: 11px; font-weight: 700; vertical-align: middle; }
+.wbdc-issues-details summary, .wbdc-skipped-settings summary, .wbdc-report-warnings summary { cursor: pointer; }
+.wbdc-report-notes { margin: 8px 0 0; padding-left: 16px; font-size: 12px; color: #334155; }
+.wbdc-not-carried { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid #c62828; background: #fdf6f6; }
+.wbdc-not-carried h3 { margin: 0 0 6px; font-size: 13px; }
+.wbdc-not-carried-label { margin: 8px 0 2px; font-size: 12px; font-weight: 400; }
+.wbdc-not-carried-list { margin: 0 0 6px; padding-left: 16px; font-size: 12px; }
+.wbdc-addon-block { margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid #2271b1; background: #f6f9fd; }
+.wbdc-addon-block h3 { margin: 0 0 6px; font-size: 13px; }
+.wbdc-addon-block .description { margin: 0 0 6px; font-size: 12px; }
+.wbdc-theme-elements { margin: 6px 0; font-size: 12px; }
+.wbdc-published-label { color: #2e7d32; font-size: 12px; font-weight: 600; }
+.wbdc-result-actions { display: flex; gap: 8px; margin: 16px 0 24px; flex-wrap: wrap; }
+.wbdc-review-prompt { border-left: 4px solid #2271b1; }
+.wbdc-report-summary { margin: 6px 0; font-size: 13px; }

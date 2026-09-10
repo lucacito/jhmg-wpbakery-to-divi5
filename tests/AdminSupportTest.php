@@ -5,6 +5,7 @@ namespace WPBakeryDivi5Converter\Tests;
 use PHPUnit\Framework\TestCase;
 use WPBakeryDivi5Converter\Admin\AdminPage;
 use WPBakeryDivi5Converter\Conversion\ConversionCommitter;
+use WPBakeryDivi5Converter\Conversion\ConversionPreflight;
 use WPBakeryDivi5Converter\Parsers\WPBakeryImportParser;
 
 /**
@@ -27,6 +28,8 @@ final class AdminSupportTest extends TestCase {
         $GLOBALS['__test_styles']      = [];
         $GLOBALS['__test_post_types']  = [ 'post' => 'post', 'page' => 'page' ];
         unset( $GLOBALS['__test_caps'] );
+        $_GET   = [];
+        $_FILES = [];
     }
 
     /** @return array[] */
@@ -56,9 +59,21 @@ final class AdminSupportTest extends TestCase {
         $this->assertSame( [], $GLOBALS['__test_styles'] );
 
         $page->enqueue_admin_styles( 'tools_page_wbdc-converter' );
-        $this->assertTrue( $GLOBALS['__test_styles']['wbdc-admin']['enqueued'] );
-        $this->assertStringContainsString( '.wbdc-card', $GLOBALS['__test_styles']['wbdc-admin']['inline'] );
-        $this->assertSame( WBDC_PLUGIN_VERSION, $GLOBALS['__test_styles']['wbdc-admin']['ver'] );
+        $style = $GLOBALS['__test_styles']['wbdc-admin'];
+
+        $this->assertTrue( $style['enqueued'] );
+        $this->assertStringEndsWith( 'assets/css/admin.css', (string) $style['src'], 'a real file, not inline CSS' );
+        $this->assertSame( WBDC_PLUGIN_VERSION, $style['ver'], 'a versioned enqueue, so a release busts the cache' );
+        $this->assertSame( '', $style['inline'] );
+    }
+
+    /** The stylesheet the enqueue names is really there, and holds the classes the screens use. */
+    public function test_the_admin_stylesheet_exists_and_covers_the_screens_classes(): void {
+        $css = (string) file_get_contents( __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi/assets/css/admin.css' );
+
+        foreach ( [ '.wbdc-card', '.wbdc-outline', '.wbdc-not-carried', '.wbdc-addon-block', '.wbdc-report-summary', '.wbdc-badge-flag' ] as $class ) {
+            $this->assertStringContainsString( $class, $css, $class );
+        }
     }
 
     public function test_the_screen_explains_itself_when_divi_5_is_missing(): void {
@@ -92,14 +107,47 @@ final class AdminSupportTest extends TestCase {
         $this->assertSame( [ 'page', 'post' ], WPBakeryImportParser::DEFAULT_SELECTED_POST_TYPES );
     }
 
-    public function test_selecting_post_types_keeps_templates_and_reports_what_it_dropped(): void {
-        $all = AdminPage::select_items( $this->items(), [ 'page', 'post' ] );
-        $this->assertSame( [ 'Home', 'A builder post', 'Saved Section' ], array_column( $all['items'], 'title' ) );
+    public function test_selecting_post_types_separates_templates_from_what_it_dropped(): void {
+        $all = AdminPage::select_items( $this->items(), [ 'page', 'post', 'vc4_templates' ] );
+        $this->assertSame( [ 'Home', 'Saved Section', 'A builder post' ], array_column( $all['items'], 'title' ) );
+        $this->assertSame( [], $all['templates'] );
         $this->assertSame( [], $all['dropped'] );
 
         $pages_only = AdminPage::select_items( $this->items(), [ 'page' ] );
-        $this->assertSame( [ 'Home', 'Saved Section' ], array_column( $pages_only['items'], 'title' ), 'a template is never dropped, only deferred' );
+        $this->assertSame( [ 'Home' ], array_column( $pages_only['items'], 'title' ) );
+        $this->assertSame( [ 'Saved Section' ], array_column( $pages_only['templates'], 'title' ), 'an unticked template leaves the plan rather than queueing behind it' );
         $this->assertSame( [ 'post' => 1 ], $pages_only['dropped'] );
+    }
+
+    /**
+     * On free the limit is one item, taken from the front of the plan. While an
+     * unticked template merely queued at the back it was almost never reached,
+     * so it fell into the generic "N more pages" row instead of saying what it
+     * was. Out of the plan, it is named every time.
+     */
+    public function test_on_free_an_unticked_template_is_named_rather_than_swallowed_by_the_limit(): void {
+        $page = $this->convertingPage();
+
+        set_transient(
+            AdminPage::IMPORT_ITEMS_TRANSIENT_PREFIX . get_current_user_id(),
+            AdminPage::stash_for( $this->items(), [] )
+        );
+
+        $this->assertSame( 1, ConversionPreflight::limit(), 'this is the free plugin' );
+
+        $page->go( [ 'wbdc_post_types' => [ 'page' ], 'wbdc_post_status' => 'draft' ] );
+
+        $results  = get_transient( AdminPage::BATCH_TRANSIENT_PREFIX . get_option( 'wbdc_import_history' )[0]['id'] );
+        $errors   = array_column( $results, 'error' );
+        $template = array_values( array_filter( $results, static fn( array $r ): bool => ( $r['template_type'] ?? '' ) === 'library' ) );
+
+        $this->assertTrue( $results[0]['success'], 'the one conversion the limit allows went to a page, not to a template' );
+        $this->assertSame( 'Home', $results[0]['title'] );
+
+        $this->assertCount( 1, $template );
+        $this->assertSame( ConversionCommitter::LIBRARY_NOT_SELECTED, $template[0]['error'] );
+        $this->assertSame( 'Saved Section', $template[0]['title'] );
+        $this->assertNotContains( 'Free converts one page per upload. The Pro add-on converts every page in the file in one run.', $errors, 'nothing was left over: the plan held one selected item' );
     }
 
     /**
@@ -125,8 +173,9 @@ final class AdminSupportTest extends TestCase {
         $this->assertSame( [ 'page' => 1 ], AdminPage::select_items( $items, [ 'post' ] )['dropped'] );
     }
 
-    public function test_the_import_convert_step_records_a_run_and_skips_the_unselected_template(): void {
-        $page = new class() extends AdminPage {
+    /** An AdminPage whose redirect can be observed and whose convert step can be called. */
+    private function convertingPage(): AdminPage {
+        return new class() extends AdminPage {
             /** @var string[] */
             public array $redirects = [];
             protected function redirect( string $location ): void {
@@ -137,6 +186,10 @@ final class AdminSupportTest extends TestCase {
                 $this->handle_import_convert( $request );
             }
         };
+    }
+
+    public function test_the_import_convert_step_records_a_run_and_skips_the_unselected_template(): void {
+        $page = $this->convertingPage();
 
         add_filter( 'wbdc_direct_conversion_limit', fn(): int => PHP_INT_MAX );
         set_transient(
@@ -161,13 +214,7 @@ final class AdminSupportTest extends TestCase {
     }
 
     public function test_the_import_convert_step_refuses_an_expired_stash(): void {
-        $page = new class() extends AdminPage {
-            protected function redirect( string $location ): void {}
-            /** @param array<string,mixed> $request */
-            public function go( array $request ): void {
-                $this->handle_import_convert( $request );
-            }
-        };
+        $page = $this->convertingPage();
 
         $this->expectException( \RuntimeException::class );
         $page->go( [ 'wbdc_post_types' => [ 'page' ] ] );
@@ -194,6 +241,120 @@ final class AdminSupportTest extends TestCase {
         $restored = AdminPage::items_from( $stash );
         $this->assertSame( $items[0]['attachments'], $restored[0]['attachments'] );
         $this->assertSame( $items[1]['attachments'], $restored[1]['attachments'] );
+    }
+
+    // --- the guards on the two handlers that read a superglobal ---------------------------
+
+    /**
+     * Publish flips a post's status from a GET, so it checks the nonce, the
+     * capability, and that the post is one this plugin made. Without the last
+     * check a valid nonce would publish any post id somebody typed.
+     */
+    public function test_publish_refuses_a_post_this_plugin_did_not_create(): void {
+        wp_insert_post( [ 'ID' => 610, 'post_type' => 'page', 'post_status' => 'draft' ] );
+        wp_insert_post( [ 'ID' => 611, 'post_type' => 'page', 'post_status' => 'draft' ] );
+        update_post_meta( 610, '_wbdc_import_source', 'direct' );
+
+        $page = new class() extends AdminPage {
+            /** @var string[] */
+            public array $redirects = [];
+            protected function redirect( string $location ): void {
+                $this->redirects[] = $location;
+            }
+            public function publish(): void {
+                $this->handle_publish();
+            }
+        };
+
+        $_GET = [ 'post_id' => '611', 'import_id' => 'abc', '_wpnonce' => wp_create_nonce( 'wbdc_publish_611' ) ];
+        try {
+            $page->publish();
+            $this->fail( 'a post this plugin never made must not be publishable from this screen' );
+        } catch ( \RuntimeException $e ) {
+            $this->assertStringContainsString( 'not created by this converter', $e->getMessage() );
+        }
+        $this->assertSame( 'draft', get_post( 611 )->post_status );
+
+        $_GET = [ 'post_id' => '610', 'import_id' => 'abc', '_wpnonce' => wp_create_nonce( 'wbdc_publish_610' ) ];
+        $page->publish();
+        $this->assertSame( 'publish', get_post( 610 )->post_status );
+        $this->assertStringContainsString( 'action=batch_result', $page->redirects[0] );
+
+        $_GET = [];
+    }
+
+    public function test_publish_needs_the_capability(): void {
+        wp_insert_post( [ 'ID' => 620, 'post_type' => 'page', 'post_status' => 'draft' ] );
+        update_post_meta( 620, '_wbdc_import_source', 'direct' );
+
+        $page = new class() extends AdminPage {
+            protected function redirect( string $location ): void {}
+            public function publish(): void {
+                $this->handle_publish();
+            }
+        };
+
+        $GLOBALS['__test_caps'] = false;
+        $_GET                   = [ 'post_id' => '620', '_wpnonce' => wp_create_nonce( 'wbdc_publish_620' ) ];
+
+        try {
+            $page->publish();
+            $this->fail( 'publish must require manage_options' );
+        } catch ( \RuntimeException $e ) {
+            $this->assertStringContainsString( 'Insufficient permissions', $e->getMessage() );
+        }
+
+        $this->assertSame( 'draft', get_post( 620 )->post_status );
+        $_GET = [];
+    }
+
+    /**
+     * The upload handler reads `$_FILES`. It refuses a missing file, a PHP
+     * upload error, and — the one that matters — a path the request named
+     * rather than one PHP received.
+     */
+    public function test_the_upload_handler_refuses_what_it_should(): void {
+        $page = new class() extends AdminPage {
+            protected function redirect( string $location ): void {}
+            public function upload(): void {
+                $this->handle_import();
+            }
+        };
+
+        $_FILES = [];
+        $this->assertDies( 'No file was uploaded', fn() => $page->upload() );
+
+        $_FILES = [ 'wbdc_import_file' => [ 'error' => UPLOAD_ERR_INI_SIZE, 'tmp_name' => '', 'name' => 'x.xml' ] ];
+        $this->assertDies( 'exceeds the server upload limit', fn() => $page->upload() );
+
+        // A real, readable file that PHP did not receive as an upload: without
+        // the is_uploaded_file() check the parser would read whatever path the
+        // request pointed at.
+        $_FILES = [
+            'wbdc_import_file' => [
+                'error'    => UPLOAD_ERR_OK,
+                'tmp_name' => __DIR__ . '/../fixtures/wpbakery-import/two-pages.xml',
+                'name'     => 'two-pages.xml',
+            ],
+        ];
+        $this->assertDies( 'did not arrive as an upload', fn() => $page->upload() );
+
+        $this->assertFalse( get_transient( AdminPage::IMPORT_ITEMS_TRANSIENT_PREFIX . get_current_user_id() ), 'nothing was stashed' );
+
+        $GLOBALS['__test_caps'] = false;
+        $this->assertDies( 'Insufficient permissions', fn() => $page->upload() );
+
+        $_FILES = [];
+    }
+
+    /** @param callable(): void $run */
+    private function assertDies( string $needle, callable $run ): void {
+        try {
+            $run();
+            $this->fail( "expected wp_die containing '{$needle}'" );
+        } catch ( \RuntimeException $e ) {
+            $this->assertStringContainsString( $needle, $e->getMessage() );
+        }
     }
 
     // --- the result table ---------------------------------------------------------------

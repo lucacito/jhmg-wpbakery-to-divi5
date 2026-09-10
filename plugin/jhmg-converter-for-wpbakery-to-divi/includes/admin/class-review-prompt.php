@@ -101,6 +101,11 @@ class ReviewPrompt {
         if ( empty( $_GET[ self::QUERY_ACTION ] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- the nonce is verified below
             return;
         }
+        // The same capability `should_ask()` requires before it ever offers
+        // the prompt: nobody who cannot be shown it can answer it.
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
 
         $nonce = isset( $_GET['_wpnonce'] ) ? sanitize_key( wp_unslash( $_GET['_wpnonce'] ) ) : '';
         if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {

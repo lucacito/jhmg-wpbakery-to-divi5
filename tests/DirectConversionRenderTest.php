@@ -2,7 +2,9 @@
 
 namespace WPBakeryDivi5Converter\Tests;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use WPBakeryDivi5Converter\Admin\AdminPage;
 use WPBakeryDivi5Converter\Admin\DirectConversionPage;
 use WPBakeryDivi5Converter\Admin\NotCarriedOverRenderer;
 use WPBakeryDivi5Converter\Admin\OutlineRenderer;
@@ -26,6 +28,31 @@ final class DirectConversionRenderTest extends TestCase {
         $GLOBALS['__test_post_types'] = [ 'post' => 'post', 'page' => 'page' ];
     }
 
+    /**
+     * A report with every key present and empty, which is what the engine
+     * hands over for a page that held nothing.
+     *
+     * @return array<string,mixed>
+     */
+    public static function emptyReport(): array {
+        return [
+            'converted'           => [],
+            'approximate'         => [],
+            'approximate_matches' => [],
+            'warnings'            => [],
+            'skipped_settings'    => [],
+            'unresolved_globals'  => [],
+            'not_carried_over'    => [],
+            'theme_elements'      => [],
+            'static_copies'       => [],
+            'custom_css_carried'  => [],
+            'unresolved_media'    => [],
+            'text_nodes'          => 0,
+            'bracketed_text'      => 0,
+            'quality'             => [ 'module_coverage' => 100, 'settings_issues' => 0 ],
+        ];
+    }
+
     /** @param array<string,mixed> $report */
     private function plan( array $report = [], string $mode = 'direct', array $extra = [] ): ConversionPlan {
         return new ConversionPlan( [
@@ -44,22 +71,10 @@ final class DirectConversionRenderTest extends TestCase {
                         ],
                     ],
                 ],
-                'report'     => array_merge( [
-                    'converted'           => [ 'section' => 1, 'row' => 1, 'heading' => 2 ],
-                    'approximate'         => [],
-                    'approximate_matches' => [],
-                    'warnings'            => [],
-                    'skipped_settings'    => [],
-                    'unresolved_globals'  => [],
-                    'not_carried_over'    => [],
-                    'theme_elements'      => [],
-                    'static_copies'       => [],
-                    'custom_css_carried'  => [],
-                    'unresolved_media'    => [],
-                    'text_nodes'          => 0,
-                    'bracketed_text'      => 0,
-                    'quality'             => [ 'module_coverage' => 100, 'settings_issues' => 0 ],
-                ], $report ),
+                'report'     => array_merge(
+                    array_merge( self::emptyReport(), [ 'converted' => [ 'section' => 1, 'row' => 1, 'heading' => 2 ] ] ),
+                    $report
+                ),
             ], $extra ) ),
         ] );
     }
@@ -130,6 +145,90 @@ final class DirectConversionRenderTest extends TestCase {
         $this->assertStringContainsString( 'copied as static HTML', $direct );
         $this->assertStringContainsString( 'attachment 412', $direct );
         $this->assertStringContainsString( 'left as placeholders', $import );
+    }
+
+    // --- every key the engine reports ----------------------------------------------------
+
+    /**
+     * A sample value for each key of `ConversionReportTest::KEYS`, with a
+     * fingerprint that must appear in the rendered report.
+     *
+     * Two keys are views of others rather than things of their own, so their
+     * sample carries the context they are read against: `quality` is arithmetic
+     * over the converted, approximate and unsupported counts, and needs one of
+     * them present for the sentence to have a denominator. Everything else
+     * stands alone.
+     *
+     * @return array<string, array{sample: array<string,mixed>, expect: string}>
+     */
+    public static function reportKeySamples(): array {
+        return [
+            'converted'           => [ 'sample' => [ 'converted' => [ 'heading' => 3 ] ], 'expect' => '3 Divi modules' ],
+            'approximate'         => [ 'sample' => [ 'approximate' => [ 'tabs' => 2 ] ], 'expect' => '2 of them approximate' ],
+            'approximate_matches' => [
+                'sample' => [ 'approximate_matches' => [ [ 'node_id' => 'n1', 'tag' => 'vc_tta_tour', 'matched_to' => 'TtaTabsConverter' ] ] ],
+                'expect' => 'vc_tta_tour → TtaTabsConverter',
+            ],
+            'warnings'            => [ 'sample' => [ 'warnings' => [ 'a note from the engine' ] ], 'expect' => 'a note from the engine' ],
+            'skipped_settings'    => [ 'sample' => [ 'skipped_settings' => [ 'vc_row-1: parallax_speed_bg' ] ], 'expect' => 'vc_row-1: parallax_speed_bg' ],
+            'unresolved_globals'  => [
+                'sample' => [ 'unresolved_globals' => [ [ 'node_id' => 'n1', 'setting_key' => 'bg_color', 'ref' => 'var(--z)' ] ] ],
+                'expect' => 'bg_color = var(--z)',
+            ],
+            'not_carried_over'    => [
+                'sample' => [ 'not_carried_over' => [ [ 'kind' => 'animation', 'node_id' => 'n1', 'detail' => 'bounceInDown' ] ] ],
+                'expect' => 'bounceInDown',
+            ],
+            'theme_elements'      => [ 'sample' => [ 'theme_elements' => [ 'Ronneby' => 3 ] ], 'expect' => 'Ronneby × 3' ],
+            'static_copies'       => [ 'sample' => [ 'static_copies' => [ 'a-1', 'b-2' ] ], 'expect' => 'kept as static HTML' ],
+            'custom_css_carried'  => [ 'sample' => [ 'custom_css_carried' => [ 'n1' ] ], 'expect' => 'carried as custom CSS' ],
+            'unresolved_media'    => [
+                'sample' => [ 'unresolved_media' => [ [ 'node_id' => 'n1', 'attachment_id' => 412 ] ] ],
+                'expect' => 'attachment 412',
+            ],
+            'text_nodes'          => [ 'sample' => [ 'text_nodes' => 2 ], 'expect' => '2 runs of text' ],
+            'bracketed_text'      => [ 'sample' => [ 'bracketed_text' => 3 ], 'expect' => '3 bracketed tokens' ],
+            'quality'             => [
+                'sample' => [ 'quality' => [ 'module_coverage' => 62, 'settings_issues' => 1 ], 'converted' => [ 'heading' => 5 ] ],
+                'expect' => '62% coverage',
+            ],
+        ];
+    }
+
+    /** The samples and the engine's contract must name the same keys. */
+    public function test_a_new_report_key_has_nowhere_to_hide(): void {
+        $this->assertSame(
+            array_keys( ConversionReportTest::KEYS ),
+            array_keys( self::reportKeySamples() ),
+            'ConversionReportTest::KEYS changed: give the new key a sample and somewhere to render'
+        );
+    }
+
+    #[DataProvider( 'reportKeySamples' )]
+    public function test_every_report_key_reaches_the_reader( array $sample, string $expect ): void {
+        $html = ( new DirectConversionPage() )->render_report( $this->plan( $sample ) );
+
+        $this->assertStringContainsString( $expect, $html );
+    }
+
+    /** The result screen hides nothing the check screen shows. */
+    #[DataProvider( 'reportKeySamples' )]
+    public function test_every_report_key_reaches_the_result_screen_too( array $sample, string $expect ): void {
+        wp_insert_post( [ 'ID' => 500, 'post_type' => 'page', 'post_status' => 'publish' ] );
+
+        $html = AdminPage::batch_table( [
+            [
+                'title'       => 'Home',
+                'post_id'     => 500,
+                'success'     => true,
+                'error'       => '',
+                'mode'        => 'direct',
+                'report'      => array_merge( self::emptyReport(), $sample ),
+                'unsupported' => [],
+            ],
+        ], 'abc' );
+
+        $this->assertStringContainsString( $expect, $html );
     }
 
     // --- the report screen -------------------------------------------------------------
@@ -234,7 +333,8 @@ final class DirectConversionRenderTest extends TestCase {
     public function test_the_picker_says_so_when_the_site_holds_no_wpbakery_pages(): void {
         $page = new DirectConversionPage( new WPBakeryPageRepository( fn(): array => [] ) );
 
-        $this->assertFalse( $page->has_wpbakery_content() );
+        // The landing page renders the picker unconditionally and lets this
+        // empty state answer, rather than running the content LIKE twice.
         $this->assertStringContainsString( 'No WPBakery pages', $page->render_picker() );
     }
 }

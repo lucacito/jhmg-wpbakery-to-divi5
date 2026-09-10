@@ -55,6 +55,35 @@ final class CoverageTelemetryTest extends TestCase {
         $this->assertTrue( ( new CoverageTelemetry( $this->history(), '2026-09-15' ) )->due() );
     }
 
+    /**
+     * The promise is "no site address", and a request header is part of the
+     * request. WordPress's own default user-agent is
+     * `WordPress/<version>; <site url>`, so leaving it alone would send the
+     * one thing the readme says is never sent.
+     */
+    public function test_the_request_never_names_the_site(): void {
+        update_option( CoverageTelemetry::CONSENT_OPTION, '1' );
+
+        ( new CoverageTelemetry( $this->history(), '2026-09-08' ) )->maybe_send();
+
+        $args       = $GLOBALS['wbdc_test_http']['log'][0]['args'];
+        $user_agent = (string) ( $args['user-agent'] ?? '' );
+
+        $this->assertSame( 'jhmg-converter-for-wpbakery-to-divi/' . WBDC_PLUGIN_VERSION, $user_agent );
+        $this->assertStringNotContainsString( 'WordPress/', $user_agent );
+
+        $site = (string) wp_parse_url( home_url(), PHP_URL_HOST );
+        $this->assertNotSame( '', $site );
+
+        foreach ( $args as $name => $value ) {
+            if ( is_array( $value ) ) {
+                $value = implode( ' ', array_map( 'strval', $value ) ) . ' ' . implode( ' ', array_keys( $value ) );
+            }
+            $this->assertStringNotContainsString( $site, (string) $value, "the site address must not travel in '{$name}'" );
+            $this->assertStringNotContainsString( home_url(), (string) $value, "the site address must not travel in '{$name}'" );
+        }
+    }
+
     public function test_the_payload_holds_only_the_two_documented_keys(): void {
         $payload = ( new CoverageTelemetry( $this->history() ) )->payload();
 

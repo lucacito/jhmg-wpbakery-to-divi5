@@ -115,14 +115,28 @@ class WPBakeryPageRepository {
      * @return array[] Rows: ['id','title','post_type','status','modified','converted','flag_missing'].
      */
     public function find( array $args = [] ): array {
-        $rows = [];
+        $posts = [];
 
         foreach ( ( $this->query_runner )( $this->query_args( $args ) ) as $post ) {
             $id = (int) ( $post->ID ?? 0 );
-            if ( $id <= 0 ) {
-                continue;
+            if ( $id > 0 ) {
+                $posts[ $id ] = $post;
             }
+        }
 
+        if ( $posts === [] ) {
+            return [];
+        }
+
+        // Both badges are answered once for the whole page of rows rather than
+        // once per row: twenty rows used to mean twenty `get_posts()` calls and
+        // twenty meta reads.
+        $ids       = array_keys( $posts );
+        $converted = $this->already_converted( $ids );
+        $flagged   = $this->flagged( $ids );
+
+        $rows = [];
+        foreach ( $posts as $id => $post ) {
             $title  = trim( (string) ( $post->post_title ?? '' ) );
             $rows[] = [
                 'id'           => $id,
@@ -130,35 +144,66 @@ class WPBakeryPageRepository {
                 'post_type'    => (string) ( $post->post_type ?? '' ),
                 'status'       => (string) ( $post->post_status ?? '' ),
                 'modified'     => (string) ( $post->post_modified ?? '' ),
-                'converted'    => $this->already_converted( $id ),
-                'flag_missing' => $this->flag_missing( $id ),
+                'converted'    => in_array( $id, $converted, true ),
+                'flag_missing' => ! in_array( $id, $flagged, true ),
             ];
         }
 
         return $rows;
     }
 
-    public function has_any(): bool {
-        return ! empty( ( $this->query_runner )( $this->query_args( [ 'per_page' => 1 ] ) ) );
-    }
-
-    /** True when some post records this one as its conversion source. Informational only. */
-    private function already_converted( int $source_post_id ): bool {
+    /**
+     * Which of these posts some other post records as its conversion source.
+     * Informational only — one query for the whole page of rows.
+     *
+     * @param int[] $source_post_ids
+     * @return int[] The subset that has been converted before.
+     */
+    private function already_converted( array $source_post_ids ): array {
         $found = get_posts( [
             'post_type'      => 'any',
             'post_status'    => 'any',
             'meta_key'       => '_wbdc_source_post_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
-            'meta_value'     => $source_post_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
-            'posts_per_page' => 1,
+            'meta_value'     => array_map( 'strval', $source_post_ids ), // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+            'meta_compare'   => 'IN',
+            'posts_per_page' => -1,
             'fields'         => 'ids',
         ] );
 
-        return ! empty( $found );
+        $converted = [];
+        foreach ( is_array( $found ) ? $found : [] as $post_id ) {
+            $source = (int) get_post_meta( (int) $post_id, '_wbdc_source_post_id', true );
+            if ( in_array( $source, $source_post_ids, true ) ) {
+                $converted[] = $source;
+            }
+        }
+
+        return $converted;
     }
 
-    /** True when WPBakery's own flag is absent or switched off. A badge, never a filter. */
-    private function flag_missing( int $post_id ): bool {
-        return (string) get_post_meta( $post_id, self::ENABLED_META, true ) !== self::ENABLED_VALUE;
+    /**
+     * Which of these posts carry WPBakery's flag switched on. A badge, never a
+     * filter — see the class docblock.
+     *
+     * @param int[] $post_ids
+     * @return int[]
+     */
+    private function flagged( array $post_ids ): array {
+        // Primes the meta cache for the whole page in one query, so the reads
+        // below cost nothing (and cost nothing at all in the unit tests, which
+        // have no cache and answer from an array).
+        if ( function_exists( 'update_meta_cache' ) ) {
+            update_meta_cache( 'post', $post_ids );
+        }
+
+        $flagged = [];
+        foreach ( $post_ids as $post_id ) {
+            if ( (string) get_post_meta( $post_id, self::ENABLED_META, true ) === self::ENABLED_VALUE ) {
+                $flagged[] = $post_id;
+            }
+        }
+
+        return $flagged;
     }
 
     /**

@@ -191,22 +191,27 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
     }
     /**
      * Enough of get_posts() for the repositories and the Theme Builder exporter:
-     * filter by post_type ('any' allowed) and one meta_key/meta_value pair,
-     * newest id first, return ids.
+     * filter by post_type ('any' allowed) and one meta_key/meta_value pair —
+     * an array meta_value is an IN, as WP_Meta_Query reads it — newest id
+     * first, return ids.
      */
     function get_posts( array $args = [] ) {
+        // Tests that care how many queries a screen makes count them here.
+        $GLOBALS['__test_get_posts_calls'] = ( $GLOBALS['__test_get_posts_calls'] ?? 0 ) + 1;
+
         $types = (array) ( $args['post_type'] ?? 'post' );
         $key   = $args['meta_key'] ?? '';
         $value = $args['meta_value'] ?? '';
         $limit = (int) ( $args['posts_per_page'] ?? -1 );
         $any   = in_array( 'any', $types, true );
+        $wanted = is_array( $value ) ? array_map( 'strval', $value ) : [ (string) $value ];
 
         $matches = [];
         foreach ( $GLOBALS['__test_posts'] as $id => $post ) {
             if ( ! $any && ! in_array( $post->post_type ?? '', $types, true ) ) {
                 continue;
             }
-            if ( $key !== '' && (string) get_post_meta( $id, $key, true ) !== (string) $value ) {
+            if ( $key !== '' && ! in_array( (string) get_post_meta( $id, $key, true ), $wanted, true ) ) {
                 continue;
             }
             $matches[] = (int) $id;
@@ -442,6 +447,9 @@ if ( ! function_exists( 'wp_register_style' ) ) {
 }
 if ( ! function_exists( 'wp_enqueue_style' ) ) {
     function wp_enqueue_style( $handle, $src = '', $deps = [], $ver = false, $media = 'all' ) {
+        if ( ! isset( $GLOBALS['__test_styles'][ $handle ] ) || $src !== '' ) {
+            $GLOBALS['__test_styles'][ $handle ] = [ 'src' => $src, 'ver' => $ver, 'inline' => '', 'enqueued' => false ];
+        }
         $GLOBALS['__test_styles'][ $handle ]['enqueued'] = true;
         return true;
     }

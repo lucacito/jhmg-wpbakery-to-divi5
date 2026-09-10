@@ -8,6 +8,9 @@
  * (task-12-amendments §4). No counts, no versions, no site identifier, no
  * URLs, no post content. Off by default; nothing leaves the site until the
  * user turns it on from the coverage panel.
+ *
+ * "Nothing else" includes the request headers: the `user-agent` is set
+ * explicitly, because WordPress's default one carries the site's own URL.
  */
 
 namespace WPBakeryDivi5Converter\Telemetry;
@@ -27,6 +30,9 @@ class CoverageTelemetry {
     const PRODUCT          = 'wpbakery-to-divi5';
     const ENDPOINT         = 'https://divi5lab.com/api/plugin/coverage';
     const INTERVAL_DAYS    = 7;
+
+    /** Replaces WordPress's default, which names the site. See `maybe_send()`. */
+    const USER_AGENT = 'jhmg-converter-for-wpbakery-to-divi/' . WBDC_PLUGIN_VERSION;
 
     // Mirror the receiving endpoint's schema: widget_types: string(1..64)[1..100].
     const MAX_TYPE_LENGTH = 64;
@@ -82,10 +88,16 @@ class CoverageTelemetry {
         }
 
         wp_remote_post( self::ENDPOINT, [
-            'timeout'  => 5,
-            'blocking' => false,
-            'headers'  => [ 'content-type' => 'application/json' ],
-            'body'     => wp_json_encode( $payload ),
+            'timeout'    => 5,
+            'blocking'   => false,
+            'headers'    => [ 'content-type' => 'application/json' ],
+            // WordPress's own default is `WordPress/<version>; <site url>`
+            // (`wp-includes/class-wp-http.php`), which would put the site
+            // address in the request header — the one thing the readme and the
+            // consent line promise is never sent. This says what the client is
+            // and nothing about who is running it.
+            'user-agent' => self::USER_AGENT,
+            'body'       => wp_json_encode( $payload ),
         ] );
 
         update_option( self::LAST_SENT_OPTION, $this->today );
