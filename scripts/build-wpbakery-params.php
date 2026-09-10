@@ -24,14 +24,18 @@
  *   php scripts/build-wpbakery-params.php                      # both zips in references/
  *   php scripts/build-wpbakery-params.php /path/to/js_composer.9.0.1.zip …
  *   php scripts/build-wpbakery-params.php /path/to/extracted/js_composer …
+ *   php scripts/build-wpbakery-params.php references/js_composer.7.8.zip --out=/tmp/one-era.json
  *
  * Output shape: { "<tag>": [ "<param_name>", … ] }, tags and names sorted, so
  * a regeneration from the same archives is byte-identical.
  *
  * **What is read.** `config/**` — the element configs `config/lean-map.php`
  * lazily maps a tag to, containers and deprecated elements included — plus the
- * grid-item element configs under `include/params/vc_grid_item/shortcodes/`,
- * which declare their own `'base'`. A config the lean map does not name and
+ * grid-item element configs, which declare their own `'base'`
+ * (`include/params/vc_grid_item/shortcodes/` in 9.0.1, the single
+ * `shortcodes.php` of the same directory in 7.8), plus the nineteen deprecated
+ * fields the 9.0 attribute migration re-registers with `vc_add_param()`
+ * (`LEGACY_PARAMS`). A config the lean map does not name and
  * that carries no `'base'` (the elements registered from
  * `include/classes/shortcodes/`, such as `vc_flexbox_container`) is attributed
  * by the file-name convention the lean map itself follows:
@@ -46,20 +50,62 @@
  *  2. `vc_map_integrate_shortcode( <source>, '<prefix>', … )`, which is how
  *     `vc_cta` comes to carry `btn_title` and `h2_font_container` — the source's
  *     names are added under the prefix;
- *  3. a variable holding either of those, assigned in the same file.
+ *  3. a variable a `'params' =>` names, and the variables that one holds in
+ *     turn, assigned anywhere in the same file.
  *
- * A tag the table has no entry for is not "a tag with no parameters": it is a
- * tag this file could not read, and the converter treats it as unknown rather
- * than as declaring nothing (`WPBakeryParams::declares()` returns null).
+ * A file that maps several elements in a row — 7.8's grid-item `shortcodes.php`
+ * is the only one either era has — is cut at each `'base' =>` so one element's
+ * fields do not become all sixteen elements'.
+ *
+ * A tag whose config **was** read and declares nothing is written as an
+ * explicit `[]` — 9.0.1's `vc_gitem_zone` is one — and every name on such a
+ * tag is therefore undeclared. A tag with **no entry** is one this file could
+ * not read, which the converter treats as unknown rather than as declaring
+ * nothing (`WPBakeryParams::declares()` returns null). Keeping the two apart
+ * is the whole point of emitting the empty entry.
  */
 
-/** Where a source's element configs live, relative to the js_composer root. */
-const CONFIG_DIRS = [ 'config/', 'include/params/vc_grid_item/shortcodes/' ];
+/**
+ * Where a source's element configs live, relative to the js_composer root.
+ *
+ * A trailing slash is a directory prefix; anything else is one file. 9.0.1
+ * gives the grid-item elements a file each under
+ * `include/params/vc_grid_item/shortcodes/`; 7.8 declares all sixteen of them
+ * in one `shortcodes.php`, which is the only multi-`'base'` file either era
+ * has and the only place two names are declared at all
+ * (`vc_gitem_image.border_color`, `vc_gitem_post_categories.category_color`).
+ */
+const CONFIG_PATHS = [
+    'config/',
+    'include/params/vc_grid_item/shortcodes/',
+    'include/params/vc_grid_item/shortcodes.php',
+];
 
 /** The 9.0.1 helper class whose methods configs call for the shared param groups. */
 const CONFIG_LIB = 'include/classes/editors/class-vc-config-lib.php';
 
-$sources = array_slice( $argv, 1 );
+/**
+ * 9.0.1 keeps the fields it deprecated in 9.0 registered — as hidden params, so
+ * a page saved before the upgrade still round-trips — by looping
+ * `vc_add_param()` over a table of nineteen `element` + `param_name` pairs.
+ * They are WPBakery's own fields and no config file declares them any more.
+ * `CLAUDE.md` names this file as a source of field names.
+ */
+const LEGACY_PARAMS = 'include/classes/migrations/class-wpb-template-attributes-migration.php';
+
+$out     = dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi/data/wpbakery-params.json';
+$sources = [];
+
+foreach ( array_slice( $argv, 1 ) as $argument ) {
+    if ( str_starts_with( $argument, '--out=' ) ) {
+        $out = substr( $argument, 6 );
+
+        continue;
+    }
+
+    $sources[] = $argument;
+}
+
 if ( $sources === [] ) {
     $sources = [
         dirname( __DIR__ ) . '/references/js_composer.9.0.1.zip',
@@ -82,6 +128,10 @@ foreach ( $sources as $source ) {
     $read[] = sprintf( '%s: %d tags', basename( $source ), count( $found ) );
 
     foreach ( $found as $tag => $names ) {
+        // A tag with an empty list is a tag whose config was read and declared
+        // nothing; it must survive the merge as an empty entry.
+        $table[ $tag ] = $table[ $tag ] ?? [];
+
         foreach ( $names as $name ) {
             $table[ $tag ][ $name ] = true;
         }
@@ -100,7 +150,6 @@ foreach ( $table as $tag => $names ) {
     $total            += count( $list );
 }
 
-$out = dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi/data/wpbakery-params.json';
 if ( ! is_dir( dirname( $out ) ) ) {
     mkdir( dirname( $out ), 0755, true );
 }
@@ -194,33 +243,45 @@ function params_from( array $files ): array {
         }
     }
 
-    // Pass one: each tag's own names, before the integrations that need them.
-    $direct = [];
+    $segments = [];
     foreach ( $tags_for as $path => $tags ) {
-        $names = param_names( $files[ $path ] );
+        $segments[ $path ] = segments_for( $files[ $path ], $tags );
+    }
 
-        foreach ( helper_calls( $files[ $path ], $functions ) as $helper ) {
-            $names = array_merge( $names, $functions[ $helper ] );
-        }
+    // Pass one: each tag's own names, before the integrations that need them.
+    // A tag whose config was read is a key here even when the config declares
+    // nothing, so "declares no parameters" stays distinguishable from "this
+    // generator could not read it" — the converter treats the two differently.
+    $direct = [];
+    foreach ( $segments as $path => $file_segments ) {
+        foreach ( $file_segments as [ $tag, $segment ] ) {
+            $names = names_in( $segment, $files[ $path ], $functions );
 
-        foreach ( $tags as $tag ) {
             $direct[ $tag ] = array_merge( $direct[ $tag ] ?? [], $names );
         }
     }
 
     // Pass two: `vc_map_integrate_shortcode()` — another element's params under
     // a prefix, which is where `vc_cta`'s `btn_*` and `h2_*` fields come from.
+    // Per segment, not per file: 7.8 maps sixteen elements in one file and
+    // integrates `vc_icon` into exactly one of them.
     $table = $direct;
-    foreach ( $tags_for as $path => $tags ) {
-        foreach ( integrations( $files[ $path ] ) as [ $reference, $prefix ] ) {
-            $names = resolve_reference( $reference, $files[ $path ], $functions, $direct );
+    foreach ( $segments as $path => $file_segments ) {
+        foreach ( $file_segments as [ $tag, $segment ] ) {
+            foreach ( integrations( $segment ) as [ $reference, $prefix, $target ] ) {
+                $names = resolve_reference( $reference, $files[ $path ], $functions, $direct );
+                $into  = $target !== '' ? $target : $tag;
 
-            foreach ( $tags as $tag ) {
                 foreach ( $names as $name ) {
-                    $table[ $tag ][] = $prefix . $name;
+                    $table[ $into ][] = $prefix . $name;
                 }
             }
         }
+    }
+
+    // The fields 9.0.1 keeps registered only as deprecated hidden params.
+    foreach ( legacy_params( $files ) as [ $tag, $name ] ) {
+        $table[ $tag ][] = $name;
     }
 
     foreach ( $table as $tag => $names ) {
@@ -228,6 +289,197 @@ function params_from( array $files ): array {
     }
 
     return $table;
+}
+
+/**
+ * The stretch of a config file each of its tags owns.
+ *
+ * One tag owns the whole file — which is every config `config/lean-map.php`
+ * names, and every one attributed by file name. A file that maps several
+ * elements in a row (7.8's `include/params/vc_grid_item/shortcodes.php`, the
+ * only one either era has) is cut at each `'base' =>`, so `vc_gitem_image`'s
+ * fields do not become `vc_gitem_row`'s as well. Anything declared above the
+ * first base is shared scaffolding held in a variable, and reaches the tags
+ * that name that variable through `names_in()`.
+ *
+ * @param string[] $tags
+ * @return array<int, array{0: string, 1: string}> [tag, the source it owns]
+ */
+function segments_for( string $source, array $tags ): array {
+    if ( count( $tags ) < 2 ) {
+        return [ [ (string) reset( $tags ), $source ] ];
+    }
+
+    if ( preg_match_all( '/[\'"]base[\'"]\s*=>\s*[\'"]([a-z0-9_]+)[\'"]/i', $source, $matches, PREG_OFFSET_CAPTURE ) === 0 ) {
+        return [];
+    }
+
+    $segments = [];
+    foreach ( $matches[0] as $index => $match ) {
+        $start  = (int) $match[1];
+        $end    = isset( $matches[0][ $index + 1 ] ) ? (int) $matches[0][ $index + 1 ][1] : strlen( $source );
+        $segments[] = [ (string) $matches[1][ $index ][0], substr( $source, $start, $end - $start ) ];
+    }
+
+    return $segments;
+}
+
+/**
+ * Every parameter name a stretch of config declares: its own, the shared groups
+ * it calls a helper for, and the ones held in a variable it names
+ * (`'params' => $zone_params`, `array_merge( $post_data_params, … )`), which is
+ * how 7.8 writes the grid-item elements.
+ *
+ * @param array<string, string[]> $functions
+ * @return string[]
+ */
+function names_in( string $segment, string $file, array $functions ): array {
+    $names = param_names( $segment );
+
+    foreach ( helper_calls( $segment, $functions ) as $helper ) {
+        $names = array_merge( $names, $functions[ $helper ] );
+    }
+
+    foreach ( params_values( $segment ) as $value ) {
+        $names = array_merge( $names, variable_params( $value, $file ) );
+    }
+
+    return array_values( array_unique( $names ) );
+}
+
+/**
+ * The parameter names held in the variables a value names, and in the
+ * variables those hold in turn — 7.8's `$zone_params` is a list of arrays that
+ * includes `$vc_gitem_add_link_param`, so one level would lose `link`.
+ *
+ * @return string[]
+ */
+function variable_params( string $value, string $file, int $depth = 0 ): array {
+    if ( $depth > 2 || preg_match_all( '/\$([a-z_][a-z0-9_]*)/i', $value, $matches ) === 0 ) {
+        return [];
+    }
+
+    $names = [];
+    foreach ( array_unique( $matches[1] ) as $variable ) {
+        $assigned = assignment_value( $file, $variable );
+
+        if ( $assigned === '' ) {
+            continue;
+        }
+
+        $names = array_merge( $names, param_names( $assigned ), variable_params( $assigned, $file, $depth + 1 ) );
+    }
+
+    return $names;
+}
+
+/**
+ * The value of every `'params' =>` in a stretch of config.
+ *
+ * Variables are read out of these and nowhere else: a `$variable` mentioned
+ * somewhere else in a map is a template path or a `js_view`, and pulling its
+ * parameters in would put fields on an element that does not have them —
+ * which is the one error this table must not make, because a name it wrongly
+ * calls WPBakery's is a theme's field reported as a converter gap.
+ *
+ * @return string[]
+ */
+function params_values( string $segment ): array {
+    if ( preg_match_all( '/[\'"]params[\'"]\s*=>\s*/', $segment, $matches, PREG_OFFSET_CAPTURE ) === 0 ) {
+        return [];
+    }
+
+    $values = [];
+    foreach ( $matches[0] as $match ) {
+        $from = (int) $match[1] + strlen( $match[0] );
+
+        // `'params' => $zone_params,` — the value is the variable itself.
+        if ( preg_match( '/^\$[a-z_][a-z0-9_]*/i', substr( $segment, $from, 64 ), $variable ) === 1 ) {
+            $values[] = $variable[0];
+
+            continue;
+        }
+
+        // `'params' => array( … )`, `'params' => array_merge( $a, $b, array( … ) )`.
+        $open = strcspn( $segment, '([', $from ) + $from;
+        if ( $open < strlen( $segment ) ) {
+            $values[] = balanced( $segment, $open );
+        }
+    }
+
+    return $values;
+}
+
+/**
+ * The `array( … )` / `[ … ]` a variable is assigned in this file, matched by
+ * counting brackets so a nested array does not end it early. '' when the file
+ * assigns it nothing.
+ */
+function assignment_value( string $source, string $variable ): string {
+    if ( preg_match( '/\$' . preg_quote( $variable, '/' ) . '\s*=\s*/', $source, $match, PREG_OFFSET_CAPTURE ) !== 1 ) {
+        return '';
+    }
+
+    $from = (int) $match[0][1] + strlen( $match[0][0] );
+    $open = strcspn( $source, '([', $from ) + $from;
+
+    return $open >= strlen( $source ) ? '' : balanced( $source, $open );
+}
+
+/** The bracketed run starting at `$open`, brackets counted rather than lazily matched. */
+function balanced( string $source, int $open ): string {
+    $pairs  = [ '(' => ')', '[' => ']' ];
+    $close  = $pairs[ $source[ $open ] ] ?? ')';
+    $depth  = 0;
+    $length = strlen( $source );
+
+    for ( $i = $open; $i < $length; $i++ ) {
+        if ( $source[ $i ] === $source[ $open ] ) {
+            $depth++;
+        } elseif ( $source[ $i ] === $close ) {
+            $depth--;
+            if ( $depth === 0 ) {
+                return substr( $source, $open, $i - $open + 1 );
+            }
+        }
+    }
+
+    return substr( $source, $open );
+}
+
+/**
+ * The `element` + `param_name` pairs the 9.0 attribute migration re-registers
+ * with `vc_add_param()`.
+ *
+ * They are fields WPBakery declared, deprecated, and still accepts — a page
+ * saved before 9.0 carries them — so a converter that meets one has met a
+ * WPBakery field, not a theme's.
+ *
+ * @param array<string,string> $files
+ * @return array<int, array{0: string, 1: string}>
+ */
+function legacy_params( array $files ): array {
+    $source = $files[ LEGACY_PARAMS ] ?? '';
+
+    if ( $source === '' ) {
+        return [];
+    }
+
+    if ( preg_match_all(
+        '/[\'"]element[\'"]\s*=>\s*[\'"]([a-z0-9_]+)[\'"]\s*,\s*[\'"]param_name[\'"]\s*=>\s*[\'"]([a-z0-9_]+)[\'"]/s',
+        $source,
+        $matches,
+        PREG_SET_ORDER
+    ) === 0 ) {
+        return [];
+    }
+
+    $pairs = [];
+    foreach ( $matches as $match ) {
+        $pairs[] = [ $match[1], $match[2] ];
+    }
+
+    return $pairs;
 }
 
 /**
@@ -243,8 +495,10 @@ function tag_from_file_name( string $path ): string {
 }
 
 function is_config_path( string $path ): bool {
-    foreach ( CONFIG_DIRS as $directory ) {
-        if ( str_starts_with( $path, $directory ) ) {
+    foreach ( CONFIG_PATHS as $candidate ) {
+        $matched = str_ends_with( $candidate, '/' ) ? str_starts_with( $path, $candidate ) : $path === $candidate;
+
+        if ( $matched ) {
             return true;
         }
     }
@@ -380,11 +634,17 @@ function helper_calls( string $source, array $functions ): array {
 /**
  * Every `vc_map_integrate_shortcode( <source>, '<prefix>', … )` call.
  *
- * @return array<int, array{0: string, 1: string}> [the first argument as written, the prefix]
+ * A call written as `$list['vc_icon']['params'] = vc_map_integrate_shortcode( … )`
+ * says which element it is for, and that element is not always the one the
+ * surrounding map declares — 7.8 sets `vc_icon`'s params in the middle of the
+ * grid-item file. When it says so, it is believed; otherwise the params belong
+ * to the element whose map the call sits in.
+ *
+ * @return array<int, array{0: string, 1: string, 2: string}> [the first argument as written, the prefix, the named element or '']
  */
 function integrations( string $source ): array {
     if ( preg_match_all(
-        '/vc_map_integrate_shortcode\(\s*(\(array\)\s*)?([^,]+?)\s*,\s*[\'"]([^\'"]*)[\'"]/s',
+        '/(?:\$list\[\s*[\'"]([a-z0-9_]+)[\'"]\s*\]\s*\[\s*[\'"]params[\'"]\s*\]\s*=\s*)?vc_map_integrate_shortcode\(\s*(?:\(array\)\s*)?([^,]+?)\s*,\s*[\'"]([^\'"]*)[\'"]/s',
         $source,
         $matches,
         PREG_SET_ORDER
@@ -394,7 +654,7 @@ function integrations( string $source ): array {
 
     $found = [];
     foreach ( $matches as $match ) {
-        $found[] = [ trim( $match[2] ), $match[3] ];
+        $found[] = [ trim( $match[2] ), $match[3], $match[1] ];
     }
 
     return $found;
@@ -418,7 +678,9 @@ function resolve_reference( string $reference, string $source, array $functions,
         return $direct[ $match[1] ] ?? [];
     }
 
-    if ( preg_match( '/^([a-z0-9_]+)\s*\(/i', $reference, $match ) === 1 ) {
+    // A plain call or a static one: `vc_btn_element_params()`,
+    // `VcGridsCommon::getBasicAtts()`.
+    if ( preg_match( '/^(?:[a-z_][a-z0-9_]*::)?([a-z_][a-z0-9_]*)\s*\(/i', $reference, $match ) === 1 ) {
         return $functions[ $match[1] ] ?? [];
     }
 

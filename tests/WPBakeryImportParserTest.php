@@ -102,6 +102,85 @@ final class WPBakeryImportParserTest extends TestCase {
         $this->assertSame( [ 'kind' => 'upload', 'post_id' => null, 'file' => 'page.txt' ], $items[0]['source_ref'] );
     }
 
+    /**
+     * A Windows editor that saves as UTF-8 writes a byte-order mark first, and
+     * `ltrim()` does not consider it whitespace — so without stripping it a
+     * perfectly good export sniffs as neither XML nor shortcodes.
+     */
+    public function test_a_file_with_a_byte_order_mark_is_read(): void {
+        $tmp = (string) tempnam( sys_get_temp_dir(), 'wbdc' );
+        file_put_contents( $tmp, "\xEF\xBB\xBF" . file_get_contents( self::DIR . 'export.xml' ) );
+
+        try {
+            $items = ( new WPBakeryImportParser() )->parse( $tmp, 'export.xml' );
+            $this->assertCount( 1, $items );
+            $this->assertSame( 'News List', $items[0]['title'] );
+        } finally {
+            unlink( $tmp );
+        }
+    }
+
+    public function test_a_text_upload_with_a_byte_order_mark_is_read(): void {
+        $tmp = (string) tempnam( sys_get_temp_dir(), 'wbdc' );
+        file_put_contents( $tmp, "\xEF\xBB\xBF" . file_get_contents( self::DIR . 'page.txt' ) );
+
+        try {
+            $items = ( new WPBakeryImportParser() )->parse( $tmp, 'page.txt' );
+            $this->assertCount( 1, $items );
+            $this->assertStringStartsWith( '[vc_row]', $items[0]['content'] );
+        } finally {
+            unlink( $tmp );
+        }
+    }
+
+    /**
+     * One upload reads at most `MAX_ITEMS` pages. What it left is said out
+     * loud, so the screen that offers the reader a choice of pages is not
+     * quietly offering them a subset.
+     */
+    public function test_an_export_past_the_cap_is_truncated_and_says_so(): void {
+        $parser = new WPBakeryImportParser();
+        $items  = $parser->parseString( self::exportOf( WPBakeryImportParser::MAX_ITEMS + 3 ), 'big.xml' );
+
+        $this->assertCount( WPBakeryImportParser::MAX_ITEMS, $items );
+        $this->assertSame(
+            [ sprintf( 'This file holds %d WPBakery pages; the first %d were read and the rest were left.', WPBakeryImportParser::MAX_ITEMS + 3, WPBakeryImportParser::MAX_ITEMS ) ],
+            $parser->warnings()
+        );
+    }
+
+    public function test_an_export_inside_the_cap_warns_about_nothing(): void {
+        $parser = new WPBakeryImportParser();
+        $parser->parseString( self::exportOf( 3 ), 'small.xml' );
+
+        $this->assertSame( [], $parser->warnings() );
+    }
+
+    /** Warnings belong to the last parse, not to every parse this object ever did. */
+    public function test_warnings_are_cleared_between_parses(): void {
+        $parser = new WPBakeryImportParser();
+        $parser->parseString( self::exportOf( WPBakeryImportParser::MAX_ITEMS + 1 ), 'big.xml' );
+        $parser->parseString( self::exportOf( 2 ), 'small.xml' );
+
+        $this->assertSame( [], $parser->warnings() );
+    }
+
+    /** An export holding `$count` WPBakery pages. */
+    private static function exportOf( int $count ): string {
+        $items = '';
+        for ( $i = 1; $i <= $count; $i++ ) {
+            $items .= '<item>'
+                . '<title><![CDATA[Page ' . $i . ']]></title>'
+                . '<content:encoded><![CDATA[[vc_row][vc_column][vc_column_text]Page ' . $i . '[/vc_column_text][/vc_column][/vc_row]]]></content:encoded>'
+                . '<wp:post_id>' . ( 100 + $i ) . '</wp:post_id><wp:post_type><![CDATA[page]]></wp:post_type>'
+                . '</item>';
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" ?>'
+            . '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/">'
+            . '<channel>' . $items . '</channel></rss>';
+    }
+
     public function test_a_file_declaring_entities_is_refused(): void {
         $this->expectException( \RuntimeException::class );
         $this->expectExceptionMessageMatches( '/DOCTYPE/' );

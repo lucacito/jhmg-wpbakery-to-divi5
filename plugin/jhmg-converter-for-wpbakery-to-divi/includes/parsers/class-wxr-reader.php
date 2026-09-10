@@ -25,9 +25,13 @@
  * and `LIBXML_PARSEHUGE` on a second attempt when a document is past libxml's
  * default limits.
  *
- * A `<!DOCTYPE` or `<!ENTITY` declaration is refused outright rather than
- * parsed with entity substitution disabled: a WordPress export never carries
- * one, so a file that does is not the file the user thinks they are uploading.
+ * A `<!DOCTYPE` or `<!ENTITY` declaration **in the prolog** is refused
+ * outright rather than parsed with entity substitution disabled: a WordPress
+ * export never carries one, so a file that does is not the file the user
+ * thinks they are uploading. The prolog is where a declaration has to be to
+ * mean anything, and scoping the check there is what lets a page that quotes
+ * `<!DOCTYPE html>` in its content — a code block, a tutorial, a raw-HTML
+ * element — convert instead of being refused.
  */
 
 namespace WPBakeryDivi5Converter\Parsers;
@@ -48,7 +52,7 @@ class WxrReader {
      * @throws \RuntimeException On XML that is malformed, or that declares a DOCTYPE or entities.
      */
     public function read( string $xml ): array {
-        if ( preg_match( '/<!(DOCTYPE|ENTITY)/i', $xml ) ) {
+        if ( preg_match( '/<!(DOCTYPE|ENTITY)/i', self::prolog( $xml ) ) ) {
             throw new \RuntimeException( 'The export file declares a DOCTYPE or entities, which an export never does. Refusing to read it.' );
         }
 
@@ -69,6 +73,19 @@ class WxrReader {
         }
 
         return $items;
+    }
+
+    /**
+     * Everything before the document element.
+     *
+     * `<?xml …?>`, comments and any declaration live here; the first `<` that
+     * is followed by a name character opens the root element (`<rss>`) and
+     * everything from there on is content, whatever it quotes.
+     */
+    private static function prolog( string $xml ): string {
+        return preg_match( '/<[A-Za-z_]/', $xml, $match, PREG_OFFSET_CAPTURE ) === 1
+            ? substr( $xml, 0, (int) $match[0][1] )
+            : $xml;
     }
 
     /**
@@ -129,7 +146,15 @@ class WxrReader {
             return [];
         }
 
-        $directory = substr( $url, 0, (int) strrpos( $url, '/' ) + 1 );
+        // A URL with no path separator has no directory to resolve a size's
+        // file name against, and `(int) false` would silently make one out of
+        // its first character.
+        $slash = strrpos( $url, '/' );
+        if ( $slash === false ) {
+            return [];
+        }
+
+        $directory = substr( $url, 0, $slash + 1 );
         $sizes     = [];
 
         foreach ( $meta['sizes'] as $name => $size ) {

@@ -27,11 +27,28 @@ if ( ! defined( 'ABSPATH' ) ) {
  *   declare for that tag cannot have come from WPBakery whoever did add it.
  *   That is a `not_carried_over` entry of kind `addon`.
  *
- * A tag the table has no entry for is **unknown**, not "declares nothing":
- * eight core tags are registered from `include/classes/shortcodes/` rather
- * than from a config file, so the generator cannot read their params, and
- * guessing that everything on them is a theme's would hide real gaps.
- * `declares()` answers null for those and the caller keeps its old behaviour.
+ * **An empty entry and a missing one are different states.** `[]` is a tag
+ * whose config the generator read and which declares no parameters at all —
+ * `vc_gitem_zone` and `vc_gitem_zone_b` are exactly that in 9.0.1
+ * (`include/params/vc_grid_item/shortcodes/vc_gitem_zone.php`, a map with a
+ * `'base'` and no `params`), though 7.8 gives both a set, so the shipped union
+ * has none. Every key on such a tag is undeclared, and `declares()` says so.
+ *
+ * A tag with **no entry** is one this generator could not read, and guessing
+ * that everything on it is a theme's would hide real gaps, so `declares()`
+ * answers null and the caller keeps its old behaviour. Six core tags are in
+ * that state, and none of them is a config file the generator missed:
+ *
+ * - `vc_acf`, `vc_gitem_acf`, `vc_gitem_wocommerce` — mapped inline in a
+ *   vendor bridge (`include/classes/vendors/plugins/acf/shortcode.php`,
+ *   `…/acf/grid-item-shortcodes.php`, `…/woocommerce/grid-item-shortcodes.php`),
+ *   and only when that plugin is active;
+ * - `vc_custom_field` — a render class with no `vc_map()` in the archive
+ *   (`include/classes/shortcodes/vc-custom-field.php`);
+ * - `vc_container_anchor` — not a mapped element at all: a helper that prints
+ *   an anchor (`include/helpers/helpers.php:2377`);
+ * - `vc_grid` — the runtime shortcode `vc_basic_grid` renders through; no
+ *   `'base' => 'vc_grid'` exists in either archive.
  */
 final class WPBakeryParams {
 
@@ -41,7 +58,9 @@ final class WPBakeryParams {
     /**
      * Whether WPBakery declares `$param` for `$tag`.
      *
-     * @return bool|null Null when the table knows nothing about the tag.
+     * @return bool|null False for every param of a tag the table holds as `[]`
+     *   — that tag's config was read and declares nothing. Null only when the
+     *   table has no entry for the tag at all.
      */
     public static function declares( string $tag, string $param ): ?bool {
         $declared = self::declaredFor( $tag );
@@ -50,7 +69,8 @@ final class WPBakeryParams {
     }
 
     /**
-     * @return array<int, string>|null Every parameter name declared for the tag, or null when it is not in the table.
+     * @return array<int, string>|null Every parameter name declared for the tag —
+     *   `[]` when its config declares none — or null when it is not in the table.
      */
     public static function declaredFor( string $tag ): ?array {
         $table = self::table();

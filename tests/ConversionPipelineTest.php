@@ -232,16 +232,17 @@ final class ConversionPipelineTest extends TestCase {
 
     // --- the library path ---------------------------------------------------------
 
+    /** The wording the free plugin owes a reader whose template became a page. */
+    private const LIBRARY_WARNING = 'WPBakery template imported as a page (Pro turns templates into Divi Library layouts)';
+
     public function test_a_template_without_pro_becomes_a_page_draft_with_a_warning(): void {
         $plan    = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'Saved Row', [ 'template_type' => 'library' ] ) ] ) );
         $results = ( new ConversionCommitter() )->commit( $plan );
 
         $this->assertTrue( $results[0]['success'] );
         $this->assertSame( 'page', get_post( $results[0]['post_id'] )->post_type );
-        $this->assertSame(
-            'WPBakery template imported as a page (Pro turns templates into Divi Library layouts)',
-            end( $results[0]['report']['warnings'] )
-        );
+        $this->assertSame( 'library', $results[0]['template_type'] );
+        $this->assertSame( self::LIBRARY_WARNING, end( $results[0]['report']['warnings'] ) );
     }
 
     public function test_a_template_goes_through_the_pro_exporter_when_one_is_registered(): void {
@@ -267,6 +268,69 @@ final class ConversionPipelineTest extends TestCase {
         $this->assertSame( 'library', $results[0]['template_type'] );
         $this->assertTrue( $results[0]['success'] );
         $this->assertSame( [], $GLOBALS['__test_posts'], 'the exporter owns the writing, not the committer' );
+    }
+
+    /**
+     * The caller unticked "convert templates". Converting it into a page
+     * anyway is the opposite of what was asked, and the result has to keep
+     * saying it was a template.
+     */
+    public function test_a_template_the_caller_did_not_select_is_skipped_not_paged(): void {
+        $plan    = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'Saved Row', [ 'template_type' => 'library' ] ) ] ) );
+        $results = ( new ConversionCommitter() )->commit( $plan, [ 'convert_templates' => false ] );
+
+        $this->assertFalse( $results[0]['success'] );
+        $this->assertTrue( $results[0]['skipped'] );
+        $this->assertSame( 'library', $results[0]['template_type'] );
+        $this->assertSame( 'WPBakery template not selected for conversion', $results[0]['error'] );
+        $this->assertSame( 0, $results[0]['post_id'] );
+        $this->assertSame( [], $GLOBALS['__test_posts'], 'nothing was written' );
+    }
+
+    /** An unselected template does not stop the pages beside it. */
+    public function test_unselecting_templates_leaves_ordinary_pages_alone(): void {
+        add_filter( ConversionPreflight::LIMIT_FILTER, fn(): int => 5 );
+
+        $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [
+            $this->item( 'Saved Row', [ 'template_type' => 'library' ] ),
+            $this->item( 'Home' ),
+        ] ) );
+
+        $results = ( new ConversionCommitter() )->commit( $plan, [ 'convert_templates' => false ] );
+
+        $this->assertTrue( $results[0]['skipped'] );
+        $this->assertTrue( $results[1]['success'] );
+        $this->assertSame( 'page', get_post( $results[1]['post_id'] )->post_type );
+    }
+
+    /** With the option left alone, a template is converted — the default is true. */
+    public function test_templates_are_converted_when_the_option_is_not_given(): void {
+        $plan    = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'Saved Row', [ 'template_type' => 'library' ] ) ] ) );
+        $results = ( new ConversionCommitter() )->commit( $plan, [ 'convert_templates' => true ] );
+
+        $this->assertTrue( $results[0]['success'] );
+        $this->assertArrayNotHasKey( 'skipped', $results[0] );
+        $this->assertSame( self::LIBRARY_WARNING, end( $results[0]['report']['warnings'] ) );
+    }
+
+    /**
+     * The filter is a public contract Task 13's Pro exporter hooks, and it is
+     * asked per item: an exporter that cannot take this one returns null and
+     * the free path takes over.
+     */
+    public function test_the_library_filter_is_given_the_item_and_the_commit_options(): void {
+        $seen = [];
+
+        add_filter( 'wbdc_library_exporter', function ( $exporter, $item = [], $options = [] ) use ( &$seen ) {
+            $seen[] = [ $item['title'] ?? '', $item['template_type'] ?? '', $options['post_status'] ?? '' ];
+
+            return null;
+        }, 10, 3 );
+
+        $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'Saved Row', [ 'template_type' => 'library' ] ) ] ) );
+        ( new ConversionCommitter() )->commit( $plan, [ 'post_status' => 'publish' ] );
+
+        $this->assertSame( [ [ 'Saved Row', 'library', 'publish' ] ], $seen );
     }
 
     public function test_an_exporter_that_fails_is_reported_rather_than_thrown(): void {

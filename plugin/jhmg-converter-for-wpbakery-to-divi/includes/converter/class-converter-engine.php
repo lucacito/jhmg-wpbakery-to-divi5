@@ -156,6 +156,11 @@ class ConverterEngine {
     public function convert( array $document, array $options = [] ): array {
         $this->options = $this->resolveOptions( $options );
 
+        // Cleared before the tree is built, not after: `treeFrom()` can throw
+        // on a document PCRE cannot handle, and a reused engine must not
+        // attribute the next document's parameters to the last one's theme.
+        $this->detectedFamily = null;
+
         [ $roots, $page_css ] = $this->treeFrom( $document );
 
         $this->detectedFamily = self::familyOf( $roots );

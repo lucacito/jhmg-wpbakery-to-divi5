@@ -97,6 +97,61 @@ final class WxrReaderTest extends TestCase {
         $this->read( 'entity.xml' );
     }
 
+    /**
+     * The refusal is about the prolog, which is where a declaration has to be
+     * to mean anything. A page that *quotes* one — a raw-HTML element holding
+     * a document, a tutorial about HTML — is content like any other, and
+     * refusing the whole export over it would be a false alarm on a real site.
+     */
+    public function test_a_doctype_quoted_inside_a_page_is_content_not_a_declaration(): void {
+        $items = ( new WxrReader() )->read( self::wxr(
+            '[vc_row][vc_column][vc_raw_html]<!DOCTYPE html><html lang="en"></html>[/vc_raw_html][/vc_column][/vc_row]'
+        ) );
+
+        $this->assertCount( 1, $items );
+        $this->assertStringContainsString( '<!DOCTYPE html>', $items[0]['content'] );
+    }
+
+    public function test_a_declaration_before_the_root_element_is_still_refused(): void {
+        $this->expectException( \RuntimeException::class );
+        $this->expectExceptionMessageMatches( '/DOCTYPE/' );
+
+        ( new WxrReader() )->read(
+            '<?xml version="1.0"?><!DOCTYPE rss [<!ENTITY x SYSTEM "file:///etc/passwd">]>'
+            . '<rss xmlns:wp="http://wordpress.org/export/1.2/"><channel></channel></rss>'
+        );
+    }
+
+    /** One well-formed export around one page's content. */
+    private static function wxr( string $content ): string {
+        return '<?xml version="1.0" encoding="UTF-8" ?>'
+            . '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/">'
+            . '<channel><item>'
+            . '<title><![CDATA[A page]]></title>'
+            . '<content:encoded><![CDATA[' . $content . ']]></content:encoded>'
+            . '<wp:post_id>3</wp:post_id><wp:post_type><![CDATA[page]]></wp:post_type>'
+            . '</item></channel></rss>';
+    }
+
+    /**
+     * An attachment URL with no path at all cannot say what directory a named
+     * size's file sits in, and `(int) strrpos()` would silently answer "the
+     * first character".
+     */
+    public function test_an_attachment_url_with_no_path_resolves_no_sizes(): void {
+        $map = WxrReader::attachments( [
+            [
+                'post_type'      => 'attachment',
+                'post_id'        => 5,
+                'attachment_url' => 'hero.jpg',
+                'meta'           => [ '_wp_attachment_metadata' => serialize( [ 'sizes' => [ 'medium' => [ 'file' => 'hero-300x200.jpg' ] ] ] ) ],
+            ],
+        ] );
+
+        $this->assertSame( 'hero.jpg', $map[5]['url'] );
+        $this->assertSame( [], $map[5]['sizes'] );
+    }
+
     public function test_malformed_xml_is_refused(): void {
         $this->expectException( \RuntimeException::class );
         $this->expectExceptionMessageMatches( '/well-formed/' );

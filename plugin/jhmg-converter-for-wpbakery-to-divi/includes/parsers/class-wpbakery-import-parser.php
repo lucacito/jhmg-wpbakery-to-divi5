@@ -31,6 +31,10 @@ class WPBakeryImportParser {
      * A ceiling on one upload, so a whole-site export cannot turn one request
      * into thousands of conversions. The free plugin converts one item anyway;
      * this is about the parse.
+     *
+     * Reaching it is recorded in `warnings()` rather than passed over: the
+     * upload screen chooses which items to convert, and it can only choose
+     * from what it was given.
      */
     const MAX_ITEMS = 500;
 
@@ -39,8 +43,21 @@ class WPBakeryImportParser {
 
     private WxrReader $wxr;
 
+    /** @var string[] What the last parse could not do, for the screen that called it. */
+    private array $warnings = [];
+
     public function __construct( ?WxrReader $wxr = null ) {
         $this->wxr = $wxr ?? new WxrReader();
+    }
+
+    /**
+     * What the last `parse()` / `parseString()` has to say beyond its items —
+     * at present only that the file held more pages than one upload reads.
+     *
+     * @return string[]
+     */
+    public function warnings(): array {
+        return $this->warnings;
     }
 
     /**
@@ -55,7 +72,7 @@ class WPBakeryImportParser {
         }
 
         $raw = (string) file_get_contents( $file_path );
-        if ( trim( $raw ) === '' ) {
+        if ( trim( self::withoutBom( $raw ) ) === '' ) {
             throw new \RuntimeException( 'Import file is empty.' );
         }
 
@@ -67,6 +84,12 @@ class WPBakeryImportParser {
      * @throws \RuntimeException
      */
     public function parseString( string $raw, string $file_name = '' ): array {
+        $this->warnings = [];
+
+        // A byte-order mark is what a Windows editor puts in front of a file it
+        // saved as UTF-8, and `ltrim()` does not consider it whitespace: without
+        // this, a perfectly good export sniffs as neither XML nor shortcodes.
+        $raw     = self::withoutBom( $raw );
         $trimmed = ltrim( $raw );
 
         if ( str_starts_with( $trimmed, '<?xml' ) || str_starts_with( $trimmed, '<rss' ) ) {
@@ -107,10 +130,21 @@ class WPBakeryImportParser {
         $attachments = WxrReader::attachments( $posts );
 
         $items = [];
+        $held  = 0;
+
         foreach ( $posts as $post ) {
             $content = (string) $post['content'];
 
             if ( ! WPBakeryDocumentParser::isWPBakeryContent( $content ) ) {
+                continue;
+            }
+
+            $held++;
+
+            // Past the cap the rest are still counted, so the warning can say
+            // how many pages the file holds rather than only that it held too
+            // many.
+            if ( $held > self::MAX_ITEMS ) {
                 continue;
             }
 
@@ -123,10 +157,15 @@ class WPBakeryImportParser {
                 $attachments,
                 $file_name
             );
+        }
 
-            if ( count( $items ) >= self::MAX_ITEMS ) {
-                break;
-            }
+        if ( $held > self::MAX_ITEMS ) {
+            $this->warnings[] = sprintf(
+                /* translators: 1: number of WPBakery pages in the file, 2: how many of them were read */
+                __( 'This file holds %1$d WPBakery pages; the first %2$d were read and the rest were left.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                $held,
+                self::MAX_ITEMS
+            );
         }
 
         return $items;
@@ -186,6 +225,11 @@ class WPBakeryImportParser {
             'error'            => '',
             'source_ref'       => [ 'kind' => 'upload', 'post_id' => null, 'file' => $file_name !== '' ? basename( $file_name ) : null ],
         ];
+    }
+
+    /** A UTF-8 byte-order mark, if the file starts with one. */
+    private static function withoutBom( string $raw ): string {
+        return str_starts_with( $raw, "\xEF\xBB\xBF" ) ? substr( $raw, 3 ) : $raw;
     }
 
     private function titleFromFileName( string $file_name ): string {

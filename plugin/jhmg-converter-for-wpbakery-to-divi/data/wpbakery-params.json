@@ -377,23 +377,30 @@
     ],
     "vc_gitem_image": [
         "alignment",
+        "border_color",
         "css",
         "custom_border_color",
         "el_class",
         "img_size",
+        "link",
         "link_target",
         "style",
         "url"
     ],
     "vc_gitem_post_author": [
+        "block_container",
         "css",
         "el_class",
         "font_container",
+        "google_fonts",
         "link",
-        "text_align"
+        "text_align",
+        "use_custom_fonts",
+        "use_theme_fonts"
     ],
     "vc_gitem_post_categories": [
         "alignment",
+        "category_color",
         "category_size",
         "category_style",
         "css",
@@ -402,10 +409,28 @@
         "link"
     ],
     "vc_gitem_post_date": [
-        "el_class"
+        "block_container",
+        "css",
+        "el_class",
+        "font_container",
+        "google_fonts",
+        "link",
+        "link_target",
+        "url",
+        "use_custom_fonts",
+        "use_theme_fonts"
     ],
     "vc_gitem_post_excerpt": [
-        "el_class"
+        "block_container",
+        "css",
+        "el_class",
+        "font_container",
+        "google_fonts",
+        "link",
+        "link_target",
+        "url",
+        "use_custom_fonts",
+        "use_theme_fonts"
     ],
     "vc_gitem_post_meta": [
         "align",
@@ -414,15 +439,29 @@
         "label"
     ],
     "vc_gitem_post_title": [
+        "block_container",
         "css",
         "el_class",
         "font_container",
+        "google_fonts",
         "link",
+        "link_target",
         "text_align",
-        "url"
+        "url",
+        "use_custom_fonts",
+        "use_theme_fonts"
     ],
     "vc_gitem_row": [
         "el_class"
+    ],
+    "vc_gitem_zone": [
+        "css",
+        "el_class",
+        "featured_image",
+        "img_size",
+        "link",
+        "link_target",
+        "url"
     ],
     "vc_gitem_zone_a": [
         "css",
@@ -432,6 +471,16 @@
         "height_mode",
         "img_size",
         "link",
+        "link_target",
+        "url"
+    ],
+    "vc_gitem_zone_b": [
+        "css",
+        "el_class",
+        "featured_image",
+        "img_size",
+        "link",
+        "link_target",
         "url"
     ],
     "vc_gitem_zone_c": [

@@ -28,22 +28,62 @@ class ConversionCommitter {
      */
     const LIBRARY_WARNING = 'WPBakery template imported as a page (Pro turns templates into Divi Library layouts)';
 
+    /**
+     * What a template gets when the caller unticked "convert templates".
+     *
+     * Not converting it is the instruction; converting it into a page anyway
+     * and saying nothing would be the opposite of what was asked, and would
+     * lose the one signal that the item was a template at all.
+     */
+    const LIBRARY_NOT_SELECTED = 'WPBakery template not selected for conversion';
+
     private DiviExporter $exporter;
 
-    /** Divi Library exporter supplied by the Pro add-on via filter (null when absent). */
-    private ?object $libraryExporter;
+    /**
+     * A Divi Library exporter handed in directly, which wins over the filter.
+     * Null in production, where the filter is asked once per item.
+     */
+    private ?object $injectedLibraryExporter;
 
     public function __construct( ?DiviExporter $exporter = null, ?object $library_exporter = null ) {
-        $this->exporter = $exporter ?? new DiviExporter();
+        $this->exporter                = $exporter ?? new DiviExporter();
+        $this->injectedLibraryExporter = $library_exporter;
+    }
+
+    /**
+     * The Pro add-on's Divi Library exporter, or null.
+     *
+     * `apply_filters( 'wbdc_library_exporter', null, array $item, array $options )`
+     * — a public contract (task-11-amendments §2, Task 13). The item is the
+     * plan item about to be committed and the options are the caller's commit
+     * options, so an exporter can answer per item (a licence that has lapsed, a
+     * template type it does not handle) by returning null for it and letting
+     * the free path take over.
+     *
+     * @param array<string,mixed> $item
+     * @param array<string,mixed> $options
+     */
+    private function libraryExporter( array $item, array $options ): ?object {
+        if ( $this->injectedLibraryExporter !== null ) {
+            return $this->injectedLibraryExporter;
+        }
+
+        if ( ! function_exists( 'apply_filters' ) ) {
+            return null;
+        }
 
         // Literal so Plugin Check can read the hook name; keep in step with self::LIBRARY_EXPORTER_FILTER.
-        $this->libraryExporter = $library_exporter
-            ?? ( function_exists( 'apply_filters' ) ? apply_filters( 'wbdc_library_exporter', null ) : null );
+        $exporter = apply_filters( 'wbdc_library_exporter', null, $item, $options );
+
+        return is_object( $exporter ) ? $exporter : null;
     }
 
     /**
      * @param array<string,mixed> $options post_status, post_type override, convert_templates.
-     * @return array[] One result per plan item: ['title','post_id','success','error','report','unsupported'].
+     * @return array[] One result per plan item:
+     *   ['title','post_id','success','error','report','unsupported'], plus
+     *   'template_type' => 'library' on every outcome of a WPBakery template
+     *   and 'skipped' => true on one the caller chose not to convert.
      */
     public function commit( ConversionPlan $plan, array $options = [] ): array {
         $default_post_type   = $options['post_type'] ?? null;
@@ -58,9 +98,16 @@ class ConversionCommitter {
                 continue;
             }
 
-            $wants_library = ( $item['template_type'] ?? '' ) === 'library' && $convert_templates;
+            $is_library = ( $item['template_type'] ?? '' ) === 'library';
 
-            if ( $wants_library && $this->libraryExporter === null ) {
+            if ( $is_library && ! $convert_templates ) {
+                $results[] = $this->notSelected( $item );
+                continue;
+            }
+
+            $exporter = $is_library ? $this->libraryExporter( $item, $options ) : null;
+
+            if ( $is_library && $exporter === null ) {
                 $result                         = $this->commitPage( $item, $default_post_type, $default_post_status );
                 $result['template_type']        = 'library';
                 $result['report']['warnings'][] = self::LIBRARY_WARNING;
@@ -68,9 +115,12 @@ class ConversionCommitter {
                 continue;
             }
 
-            $results[] = $wants_library
-                ? $this->commitLibraryLayout( $item )
-                : $this->commitPage( $item, $default_post_type, $default_post_status );
+            if ( $is_library && $exporter !== null ) {
+                $results[] = $this->commitLibraryLayout( $item, $exporter );
+                continue;
+            }
+
+            $results[] = $this->commitPage( $item, $default_post_type, $default_post_status );
         }
 
         return $results;
@@ -128,11 +178,11 @@ class ConversionCommitter {
      * @param array<string,mixed> $item
      * @return array<string,mixed>
      */
-    private function commitLibraryLayout( array $item ): array {
+    private function commitLibraryLayout( array $item, object $exporter ): array {
         $title = (string) ( $item['title'] ?? 'Imported Template' );
 
         try {
-            $post_id = (int) $this->libraryExporter->export( $item, $this->diviDataFor( $item ) );
+            $post_id = (int) $exporter->export( $item, $this->diviDataFor( $item ) );
 
             if ( $post_id <= 0 ) {
                 return $this->failResult( $title, 'The Divi Library exporter did not create a layout.' );
@@ -175,6 +225,26 @@ class ConversionCommitter {
         if ( $kind === 'installed' && $source_post_id ) {
             update_post_meta( $post_id, '_wbdc_source_post_id', (int) $source_post_id );
         }
+    }
+
+    /**
+     * A template the caller chose not to convert: nothing written, and the
+     * result says what it was and why it was left.
+     *
+     * @param array<string,mixed> $item
+     * @return array<string,mixed>
+     */
+    private function notSelected( array $item ): array {
+        return [
+            'title'         => (string) ( $item['title'] ?? 'Imported Template' ),
+            'post_id'       => 0,
+            'template_type' => 'library',
+            'success'       => false,
+            'skipped'       => true,
+            'error'         => self::LIBRARY_NOT_SELECTED,
+            'report'        => [],
+            'unsupported'   => [],
+        ];
     }
 
     /** @return array<string,mixed> */
