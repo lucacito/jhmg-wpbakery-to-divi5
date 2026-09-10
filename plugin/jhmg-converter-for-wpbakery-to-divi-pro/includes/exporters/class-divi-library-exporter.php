@@ -19,7 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  *   post_type   `et_pb_layout`      ET_BUILDER_LAYOUT_POST_TYPE — shortcode-core.php:743,
  *                                   defined in includes/builder/post/type/Layout.php:4
- *   post_status `publish`           shortcode-core.php:740 (default) and :715 (the caller)
+ *   post_status `publish`           shortcode-core.php:738 (the `$post_status = 'publish'` default on
+ *                                   `et_pb_create_layout()`'s signature), assigned at :742, and :715 (the caller)
  *   meta        `_et_pb_built_for_post_type`  shortcode-core.php:700;
  *                                   value `page` — DiviLibraryController.php:2103
  *   meta        `_et_pb_template_type`        shortcode-core.php:701;
@@ -53,6 +54,13 @@ class DiviLibraryExporter {
 
     /** Which conversion produced this layout, so a second run updates it instead of stacking another. */
     const SOURCE_META = '_wbdcp_library_source';
+
+    /**
+     * Statuses the dedupe lookup searches. WordPress's `'any'` means "every
+     * status not flagged exclude_from_search", which leaves out `trash` — the
+     * one status a re-converted layout is most likely to be sitting in.
+     */
+    const LOOKUP_STATUSES = [ 'publish', 'draft', 'pending', 'private', 'future', 'trash', 'auto-draft', 'inherit' ];
 
     private DiviExporter $exporter;
 
@@ -120,11 +128,19 @@ class DiviLibraryExporter {
         return 'file-' . md5( $file . '|' . ( $slug !== '' ? $slug : 'untitled' ) );
     }
 
-    /** The layout previously created for this source, or 0. */
+    /**
+     * The layout previously created for this source, or 0.
+     *
+     * `'any'` is not "any": it excludes trashed posts. A layout the customer
+     * trashed and then reconverted would come back as a second post carrying
+     * the same `_wbdcp_library_source`, and restoring the first would leave two
+     * of them — so the trash is searched too, and `upsertLayout()` untrashes
+     * what it finds there.
+     */
     private function findBySourceKey( string $source_key ): int {
         $found = get_posts( [
             'post_type'              => self::LAYOUT_POST_TYPE,
-            'post_status'            => 'any',
+            'post_status'            => self::LOOKUP_STATUSES,
             'posts_per_page'         => 1,
             'fields'                 => 'ids',
             'no_found_rows'          => true,
@@ -143,21 +159,32 @@ class DiviLibraryExporter {
      * source has been converted before.
      *
      * Divi gates several internal checks on publish status, and
-     * `et_pb_create_layout()` hardcodes `publish` (shortcode-core.php:715, :740),
+     * `et_pb_create_layout()` defaults to `publish` and its caller passes it
+     * explicitly (shortcode-core.php:738, :742, :715),
      * so a layout that somehow went to draft is brought back.
      */
     private function upsertLayout( string $title, string $source_key ): int {
         $existing = $this->findBySourceKey( $source_key );
 
         if ( $existing > 0 ) {
-            wp_update_post( [ 'ID' => $existing, 'post_title' => $title, 'post_status' => 'publish' ] );
+            // A trashed layout is brought back rather than left behind beside a
+            // new copy of itself; wp_untrash_post() restores its own status,
+            // and the update below settles it on publish either way.
+            $post = get_post( $existing );
+            if ( $post !== null && ( $post->post_status ?? '' ) === 'trash' && function_exists( 'wp_untrash_post' ) ) {
+                wp_untrash_post( $existing );
+            }
+
+            // wp_update_post() unslashes its input, so the title is slashed on
+            // the way in for the same reason the content is.
+            wp_update_post( [ 'ID' => $existing, 'post_title' => wp_slash( $title ), 'post_status' => 'publish' ] );
 
             return $existing;
         }
 
         $post_id = wp_insert_post( [
             'post_type'    => self::LAYOUT_POST_TYPE,
-            'post_title'   => $title,
+            'post_title'   => wp_slash( $title ),
             'post_status'  => 'publish',
             'post_content' => '',
         ] );

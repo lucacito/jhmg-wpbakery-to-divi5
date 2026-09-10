@@ -7,7 +7,9 @@
 
 use PHPUnit\Framework\TestCase;
 use WPBakeryDivi5Converter\Conversion\ConversionPreflight;
+use WPBakeryDivi5Converter\Admin\AdminPage;
 use WPBakeryDivi5Converter\Conversion\InstalledPostSource;
+use WPBakeryDivi5Converter\History\ImportHistory;
 use WPBakeryDivi5Converter\Pro\Admin\ProPage;
 use WPBakeryDivi5Converter\Pro\Admin\TemplatesRepository;
 use WPBakeryDivi5Converter\Pro\Exporters\DiviLibraryExporter;
@@ -36,8 +38,26 @@ final class ProPluginTest extends TestCase {
         ];
     }
 
+    /**
+     * Stands in for WP_Query: the library post types, ordered as seeded, paged
+     * the way `posts_per_page`/`paged` ask, with `found` counting every match
+     * rather than the page — which is what the screen's count line reads.
+     */
     private function repo(): TemplatesRepository {
-        return new TemplatesRepository( static fn(): array => array_values( $GLOBALS['__test_posts'] ) );
+        return new TemplatesRepository( static function ( array $args ): array {
+            $all = array_values( array_filter(
+                $GLOBALS['__test_posts'],
+                static fn( $p ): bool => in_array( $p->post_type ?? '', InstalledPostSource::LIBRARY_POST_TYPES, true )
+            ) );
+
+            $per_page = (int) ( $args['posts_per_page'] ?? 20 );
+            $paged    = max( 1, (int) ( $args['paged'] ?? 1 ) );
+
+            return [
+                'posts' => array_slice( $all, ( $paged - 1 ) * $per_page, $per_page ),
+                'found' => count( $all ),
+            ];
+        } );
     }
 
     private function page(): ProPage {
@@ -75,6 +95,61 @@ final class ProPluginTest extends TestCase {
         $this->assertSame( [ 'vc4_templates', 'templatera' ], array_column( $rows, 'post_type' ) );
         $this->assertSame( 'FAQ section', $rows[0]['title'] );
         $this->assertSame( InstalledPostSource::LIBRARY_POST_TYPES, $this->repo()->query_args()['post_type'] );
+    }
+
+    public function test_the_repository_pages_and_counts_every_template(): void {
+        for ( $i = 1; $i <= 25; $i++ ) {
+            $this->seedTemplate( 100 + $i, sprintf( 'Template %02d', $i ) );
+        }
+        $repo = $this->repo();
+
+        $first = $repo->find( [ 'paged' => 1, 'per_page' => 20 ] );
+        $this->assertCount( 20, $first );
+        $this->assertSame( 25, $repo->found() );
+        $this->assertTrue( $repo->has_next_page( 1, 20 ) );
+
+        $second = $repo->find( [ 'paged' => 2, 'per_page' => 20 ] );
+        $this->assertCount( 5, $second );
+        $this->assertSame( 25, $repo->found() );
+        $this->assertFalse( $repo->has_next_page( 2, 20 ) );
+
+        // No id appears on both pages, and the tail is reachable.
+        $this->assertSame( [], array_intersect( array_column( $first, 'id' ), array_column( $second, 'id' ) ) );
+        $this->assertSame( 125, $second[4]['id'] );
+
+        $args = $repo->query_args( [ 'paged' => 3, 'per_page' => 20 ] );
+        $this->assertSame( 3, $args['paged'] );
+        $this->assertSame( 20, $args['posts_per_page'] );
+        $this->assertArrayNotHasKey( 'no_found_rows', $args, 'found_posts is what the count line reads' );
+    }
+
+    public function test_the_screen_says_what_it_is_showing_and_offers_the_next_page(): void {
+        for ( $i = 1; $i <= 25; $i++ ) {
+            $this->seedTemplate( 200 + $i, sprintf( 'Template %02d', $i ) );
+        }
+        $page = $this->page();
+
+        $first = $page->templates_markup( [ 'paged' => 1 ] );
+        $this->assertStringContainsString( 'Showing 1–20 of 25 WPBakery templates.', $first );
+        $this->assertStringContainsString( 'paged=2', $first );
+        $this->assertStringNotContainsString( 'paged=0', $first );
+
+        $second = $page->templates_markup( [ 'paged' => 2 ] );
+        $this->assertStringContainsString( 'Showing 21–25 of 25 WPBakery templates.', $second );
+        $this->assertStringContainsString( 'paged=1', $second );
+        $this->assertStringNotContainsString( 'paged=3', $second );
+        // The tail is selectable, which is the whole point of the pager.
+        $this->assertStringContainsString( 'value="225"', $second );
+    }
+
+    public function test_a_selection_made_on_a_later_page_still_converts(): void {
+        for ( $i = 1; $i <= 25; $i++ ) {
+            $this->seedTemplate( 300 + $i, sprintf( 'Template %02d', $i ) );
+        }
+
+        // Id 325 is on page two; the allow-list must not be the page of rows
+        // that happened to be rendered.
+        $this->assertSame( [ 325 ], $this->page()->verified_template_ids( [ 'wbdcp_template_ids' => [ '325' ] ] ) );
     }
 
     public function test_a_template_holding_no_wpbakery_shortcodes_is_not_offered(): void {
@@ -141,6 +216,130 @@ final class ProPluginTest extends TestCase {
 
         $this->assertCount( 3, $results );
         $this->assertSame( [ true, true, true ], array_column( $results, 'success' ) );
+    }
+
+    // --- the POST handler -------------------------------------------------------
+
+    /** ProPage with the redirect seam opened, so a handler can be run to completion. */
+    private function handlerPage(): ProPage {
+        return new class( ProPlugin::instance()->license(), $this->repo() ) extends ProPage {
+            /** @var string[] */
+            public array $redirects = [];
+
+            protected function redirect( string $location ): void {
+                $this->redirects[] = $location;
+            }
+        };
+    }
+
+    /** @param callable(): void $run */
+    private function assertDies( string $needle, callable $run ): void {
+        try {
+            $run();
+            $this->fail( "expected wp_die containing '{$needle}'" );
+        } catch ( \RuntimeException $e ) {
+            $this->assertStringContainsString( $needle, $e->getMessage() );
+        }
+    }
+
+    public function test_the_handler_ignores_every_other_screen(): void {
+        ProPlugin::instance()->register_hooks();
+        $this->seedTemplate( 50, 'FAQ section' );
+        $page = $this->handlerPage();
+
+        $_GET  = [ 'page' => 'wbdc-converter' ];
+        $_POST = [ 'action' => ProPage::CONVERT_ACTION, ProPage::IDS_FIELD => [ '50' ] ];
+
+        $page->handle_post();
+
+        $this->assertSame( [], $page->redirects );
+        $this->assertSame( [], $GLOBALS['__test_referer_checked'], 'no nonce was even looked at' );
+        $this->assertSame( [], array_filter( $GLOBALS['__test_posts'], static fn( $p ): bool => ( $p->post_type ?? '' ) === 'et_pb_layout' ) );
+
+        $_GET = $_POST = [];
+    }
+
+    public function test_the_handler_refuses_without_the_capability(): void {
+        ProPlugin::instance()->register_hooks();
+        $this->seedTemplate( 51, 'FAQ section' );
+        $page = $this->handlerPage();
+
+        $_GET                   = [ 'page' => ProPage::MENU_SLUG ];
+        $_POST                  = [ 'action' => ProPage::CONVERT_ACTION, ProPage::IDS_FIELD => [ '51' ] ];
+        $GLOBALS['__test_caps'] = false;
+
+        $this->assertDies( 'Insufficient permissions', fn() => $page->handle_post() );
+
+        $this->assertSame( [], $GLOBALS['__test_referer_checked'], 'the capability is checked before the nonce' );
+        $this->assertSame( [], array_filter( $GLOBALS['__test_posts'], static fn( $p ): bool => ( $p->post_type ?? '' ) === 'et_pb_layout' ) );
+
+        unset( $GLOBALS['__test_caps'] );
+        $_GET = $_POST = [];
+    }
+
+    public function test_the_handler_refuses_a_bad_nonce(): void {
+        ProPlugin::instance()->register_hooks();
+        $this->seedTemplate( 52, 'FAQ section' );
+        $page = $this->handlerPage();
+
+        $_GET                          = [ 'page' => ProPage::MENU_SLUG ];
+        $_POST                         = [ 'action' => ProPage::CONVERT_ACTION, ProPage::IDS_FIELD => [ '52' ] ];
+        $GLOBALS['__test_referer_ok'] = false;
+
+        $this->assertDies( 'expired', fn() => $page->handle_post() );
+
+        $this->assertSame( [], array_filter( $GLOBALS['__test_posts'], static fn( $p ): bool => ( $p->post_type ?? '' ) === 'et_pb_layout' ) );
+
+        $GLOBALS['__test_referer_ok'] = true;
+        $_GET = $_POST = [];
+    }
+
+    public function test_the_handler_refuses_an_empty_selection(): void {
+        ProPlugin::instance()->register_hooks();
+        $page = $this->handlerPage();
+
+        $_GET  = [ 'page' => ProPage::MENU_SLUG ];
+        $_POST = [ 'action' => ProPage::CONVERT_ACTION, ProPage::IDS_FIELD => [ '9999', 'not-an-id' ] ];
+
+        $this->assertDies( 'Pick at least one WPBakery template', fn() => $page->handle_post() );
+
+        $this->assertSame( [], $page->redirects );
+
+        $_GET = $_POST = [];
+    }
+
+    public function test_a_valid_selection_converts_and_lands_on_the_result_screen(): void {
+        ProPlugin::instance()->register_hooks();
+        $this->seedTemplate( 53, 'FAQ section' );
+        $page = $this->handlerPage();
+
+        $_GET  = [ 'page' => ProPage::MENU_SLUG ];
+        $_POST = [ 'action' => ProPage::CONVERT_ACTION, ProPage::IDS_FIELD => [ '53' ] ];
+
+        $page->handle_post();
+
+        $this->assertSame(
+            [ [ 'action' => ProPage::CONVERT_ACTION, 'name' => ProPage::CONVERT_NONCE ] ],
+            $GLOBALS['__test_referer_checked']
+        );
+
+        $this->assertCount( 1, $page->redirects );
+        $this->assertStringContainsString( 'page=' . AdminPage::MENU_SLUG, $page->redirects[0] );
+        $this->assertStringContainsString( 'action=batch_result', $page->redirects[0] );
+
+        preg_match( '/import_id=([a-z0-9-]+)/', $page->redirects[0], $m );
+        $results = get_transient( AdminPage::BATCH_TRANSIENT_PREFIX . $m[1] );
+        $this->assertTrue( $results[0]['success'] );
+        $this->assertSame( 'library', $results[0]['template_type'] );
+
+        // The exporter ran: the run produced a Divi Library layout, and the run
+        // is on record so free's Undo can reach it.
+        $layouts = array_filter( $GLOBALS['__test_posts'], static fn( $p ): bool => ( $p->post_type ?? '' ) === 'et_pb_layout' );
+        $this->assertCount( 1, $layouts );
+        $this->assertSame( 'post-53', get_post_meta( $results[0]['post_id'], '_wbdcp_library_source', true ) );
+        $this->assertSame( [ $results[0]['post_id'] ], ( new ImportHistory() )->find( $m[1] )['post_ids'] );
+
+        $_GET = $_POST = [];
     }
 
     // --- release metadata -------------------------------------------------------

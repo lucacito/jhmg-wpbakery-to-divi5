@@ -7,7 +7,7 @@
  *
  *   et_pb_create_layout()                includes/builder/shortcode-core.php:738
  *     post_type ET_BUILDER_LAYOUT_POST_TYPE ('et_pb_layout')  shortcode-core.php:743, post/type/Layout.php:4
- *     post_status 'publish'                                    shortcode-core.php:740, :715
+ *     post_status 'publish'                                    shortcode-core.php:738 (signature default), :742, :715
  *     $meta loop → add_post_meta()                             shortcode-core.php:754-758
  *     $tax_input loop → wp_set_post_terms()                    shortcode-core.php:810-813
  *   _et_pb_built_for_post_type                                 shortcode-core.php:700 (value 'page': DiviLibraryController.php:2103)
@@ -128,6 +128,41 @@ final class DiviLibraryExporterTest extends TestCase {
 
         $this->assertSame( $first, $second );
         $this->assertStringStartsWith( 'file-', (string) get_post_meta( $first, '_wbdcp_library_source', true ) );
+    }
+
+    public function test_a_trashed_layout_is_brought_back_rather_than_duplicated(): void {
+        [ $item, $divi_data ] = $this->item();
+        $exporter = new DiviLibraryExporter();
+
+        $first = $exporter->export( $item, $divi_data );
+        wp_trash_post( $first );
+        $this->assertSame( 'trash', get_post( $first )->post_status );
+
+        $second = $exporter->export( $item, $divi_data );
+
+        $this->assertSame( $first, $second, 'the trashed layout is the same layout' );
+        $this->assertSame( 'publish', get_post( $second )->post_status );
+        $this->assertCount(
+            1,
+            array_filter( $GLOBALS['__test_posts'], static fn( $p ): bool => ( $p->post_type ?? '' ) === 'et_pb_layout' ),
+            'restoring the first must never leave two layouts with the same source key'
+        );
+    }
+
+    public function test_the_title_is_slashed_on_the_way_in(): void {
+        // wp_insert_post()/wp_update_post() unslash their input, so a title
+        // reaching them unslashed loses its backslashes on the way to the
+        // database. Assert what was handed to them, as the content test does.
+        [ $item, $divi_data ] = $this->item( 'Before \\ After' );
+
+        $created = ( new DiviLibraryExporter() )->export( $item, $divi_data );
+        $this->assertSame( 'Before \\\\ After', get_post( $created )->post_title );
+
+        [ $again, $divi_data2 ] = $this->item( 'After \\ Before' );
+        $updated = ( new DiviLibraryExporter() )->export( $again, $divi_data2 );
+
+        $this->assertSame( $created, $updated );
+        $this->assertSame( 'After \\\\ Before', get_post( $updated )->post_title );
     }
 
     public function test_the_block_content_is_slashed_on_the_way_in(): void {

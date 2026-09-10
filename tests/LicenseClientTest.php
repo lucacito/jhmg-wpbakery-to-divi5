@@ -110,6 +110,21 @@ final class LicenseClientTest extends TestCase {
         $this->assertFalse( get_option( 'wbdcp_update_blocked' ) );
     }
 
+    public function test_a_short_key_is_masked_whole(): void {
+        // substr(0,4) . substr(-4) hands back the entire key when it is eight
+        // characters or shorter — the two halves overlap.
+        $this->assertSame( '••••••••', LicensePage::mask( 'KEY-1234' ) );
+        $this->assertSame( '•••••', LicensePage::mask( 'SHORT' ) );
+        $this->assertSame( '', LicensePage::mask( '' ) );
+        $this->assertSame( 'KEY-•5678', LicensePage::mask( 'KEY-15678' ) );
+
+        $page = new LicensePage( $this->client() );
+        update_option( 'wbdcp_license_key', 'KEY-1234' );
+        update_option( 'wbdcp_license_state', [ 'status' => 'active' ] );
+
+        $this->assertStringNotContainsString( 'KEY-1234', $page->markup() );
+    }
+
     public function test_the_licence_tab_asks_for_a_key_and_then_shows_a_masked_one(): void {
         $page = new LicensePage( $this->client() );
 

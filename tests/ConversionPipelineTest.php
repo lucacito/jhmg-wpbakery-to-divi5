@@ -198,6 +198,23 @@ final class ConversionPipelineTest extends TestCase {
         $this->assertSame( $raw, wp_unslash( $post->post_content ) );
     }
 
+    /**
+     * The title takes the same route as the content: `wp_insert_post()`
+     * unslashes what it is given, so a page called `Before \ After` arrives
+     * called `Before  After` unless it is slashed on the way in.
+     */
+    public function test_the_title_reaches_wp_insert_post_slashed(): void {
+        $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'Before \\ After' ) ] ) );
+
+        $results = ( new ConversionCommitter() )->commit( $plan );
+        $post    = get_post( $results[0]['post_id'] );
+
+        $this->assertSame( 'Before \\\\ After', $post->post_title );
+        $this->assertSame( 'Before \\ After', wp_unslash( $post->post_title ) );
+        // The result row still reports the title as the reader typed it.
+        $this->assertSame( 'Before \\ After', $results[0]['title'] );
+    }
+
     public function test_commit_never_touches_the_source_post(): void {
         $this->seed( 20 );
         $before = (array) get_post( 20 );

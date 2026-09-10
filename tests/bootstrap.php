@@ -45,6 +45,8 @@ if ( ! function_exists( 'wbdc_test_reset_hooks' ) ) {
         $GLOBALS['__test_rendered_widgets'] = [];
         $GLOBALS['__test_terms'] = [];
         $GLOBALS['__test_object_terms'] = [];
+        $GLOBALS['__test_referer_ok'] = true;
+        $GLOBALS['__test_referer_checked'] = [];
         $GLOBALS['__test_is_rtl'] = false;
         if ( function_exists( 'wbdc_test_reset_divi' ) ) {
             wbdc_test_reset_divi();
@@ -207,9 +209,20 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
         $any   = in_array( 'any', $types, true );
         $wanted = is_array( $value ) ? array_map( 'strval', $value ) : [ (string) $value ];
 
+        // WordPress's 'any' means "every status not flagged
+        // exclude_from_search", which leaves trash out — the difference the
+        // Divi Library exporter's dedupe lookup turns on.
+        $statuses = $args['post_status'] ?? 'any';
+        $statuses = is_array( $statuses ) ? array_map( 'strval', $statuses ) : [ (string) $statuses ];
+        $any_status = in_array( 'any', $statuses, true );
+
         $matches = [];
         foreach ( $GLOBALS['__test_posts'] as $id => $post ) {
             if ( ! $any && ! in_array( $post->post_type ?? '', $types, true ) ) {
+                continue;
+            }
+            $status = (string) ( $post->post_status ?? 'publish' );
+            if ( $any_status ? in_array( $status, [ 'trash', 'auto-draft' ], true ) : ! in_array( $status, $statuses, true ) ) {
                 continue;
             }
             if ( $key !== '' && ! in_array( (string) get_post_meta( $id, $key, true ), $wanted, true ) ) {
@@ -269,6 +282,20 @@ if ( ! function_exists( 'wp_trash_post' ) ) {
             return false;
         }
         $GLOBALS['__test_trashed'][] = $post_id;
+        if ( isset( $GLOBALS['__test_posts'][ $post_id ] ) ) {
+            $post = $GLOBALS['__test_posts'][ $post_id ];
+            $GLOBALS['__test_postmeta'][ $post_id ]['_wp_trash_meta_status'] = [ (string) ( $post->post_status ?? 'publish' ) ];
+            $post->post_status = 'trash';
+        }
+        return (object) [ 'ID' => $post_id ];
+    }
+    function wp_untrash_post( int $post_id ) {
+        if ( ! isset( $GLOBALS['__test_posts'][ $post_id ] ) ) {
+            return false;
+        }
+        $previous = (string) get_post_meta( $post_id, '_wp_trash_meta_status', true );
+        $GLOBALS['__test_posts'][ $post_id ]->post_status = $previous !== '' ? $previous : 'draft';
+        delete_post_meta( $post_id, '_wp_trash_meta_status' );
         return (object) [ 'ID' => $post_id ];
     }
 }
@@ -594,7 +621,21 @@ if ( ! function_exists( 'wp_nonce_field' ) ) {
         return $field;
     }
 }
-if ( ! function_exists( 'check_admin_referer' ) ) { function check_admin_referer( $action = -1, $name = '_wpnonce' ) { return true; } }
+if ( ! function_exists( 'check_admin_referer' ) ) {
+    // Records what was checked, and fails the way WordPress does — through
+    // wp_die() — when a test sets $GLOBALS['__test_referer_ok'] = false. Unset
+    // means "passes", so no existing test has to know about it.
+    $GLOBALS['__test_referer_ok']      = true;
+    $GLOBALS['__test_referer_checked'] = [];
+
+    function check_admin_referer( $action = -1, $name = '_wpnonce' ) {
+        $GLOBALS['__test_referer_checked'][] = [ 'action' => $action, 'name' => $name ];
+        if ( isset( $GLOBALS['__test_referer_ok'] ) && ! $GLOBALS['__test_referer_ok'] ) {
+            wp_die( 'The link you followed has expired.' );
+        }
+        return true;
+    }
+}
 if ( ! function_exists( 'wp_safe_redirect' ) ) {
     $GLOBALS['__test_redirects'] = [];
     function wp_safe_redirect( $location, $status = 302 ) { $GLOBALS['__test_redirects'][] = $location; return true; }

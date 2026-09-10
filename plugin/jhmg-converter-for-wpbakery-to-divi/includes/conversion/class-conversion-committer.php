@@ -140,7 +140,10 @@ class ConversionCommitter {
         try {
             $post_args = [
                 'post_type'    => $post_type_option ?? ( $item['post_type'] ?: 'page' ),
-                'post_title'   => $title !== '' ? $title : 'Imported Page',
+                // wp_insert_post() unslashes its input, so the title is slashed
+                // on the way in for the same reason the content is: a page
+                // called `Before \ After` otherwise arrives called `Before  After`.
+                'post_title'   => wp_slash( $title !== '' ? $title : 'Imported Page' ),
                 'post_status'  => $post_status,
                 'post_content' => '',
             ];

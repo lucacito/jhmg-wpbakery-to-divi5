@@ -79,6 +79,19 @@ class LicensePage {
         exit;
     }
 
+    /**
+     * A key shown back to its owner, enough of it to recognise and not enough
+     * to use. Anything eight characters or shorter is masked whole: keeping
+     * four from each end of a short key shows the reader the whole thing.
+     */
+    public static function mask( string $key ): string {
+        if ( strlen( $key ) > 8 ) {
+            return substr( $key, 0, 4 ) . str_repeat( '•', strlen( $key ) - 8 ) . substr( $key, -4 );
+        }
+
+        return str_repeat( '•', strlen( $key ) );
+    }
+
     /** The tab body. Returns a string. */
     public function markup(): string {
         $key    = $this->license->get_key();
@@ -94,7 +107,7 @@ class LicensePage {
             if ( ! empty( $state['expires'] ) ) {
                 $html .= ' — ' . esc_html( sprintf( /* translators: %s: expiry date */ __( 'expires %s', 'jhmg-converter-for-wpbakery-to-divi-pro' ), (string) $state['expires'] ) );
             }
-            $html .= '</p><p><code>' . esc_html( substr( $key, 0, 4 ) . str_repeat( '•', max( 0, strlen( $key ) - 8 ) ) . substr( $key, -4 ) ) . '</code></p>';
+            $html .= '</p><p><code>' . esc_html( self::mask( $key ) ) . '</code></p>';
             $html .= '<p><a class="button" href="' . esc_url( $base . '&wbdcp_action=refresh_license&_wpnonce=' . wp_create_nonce( self::REFRESH_ACTION ) ) . '">' . esc_html__( 'Check again', 'jhmg-converter-for-wpbakery-to-divi-pro' ) . '</a> ';
             $html .= '<a class="button-link-delete" href="' . esc_url( $base . '&wbdcp_action=deactivate_license&_wpnonce=' . wp_create_nonce( self::DEACTIVATE_ACTION ) ) . '">' . esc_html__( 'Deactivate on this site', 'jhmg-converter-for-wpbakery-to-divi-pro' ) . '</a></p>';
         } else {
