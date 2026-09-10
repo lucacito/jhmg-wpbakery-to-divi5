@@ -122,6 +122,106 @@ final class WxrReaderTest extends TestCase {
         );
     }
 
+    /**
+     * A comment is part of the prolog, so a declaration behind one is still a
+     * declaration. Bounding the prolog at the first `<` followed by a name
+     * character reads `<!-- <a -->` as the start of the document element and
+     * stops looking one comment too early — and everything the attacker wants
+     * is written after that comment.
+     */
+    public function test_a_declaration_hidden_behind_a_comment_is_still_refused(): void {
+        $this->expectException( \RuntimeException::class );
+        $this->expectExceptionMessageMatches( '/DOCTYPE/' );
+
+        ( new WxrReader() )->read(
+            '<?xml version="1.0"?><!-- <a --><!DOCTYPE rss [<!ENTITY x "HAHA">]>'
+            . '<rss xmlns:wp="http://wordpress.org/export/1.2/"><channel><item><title>&x;</title></item></channel></rss>'
+        );
+    }
+
+    /**
+     * The same door, with the payload behind it: five nested entities turn
+     * ~400 bytes into a megabyte, and one more level into ten. libxml refuses
+     * the expansion itself — until `LIBXML_PARSEHUGE`, which is exactly what
+     * the size retry passes on the second attempt.
+     */
+    public function test_an_entity_bomb_behind_a_comment_is_refused_rather_than_expanded(): void {
+        $this->expectException( \RuntimeException::class );
+        $this->expectExceptionMessageMatches( '/DOCTYPE|entit/i' );
+
+        ( new WxrReader() )->read( '<?xml version="1.0"?><!-- <a -->' . self::bomb() );
+    }
+
+    /**
+     * And the second line of defence, which the guard above now stands in
+     * front of: the retry exists for documents past libxml's size limits, so
+     * an entity failure is a failure on both attempts. Reached directly,
+     * because a bomb can no longer get past `read()`.
+     */
+    public function test_the_huge_input_retry_refuses_an_entity_failure(): void {
+        $load = new \ReflectionMethod( WxrReader::class, 'load' );
+
+        $this->expectException( \RuntimeException::class );
+        $this->expectExceptionMessageMatches( '/entit/i' );
+
+        $load->invoke( new WxrReader(), '<?xml version="1.0"?>' . self::bomb() );
+    }
+
+    /**
+     * What the retry is for: a document past one of libxml's default limits
+     * — nesting depth here, the cheapest of them to write down — parses on the
+     * second attempt, entities or no entities.
+     */
+    public function test_a_document_past_libxmls_default_limits_still_parses_on_the_retry(): void {
+        $depth = 300;
+        $items = ( new WxrReader() )->read(
+            '<?xml version="1.0" encoding="UTF-8" ?>'
+            . '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/">'
+            . '<channel><item>'
+            . '<title>A deep page</title>'
+            . '<content:encoded><![CDATA[[vc_row][/vc_row]]]></content:encoded>'
+            . '<wp:post_id>3</wp:post_id><wp:post_type>page</wp:post_type>'
+            . '<wp:postmeta><wp:meta_key>_wpb_vc_js_status</wp:meta_key><wp:meta_value>true</wp:meta_value></wp:postmeta>'
+            . '</item>'
+            . '<deep>' . str_repeat( '<a>', $depth ) . 'x' . str_repeat( '</a>', $depth ) . '</deep>'
+            . '</channel></rss>'
+        );
+
+        $this->assertCount( 1, $items );
+        $this->assertSame( 'A deep page', $items[0]['title'] );
+        $this->assertSame( 'true', $items[0]['meta']['_wpb_vc_js_status'] );
+    }
+
+    /**
+     * And the false alarm the prolog bound has to keep avoiding: a comment
+     * before the root element that quotes a tag is a comment, not a
+     * declaration, and the export reads normally.
+     */
+    public function test_a_comment_quoting_a_tag_before_the_root_element_is_not_a_declaration(): void {
+        $items = ( new WxrReader() )->read(
+            '<?xml version="1.0" encoding="UTF-8" ?><!-- exported by <a href="#">the site</a> -->'
+            . '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wp="http://wordpress.org/export/1.2/">'
+            . '<channel><item><title>A page</title>'
+            . '<content:encoded><![CDATA[[vc_row][/vc_row]]]></content:encoded>'
+            . '<wp:post_id>3</wp:post_id><wp:post_type>page</wp:post_type>'
+            . '</item></channel></rss>'
+        );
+
+        $this->assertCount( 1, $items );
+        $this->assertSame( 'A page', $items[0]['title'] );
+    }
+
+    /** Five nested entities: ~400 bytes of XML, a megabyte of text. */
+    private static function bomb(): string {
+        return '<!DOCTYPE rss ['
+            . '<!ENTITY a "' . str_repeat( 'A', 100 ) . '">'
+            . '<!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">'
+            . '<!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">'
+            . '<!ENTITY d "&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;">'
+            . '<!ENTITY e "&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;">'
+            . ']><rss xmlns:wp="http://wordpress.org/export/1.2/"><channel><item><title>&e;</title></item></channel></rss>';
+    }
+
     /** One well-formed export around one page's content. */
     private static function wxr( string $content ): string {
         return '<?xml version="1.0" encoding="UTF-8" ?>'
