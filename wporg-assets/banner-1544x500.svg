@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1544 500" width="1544" height="500"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00c1cf"/><stop offset="1" stop-color="#7a2ee6"/></linearGradient></defs>
+  <rect width="1544" height="500" fill="url(#bg)"/>
+  <circle cx="480" cy="250" r="150" fill="#085b61"/>
+  <text x="480" y="287.4" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="104" font-weight="800" fill="#fff">WPB</text>
+  <path d="M690 250 H830 M788 208 L830 250 L788 292" stroke="#fff" stroke-width="27" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="1040" cy="250" r="150" fill="#fff"/>
+  <text x="1028" y="313" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="180" font-weight="800" fill="#6b21a8">D</text>
+  <circle cx="1133" cy="160" r="54" fill="#3b0764"/>
+  <text x="1133" y="181" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="63" font-weight="800" fill="#fff">5</text>
+</svg>

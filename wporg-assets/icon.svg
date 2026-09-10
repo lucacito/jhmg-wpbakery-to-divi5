@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#00c1cf"/><stop offset="1" stop-color="#7a2ee6"/></linearGradient></defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <text x="129.5" y="46" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="24" font-weight="700" letter-spacing="3" fill="#fff">WPBAKERY</text>
+
+  <circle cx="51" cy="128" r="40" fill="#085b61"/>
+  <text x="51" y="137.4" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="26" font-weight="800" fill="#fff">WPB</text>
+  <path d="M113 128 H143 M131.8 116.8 L143 128 L131.8 139.2" stroke="#fff" stroke-width="7.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="205" cy="128" r="40" fill="#fff"/>
+  <text x="201.8" y="144.8" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="48" font-weight="800" fill="#6b21a8">D</text>
+  <circle cx="229.8" cy="104" r="14.4" fill="#3b0764"/>
+  <text x="229.8" y="109.6" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="16.8" font-weight="800" fill="#fff">5</text>
+  <text x="128.75" y="226" text-anchor="middle" font-family="'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="26" font-weight="800" letter-spacing="1.5" fill="#fff">TO DIVI 5</text>
+</svg>
