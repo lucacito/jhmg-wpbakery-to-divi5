@@ -287,6 +287,21 @@ class AdminPage {
     }
 
     /**
+     * The post type an item is offered and selected under.
+     *
+     * A `.txt` upload holds shortcodes and no post type at all; it is offered
+     * as a page, so it has to be selected as one too — otherwise unticking
+     * `page` would leave it converting anyway, which is not what was asked.
+     *
+     * @param array<string,mixed> $item
+     */
+    private static function source_type_of( array $item ): string {
+        $type = (string) ( $item['source_post_type'] ?? '' );
+
+        return $type !== '' ? $type : 'page';
+    }
+
+    /**
      * @param mixed $raw
      * @return string[]
      */
@@ -325,10 +340,9 @@ class AdminPage {
         $dropped  = [];
 
         foreach ( $items as $item ) {
-            $type = (string) ( $item['source_post_type'] ?? '' );
+            $type = self::source_type_of( $item );
 
-            // A .txt upload has no post type of its own; it is the whole file.
-            if ( $type === '' || in_array( $type, $post_types, true ) ) {
+            if ( in_array( $type, $post_types, true ) ) {
                 $selected[] = $item;
                 continue;
             }
@@ -357,8 +371,8 @@ class AdminPage {
         foreach ( $dropped as $type => $count ) {
             $rows[] = [
                 'title'       => sprintf(
-                    /* translators: 1: number of items, 2: post type name */
-                    _n( '%1$d %2$s in this file was not converted', '%1$d %2$s items in this file were not converted', (int) $count, 'jhmg-converter-for-wpbakery-to-divi' ),
+                    /* translators: 1: number of items, 2: post type slug */
+                    _n( '%1$d item of type %2$s was not converted', '%1$d items of type %2$s were not converted', (int) $count, 'jhmg-converter-for-wpbakery-to-divi' ),
                     (int) $count,
                     (string) $type
                 ),
@@ -510,8 +524,7 @@ class AdminPage {
     public static function upload_options_form( array $items, array $warnings = [] ): string {
         $counts = [];
         foreach ( $items as $item ) {
-            $type            = (string) ( $item['source_post_type'] ?? '' );
-            $type            = $type !== '' ? $type : 'page';
+            $type            = self::source_type_of( $item );
             $counts[ $type ] = ( $counts[ $type ] ?? 0 ) + 1;
         }
         ksort( $counts );

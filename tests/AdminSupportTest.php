@@ -102,6 +102,29 @@ final class AdminSupportTest extends TestCase {
         $this->assertSame( [ 'post' => 1 ], $pages_only['dropped'] );
     }
 
+    /**
+     * A .txt upload is one page's shortcodes; the parser types it `page`, and
+     * the form and the selection have to agree on that — a checkbox that does
+     * not change what is converted would be a lie.
+     */
+    public function test_a_shortcode_file_is_offered_and_selected_as_a_page(): void {
+        $items = $this->items( 'page.txt' );
+        $this->assertSame( 'page', $items[0]['source_post_type'] );
+
+        $this->assertStringContainsString( 'value="page" checked="checked"', AdminPage::upload_options_form( $items ) );
+        $this->assertCount( 1, AdminPage::select_items( $items, [ 'page' ] )['items'] );
+        $this->assertSame( [ 'page' => 1 ], AdminPage::select_items( $items, [ 'post' ] )['dropped'] );
+    }
+
+    /** An item that somehow carries no post type at all is still offered, as a page. */
+    public function test_an_item_with_no_post_type_is_treated_as_a_page(): void {
+        $items = [ [ 'title' => 'Loose', 'source_post_type' => '', 'template_type' => '' ] ];
+
+        $this->assertStringContainsString( 'value="page" checked="checked"', AdminPage::upload_options_form( $items ) );
+        $this->assertCount( 1, AdminPage::select_items( $items, [ 'page' ] )['items'] );
+        $this->assertSame( [ 'page' => 1 ], AdminPage::select_items( $items, [ 'post' ] )['dropped'] );
+    }
+
     public function test_the_import_convert_step_records_a_run_and_skips_the_unselected_template(): void {
         $page = new class() extends AdminPage {
             /** @var string[] */

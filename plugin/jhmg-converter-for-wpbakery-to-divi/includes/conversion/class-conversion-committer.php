@@ -81,7 +81,7 @@ class ConversionCommitter {
     /**
      * @param array<string,mixed> $options post_status, post_type override, convert_templates.
      * @return array[] One result per plan item:
-     *   ['title','post_id','success','error','report','unsupported'], plus
+     *   ['title','post_id','success','error','mode','report','unsupported'], plus
      *   'template_type' => 'library' on every outcome of a WPBakery template
      *   and 'skipped' => true on one the caller chose not to convert.
      */
@@ -162,6 +162,10 @@ class ConversionCommitter {
                 'post_id'     => $post_id,
                 'success'     => true,
                 'error'       => '',
+                // The report screen words a theme element as "copied as static
+                // HTML" or "left as a placeholder" by this, so it has to
+                // survive the commit rather than stop at the plan.
+                'mode'        => (string) ( $item['mode'] ?? 'import' ),
                 'report'      => $item['report'] ?? [],
                 'unsupported' => $item['unsupported'] ?? [],
             ];
@@ -196,6 +200,7 @@ class ConversionCommitter {
                 'template_type' => 'library',
                 'success'       => true,
                 'error'         => '',
+                'mode'          => (string) ( $item['mode'] ?? 'import' ),
                 'report'        => $item['report'] ?? [],
                 'unsupported'   => $item['unsupported'] ?? [],
             ];

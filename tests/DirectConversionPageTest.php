@@ -76,6 +76,7 @@ final class DirectConversionPageTest extends TestCase {
         $this->assertSame( $before, (array) get_post( $id ), 'the WPBakery original is never modified' );
         $this->assertSame( 220, get_post_meta( $results[0]['post_id'], '_wbdc_source_post_id', true ) );
         $this->assertSame( 'direct', get_post_meta( $results[0]['post_id'], '_wbdc_import_source', true ) );
+        $this->assertSame( 'direct', $results[0]['mode'], 'the result screen words theme elements by this' );
     }
 
     public function test_check_handler_stashes_the_selection_and_redirects(): void {

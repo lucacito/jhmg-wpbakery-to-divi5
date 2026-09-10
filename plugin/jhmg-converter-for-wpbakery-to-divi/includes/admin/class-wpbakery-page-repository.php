@@ -194,12 +194,15 @@ class WPBakeryPageRepository {
     private function run_wp_query( array $args ): array {
         add_filter( 'posts_where', [ self::class, 'filter_where' ], 10, 2 );
 
+        // The filter comes off however the query ends: leaving it on would
+        // narrow every later query on the request to WPBakery content.
         try {
             $query = new \WP_Query( $args );
+            $posts = is_array( $query->posts ?? null ) ? $query->posts : [];
         } finally {
             remove_filter( 'posts_where', [ self::class, 'filter_where' ], 10 );
         }
 
-        return $query->posts ?? [];
+        return $posts;
     }
 }
