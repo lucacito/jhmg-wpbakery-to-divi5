@@ -2,16 +2,13 @@
 
 namespace WPBakeryDivi5Converter\Tests;
 
-use Divi5Validator\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use WPBakeryDivi5Converter\Converter\ConverterEngine;
-use WPBakeryDivi5Converter\Exporters\DiviBlockSerializer;
 use WPBakeryDivi5Converter\Parsers\NodeTree;
 use WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser;
 
 /**
- * Every fixture in both corpora, through the parser and then the converter.
+ * Every fixture in both corpora, through the **parser**.
  *
  * `fixtures/wpbakery-templates/` is WPBakery's own default template list
  * (config/templates.php, written by scripts/wpb-templates-to-fixtures.php) and
@@ -21,11 +18,17 @@ use WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser;
  * the parser copes with real content rather than with the examples its unit
  * tests were built around.
  *
- * Two things are asserted. **Parsing** is structural, not per-element: a page
- * has to come out as sections, and WPBakery's own templates — which its editor
- * wrote — have to come out with no stray text at all. **Conversion** has to
- * produce a valid Divi 5 document with no skipped settings, which is the
- * integration gate every handler batch keeps green.
+ * What is asserted here is structural, not per-element: a page has to come out
+ * as sections, and WPBakery's own templates — which its editor wrote — have to
+ * come out with no stray text at all.
+ *
+ * **Converting** the same two corpora is `BundledTemplateConversionTest` and
+ * `LayoutsCorpusConversionTest` (Task 10), which own the corpus counts as well
+ * and assert a good deal more than this file used to: valid Divi 5, no skipped
+ * settings, no unsupported element, one section per top-level row, every
+ * heading and label still present, and only documented `not_carried_over`
+ * kinds. The conversion assertions that lived here moved there rather than
+ * being duplicated.
  *
  * Warnings are counted, not asserted: a layout that needs repairing is not a
  * failure, it is what the conversion report is for; the counts only surface
@@ -55,13 +58,6 @@ final class FixtureCorpusTest extends TestCase {
         return $cases;
     }
 
-    public function test_both_corpora_are_present(): void {
-        // Both counts are deliberately exact: a fixture that appears without
-        // anyone noticing is a fixture nobody has read.
-        $this->assertCount( 75, self::templateProvider(), 'js_composer 9.0.1 config/templates.php holds 75 templates' );
-        $this->assertCount( 35, self::layoutProvider(), 'the Layouts for WPBakery API published 35 layouts when this corpus was fetched' );
-    }
-
     #[DataProvider( 'templateProvider' )]
     public function test_a_default_template_parses_to_sections_of_rows( string $file ): void {
         $tree = $this->tree( $file );
@@ -88,52 +84,6 @@ final class FixtureCorpusTest extends TestCase {
                 'a root that is not a section; warnings: ' . count( $tree['warnings'] )
             );
         }
-    }
-
-    /**
-     * The whole corpus through the converter, not just the parser: both
-     * corpora are documents nobody here wrote, so they are the integration
-     * gate every handler batch has to keep green — a valid Divi 5 document out
-     * the other end, and no setting reported as skipped.
-     *
-     * A skipped setting is not a crash, it is an attribute no handler claimed;
-     * on 110 real documents that is exactly the signal that a handler has a
-     * gap, so it is asserted at zero rather than counted.
-     */
-    #[DataProvider( 'templateProvider' )]
-    public function test_a_default_template_converts_clean( string $file ): void {
-        $this->assertConvertsClean( $file );
-    }
-
-    #[DataProvider( 'layoutProvider' )]
-    public function test_a_layout_converts_clean( string $file ): void {
-        $this->assertConvertsClean( $file );
-    }
-
-    private function assertConvertsClean( string $file ): void {
-        wbdc_test_reset_hooks();
-
-        $result = ( new ConverterEngine() )->convert(
-            [ 'content' => (string) file_get_contents( $file ) ],
-            [ 'mode' => 'import' ]
-        );
-
-        $this->assertSame(
-            [],
-            $result['report']['skipped_settings'],
-            basename( $file ) . ': an attribute no handler claimed'
-        );
-
-        $content = ( new DiviBlockSerializer() )->serialize( [ 'divi' => $result['divi'] ] );
-
-        // Headings keep the author's level (task-8-fix-round-1.md, R1), so a
-        // converted page may legitimately carry more than one <h1>.
-        $validation = ( new Validator() )->validateContent( $content, [ Validator::E_MULTIPLE_H1 ] );
-
-        $this->assertTrue(
-            $validation->isValid(),
-            basename( $file ) . " is not a valid Divi 5 document:\n" . json_encode( $validation->toArray(), JSON_PRETTY_PRINT )
-        );
     }
 
     /** @return array{roots: array, warnings: string[]} */
