@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_wp_text title="Opening hours"]<p>Monday to Friday, 9 to 5.</p>[/vc_wp_text][/vc_column][/vc_row]

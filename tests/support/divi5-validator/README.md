@@ -20,6 +20,11 @@ document. Refresh by copying `src/*.php` over this directory.
   `"childrenName": []`, and its server side is
   `server/Packages/ModuleLibrary/Charts/ChartsModule.php`. Fold the same two lines into the
   sibling project before the next refresh, or they will be lost.
+- `divi/post-slider` and `divi/contact-form-7` (leaf modules, valid inside a column), added while
+  implementing Task 9's `vc_posts_slider` and `contact-form-7` handlers. Both are
+  `"category": "module"` with no children in Divi 5.12.1's
+  `module-library/src/components/{post-slider,contact-form-7}/module.json`. Fold these into the
+  sibling project before the next refresh, or they will be lost.
 - `Validator::validate()` / `validateContent()` take an optional second `$ignore` argument —
   a list of `self::E_*` violation codes to drop from the result before it comes back. Added
   in Task 8's fix round 1 so `ConverterFixtureTest` can ignore `E_MULTIPLE_H1`: the controller

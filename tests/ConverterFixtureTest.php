@@ -22,6 +22,8 @@ use WPBakeryDivi5Converter\Exporters\DiviBlockSerializer;
  *   mode        'direct' | 'import'  (the scripts and this test default to direct)
  *   attachments id ⇒ URL, both a conversion option and the site's media library
  *   rendered    tag ⇒ html, what do_shortcode() answers for a theme shortcode
+ *   rendered_widgets  widget class ⇒ html, what the_widget() echoes for a vc_wp_* element
+ *   source      the corpus file a real fixture was cut from
  */
 final class ConverterFixtureTest extends TestCase {
 
@@ -57,6 +59,9 @@ final class ConverterFixtureTest extends TestCase {
         }
         if ( isset( $sidecar['rendered'] ) && is_array( $sidecar['rendered'] ) ) {
             $GLOBALS['__test_rendered_shortcodes'] = $sidecar['rendered'];
+        }
+        if ( isset( $sidecar['rendered_widgets'] ) && is_array( $sidecar['rendered_widgets'] ) ) {
+            $GLOBALS['__test_rendered_widgets'] = $sidecar['rendered_widgets'];
         }
 
         $result = ( new ConverterEngine() )->convert(

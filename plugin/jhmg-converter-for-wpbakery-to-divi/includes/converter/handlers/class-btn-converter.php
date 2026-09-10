@@ -3,6 +3,7 @@
 namespace WPBakeryDivi5Converter\Converter\Handlers;
 
 use WPBakeryDivi5Converter\Converter\BaseWPBakeryConverter;
+use WPBakeryDivi5Converter\Converter\ConverterEngine;
 use WPBakeryDivi5Converter\Helpers\Color;
 use WPBakeryDivi5Converter\Helpers\IconMap;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
@@ -61,6 +62,57 @@ class BtnConverter extends BaseWPBakeryConverter {
 
     /** The styles that paint no background of their own (`$style` branches in the template). */
     const OUTLINE_STYLES = [ 'outline', 'outline-custom' ];
+
+    /**
+     * The `button.*` settings a `vc_btn` field set produces, for the elements
+     * that embed one under a prefix.
+     *
+     * `vc_cta` and `vc_pricing_table` both build their button with
+     * `vc_map_integrate_shortcode( 'vc_btn', 'btn_', … )`
+     * (`config/buttons/shortcode-vc-cta.php:68`,
+     * `shortcode-vc-pricing-table.php`), so their `btn_*` attributes *are*
+     * `vc_btn`'s, one prefix removed — and `cta/module.json`,
+     * `pricing-table/module.json` and `button/module.json` all keep the button
+     * under the same `button` attribute with the same `innerContent` and
+     * `decoration` sub-groups. So the field mapping is this handler's, run
+     * once, rather than copied into three places.
+     *
+     * `align` is deliberately not read: an embedded button is placed by its
+     * host (`btn_position`), not by its own alignment.
+     *
+     * @param array<string,string> $atts   The host element's attributes.
+     * @param string               $prefix The prefix its button fields carry (`btn_`).
+     * @return array{settings: array, consumed: string[]} `settings` is the `button` sub-tree;
+     *   `consumed` holds the prefixed keys, so the host reports nothing twice.
+     */
+    public static function embeddedButton( ConverterEngine $engine, array $atts, string $prefix, string $node_id ): array {
+        $fields   = [];
+        $consumed = [];
+
+        foreach ( $atts as $key => $value ) {
+            if ( is_string( $key ) && $prefix !== '' && str_starts_with( $key, $prefix ) ) {
+                $fields[ substr( $key, strlen( $prefix ) ) ] = $value;
+                $consumed[]                                 = $key;
+            }
+        }
+
+        $handler = new self( $engine );
+        $attrs   = [];
+        $ignored = [];
+
+        $handler->text( $fields, $node_id, $attrs, $ignored );
+        $handler->size( $fields, $attrs, $ignored );
+        $handler->shape( $fields, $attrs, $ignored );
+        $handler->colours( $fields, $node_id, $attrs, $ignored );
+        $handler->icon( $fields, $node_id, $attrs, $ignored );
+        $handler->width( $fields, $attrs, $ignored );
+        $handler->interaction( $fields, $node_id, $ignored );
+
+        return [
+            'settings' => is_array( $attrs['button'] ?? null ) ? $attrs['button'] : [],
+            'consumed' => $consumed,
+        ];
+    }
 
     public function convert( array $node ): array {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_button_' ) );

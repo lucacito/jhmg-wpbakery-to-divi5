@@ -247,11 +247,86 @@ class ConverterRegistry {
             // styling is WPBakery's own (task-9-amendments.md §7).
             'vc_round_chart'    => [ Handlers\ChartConverter::class, true ],
             'vc_line_chart'     => [ Handlers\ChartConverter::class, true ],
+
+            // Boxes and lists.
+            'vc_cta'            => [ Handlers\CtaConverter::class, false ],
+            // A flip card flattened into one blurb.
+            'vc_hoverbox'       => [ Handlers\HoverboxConverter::class, true ],
+            'vc_pricing_table'  => [ Handlers\PricingTableConverter::class, false ],
+
+            // Post queries. The grid item template is WPBakery's own, so the
+            // query converts and the layout is an approximation.
+            'vc_basic_grid'     => [ Handlers\PostsGridConverter::class, true ],
+            'vc_masonry_grid'   => [ Handlers\PostsGridConverter::class, true ],
+            'vc_posts_slider'   => [ Handlers\PostsSliderConverter::class, true ],
+
+            // WordPress widgets with a Divi module of their own.
+            'vc_widget_sidebar' => [ Handlers\WidgetSidebarConverter::class, false ],
+            'vc_wp_custommenu'  => [ Handlers\WpCustommenuConverter::class, false ],
+            'vc_wp_search'      => [ Handlers\WpSearchConverter::class, false ],
+            'vc_wp_text'        => [ Handlers\WpTextConverter::class, false ],
+
+            // Contact Form 7 has a Divi module in 5.12.1.
+            'contact-form-7'    => [ Handlers\ContactForm7Converter::class, false ],
         ];
 
         foreach ( $elements as $tag => [ $class, $approximate ] ) {
             if ( class_exists( $class ) ) {
                 $this->registerElement( $tag, $class, $approximate );
+            }
+        }
+
+        $this->registerFamilies();
+    }
+
+    /**
+     * The three families whose members all convert the same way, so the tag is
+     * passed to one handler rather than each getting a class of its own.
+     */
+    private function registerFamilies(): void {
+        // The ten `vc_wp_*` elements that are a WordPress core widget and
+        // nothing else — rendered on this site, a placeholder from an export.
+        if ( class_exists( Handlers\WpWidgetConverter::class ) ) {
+            foreach ( array_keys( Handlers\WpWidgetConverter::WIDGETS ) as $tag ) {
+                $this->registerElement(
+                    $tag,
+                    static fn( ConverterEngine $engine ): ConverterInterface => new Handlers\WpWidgetConverter( $engine, $tag ),
+                    true
+                );
+            }
+        }
+
+        // The five share widgets: a third-party script, not a Divi module.
+        if ( class_exists( Handlers\SocialConverter::class ) ) {
+            foreach ( array_keys( Handlers\SocialConverter::NETWORKS ) as $tag ) {
+                $this->registerElement(
+                    $tag,
+                    static fn( ConverterEngine $engine ): ConverterInterface => new Handlers\SocialConverter( $engine, $tag ),
+                    true
+                );
+            }
+        }
+
+        // The two slider plugins WPBakery ships a bridge for: their decks live
+        // in the plugin's own tables (amendment §6).
+        if ( class_exists( Handlers\SliderBridgeConverter::class ) ) {
+            foreach ( [ 'rev_slider_vc', 'rev_slider', 'layerslider_vc', 'layerslider' ] as $tag ) {
+                $this->registerElement(
+                    $tag,
+                    static fn( ConverterEngine $engine ): ConverterInterface => new Handlers\SliderBridgeConverter( $engine, $tag ),
+                    true
+                );
+            }
+        }
+
+        // WooCommerce's own shortcodes, the ones WPBakery maps into its editor.
+        if ( class_exists( Handlers\WoocommerceConverter::class ) ) {
+            foreach ( Handlers\WoocommerceConverter::SHORTCODES as $tag ) {
+                $this->registerElement(
+                    $tag,
+                    static fn( ConverterEngine $engine ): ConverterInterface => new Handlers\WoocommerceConverter( $engine, $tag ),
+                    true
+                );
             }
         }
     }

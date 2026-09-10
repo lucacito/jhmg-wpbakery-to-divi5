@@ -82,13 +82,15 @@ final class ConverterEngineTest extends TestCase {
     }
 
     public function test_a_core_tag_with_no_handler_is_unsupported_and_gets_a_placeholder(): void {
-        $result = $this->convert( '[vc_row][vc_column][vc_flickr count="4"][/vc_column][/vc_row]' );
+        // `vc_gitem_post_date` is one of the grid-item elements: WPBakery ships
+        // it, and this converter has no handler for it yet.
+        $result = $this->convert( '[vc_row][vc_column][vc_gitem_post_date][/vc_column][/vc_row]' );
 
-        $this->assertSame( [ [ 'id' => 'vc_flickr-1', 'tag' => 'vc_flickr' ] ], $result['unsupported'] );
+        $this->assertSame( [ [ 'id' => 'vc_gitem_post_date-1', 'tag' => 'vc_gitem_post_date' ] ], $result['unsupported'] );
 
         $column = $result['divi']['elements'][0]['elements'][0]['elements'][0];
         $this->assertSame( 'divi/code', $column['elements'][0]['name'] );
-        $this->assertStringContainsString( 'vc_flickr', $column['elements'][0]['settings']['content']['innerContent']['desktop']['value'] );
+        $this->assertStringContainsString( 'vc_gitem_post_date', $column['elements'][0]['settings']['content']['innerContent']['desktop']['value'] );
     }
 
     public function test_a_theme_tag_is_never_unsupported(): void {

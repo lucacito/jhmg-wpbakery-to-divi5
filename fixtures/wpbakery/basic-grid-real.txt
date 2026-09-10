@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_basic_grid max_items="" style="pagination" items_per_page="8" element_width="3" gap="0" item="mediaGrid_ScaleWithRotation" grid_id="vc_gid:1436801351792-834976e6-1ef2-5" paging_animation_in="none"][/vc_column][/vc_row]

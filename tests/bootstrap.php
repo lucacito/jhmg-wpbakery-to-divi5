@@ -42,6 +42,7 @@ if ( ! function_exists( 'wbdc_test_reset_hooks' ) ) {
         $GLOBALS['__test_transients'] = [];
         $GLOBALS['__test_attachments'] = [];
         $GLOBALS['__test_rendered_shortcodes'] = [];
+        $GLOBALS['__test_rendered_widgets'] = [];
         $GLOBALS['__test_is_rtl'] = false;
         if ( function_exists( 'wbdc_test_reset_divi' ) ) {
             wbdc_test_reset_divi();
@@ -288,8 +289,14 @@ if ( ! function_exists( 'shortcode_exists' ) ) {
     }
 }
 if ( ! function_exists( 'the_widget' ) ) {
+    // Mirrors $GLOBALS['__test_rendered_shortcodes']: a test seeds
+    // $GLOBALS['__test_rendered_widgets'] = [ 'WP_Widget_Archives' => '<ul>…</ul>' ]
+    // and the stub echoes that; anything else gets a marker naming the class,
+    // so a converted page shows which widget stood where (amendment §5).
+    $GLOBALS['__test_rendered_widgets'] = [];
+
     function the_widget( $widget, $instance = [], $args = [] ) {
-        echo '<div class="widget ' . $widget . '">…</div>';
+        echo $GLOBALS['__test_rendered_widgets'][ (string) $widget ] ?? '<div class="widget ' . $widget . '">…</div>';
     }
 }
 if ( ! function_exists( 'do_blocks' ) ) {

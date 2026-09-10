@@ -8,7 +8,8 @@
  *
  * The fixture is a raw shortcode string. An optional sidecar next to it,
  * fixtures/wpbakery/heading.json, may carry:
- *   { "meta": {...}, "mode": "direct|import", "attachments": {"123": "https://..."}, "rendered": {"tag": "<html>"} }
+ *   { "meta": {...}, "mode": "direct|import", "attachments": {"123": "https://..."},
+ *     "rendered": {"tag": "<html>"}, "rendered_widgets": {"WP_Widget_Archives": "<html>"} }
  * "meta" becomes the post meta the parser reads (e.g. _wpb_shortcodes_custom_css);
  * "mode" and "attachments" are passed through as conversion options; "rendered"
  * seeds $GLOBALS['__test_rendered_shortcodes'] so do_shortcode() in the test
@@ -41,6 +42,9 @@ $attachments = $sidecar['attachments'] ?? [];
 
 if ( isset( $sidecar['rendered'] ) && is_array( $sidecar['rendered'] ) ) {
     $GLOBALS['__test_rendered_shortcodes'] = $sidecar['rendered'];
+}
+if ( isset( $sidecar['rendered_widgets'] ) && is_array( $sidecar['rendered_widgets'] ) ) {
+    $GLOBALS['__test_rendered_widgets'] = $sidecar['rendered_widgets'];
 }
 
 $result = ( new $engine_class() )->convert(

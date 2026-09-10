@@ -84,6 +84,10 @@ class SchemaRules
         'divi/map-pin',
         // Divi 5.12.1 `charts/module.json`: `category: module`, no children.
         'divi/charts',
+        // Divi 5.12.1 `post-slider/module.json` and `contact-form-7/module.json`:
+        // both `category: module` with no children.
+        'divi/post-slider',
+        'divi/contact-form-7',
         'divi/contact-field',
         'divi/counter',
         'divi/icon-list-item',
@@ -137,6 +141,9 @@ class SchemaRules
             'divi/number-counter',
             // Chart.js chart (charts/module.json, category: module)
             'divi/charts',
+            // Post slider and the Contact Form 7 module (both category: module)
+            'divi/post-slider',
+            'divi/contact-form-7',
             // Compound structural modules (live inside columns)
             'divi/accordion',
             'divi/contact-form',

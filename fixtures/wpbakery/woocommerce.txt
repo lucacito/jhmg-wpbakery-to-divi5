@@ -1,0 +1,1 @@
+[vc_row][vc_column][products limit="8" columns="4" category="hoodies" orderby="popularity" el_class="shop-grid"][/vc_column][/vc_row]

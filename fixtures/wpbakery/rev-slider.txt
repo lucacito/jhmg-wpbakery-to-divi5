@@ -1,0 +1,1 @@
+[vc_row][vc_column][rev_slider_vc alias="corporate_first-slider"][/vc_column][/vc_row]

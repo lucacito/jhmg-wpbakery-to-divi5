@@ -81,6 +81,36 @@ final class ContentHandlersBTest extends TestCase {
             'vc_pie'            => '[vc_pie value="70" title="Done" units="%" custom_color="#5472d2"]',
             'vc_round_chart'    => '[vc_round_chart type="pie" style="flat" animation="easeOutBounce" stroke_width="2" custom_stroke_color="#ffffff" legend="yes" tooltips="yes" legend_position="left" custom_legend_color="#2a2a2a" values="%5B%7B%22title%22%3A%22One%22%2C%22value%22%3A%2260%22%2C%22custom_color%22%3A%22%235472d2%22%7D%5D"]',
             'vc_line_chart'     => '[vc_line_chart type="bar" x_values="Jan;Feb" legend="yes" values="%5B%7B%22title%22%3A%22One%22%2C%22y_values%22%3A%221%3B2%22%2C%22custom_color%22%3A%22%235472d2%22%7D%5D"]',
+            'vc_cta'            => '[vc_cta h2="Heading" h4="Sub" style="flat" shape="round" custom_background="#5472d2" custom_text="#ffffff" txt_align="center" el_width="80" add_button="bottom" btn_title="Go" btn_link="url:https%3A%2F%2Fexample.com" add_icon="left" i_type="fontawesome" i_icon_fontawesome="fas fa-star"]Body[/vc_cta]',
+            'vc_hoverbox'       => '[vc_hoverbox image="7" primary_title="Front" hover_title="Back" shape="rounded" align="left" el_width="80" hover_custom_background="#5472d2" hover_add_button="true" hover_btn_title="Go"]Body[/vc_hoverbox]',
+            'vc_pricing_table'  => '[vc_pricing_table heading="Basic" subheading="Per seat" currency="$" price="9" period="month" markers_color="#5472d2" add_button="true" btn_title="Buy"]<ul><li>One</li></ul>[/vc_pricing_table]',
+            'vc_basic_grid'     => '[vc_basic_grid post_type="post" items_per_page="6" items_per_row="3" gap="10" item="basicGrid_NoAnimation" style="load-more" grid_id="vc_gid:1" orderby="title" order="ASC" taxonomies="4,9"]',
+            'vc_masonry_grid'   => '[vc_masonry_grid post_type="post" max_items="6" items_per_row="3"]',
+            'vc_posts_slider'   => '[vc_posts_slider count="3" posttypes="post" interval="5" type="flexslider_fade" slides_content="teaser" link="link_post" categories="4" orderby="title" order="ASC" thumb_size="large"]',
+            'vc_widget_sidebar' => '[vc_widget_sidebar sidebar_id="sidebar-1" title="More"]',
+            'vc_wp_custommenu'  => '[vc_wp_custommenu nav_menu="4" title="Menu"]',
+            'vc_wp_search'      => '[vc_wp_search title="Search"]',
+            'vc_wp_text'        => '[vc_wp_text title="Note"]Body[/vc_wp_text]',
+            'vc_wp_archives'    => '[vc_wp_archives title="Archives" type="dropdown" count="true"]',
+            'vc_wp_calendar'    => '[vc_wp_calendar title="Calendar"]',
+            'vc_wp_categories'  => '[vc_wp_categories title="Categories" count="true" hierarchical="true"]',
+            'vc_wp_links'       => '[vc_wp_links category="3" orderby="name"]',
+            'vc_wp_meta'        => '[vc_wp_meta title="Meta"]',
+            'vc_wp_pages'       => '[vc_wp_pages title="Pages" sortby="menu_order"]',
+            'vc_wp_posts'       => '[vc_wp_posts title="Posts" number="5" show_date="true"]',
+            'vc_wp_recentcomments' => '[vc_wp_recentcomments title="Comments" number="5"]',
+            'vc_wp_rss'         => '[vc_wp_rss url="https://example.com/feed" items="5"]',
+            'vc_wp_tagcloud'    => '[vc_wp_tagcloud title="Tags" taxonomy="post_tag"]',
+            'vc_facebook'       => '[vc_facebook type="standard"]',
+            'vc_tweetmeme'      => '[vc_tweetmeme type="share"]',
+            'vc_pinterest'      => '[vc_pinterest type="horizontal"]',
+            'vc_googleplus'     => '[vc_googleplus type="standard" annotation="bubble"]',
+            'vc_flickr'         => '[vc_flickr flickr_id="12345@N00" count="6" type="user" display="latest"]',
+            'rev_slider_vc'     => '[rev_slider_vc alias="home-slider"]',
+            'rev_slider'        => '[rev_slider alias="home-slider"]',
+            'layerslider_vc'    => '[layerslider_vc id="3"]',
+            'products'          => '[products limit="4" columns="4" category="hoodies"]',
+            'contact-form-7'    => '[contact-form-7 id="1234" title="Contact form 1"]',
         ];
     }
 
@@ -347,7 +377,216 @@ final class ContentHandlersBTest extends TestCase {
         $this->assertStringContainsString( 'stroke_width="2"', $details );
     }
 
-        /** Ids are generated from the source position, so two equivalent pages differ only there. */
+        // -------------------------------------------------------------------------
+    // CTAs, hover boxes, pricing tables, post queries
+    // -------------------------------------------------------------------------
+
+    public function test_a_cta_carries_its_heading_subheading_body_and_button(): void {
+        $result = $this->convert( $this->row(
+            '[vc_cta h2="Ready?" h4="It only takes a minute" style="flat" custom_background="#5472d2" custom_text="#ffffff" shape="round" txt_align="center" add_button="bottom" btn_title="Start" btn_link="url:https%3A%2F%2Fexample.com%2Fstart"]Sign up today.[/vc_cta]'
+        ) );
+
+        $cta = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/cta', $cta['name'] );
+        $this->assertSame( 'Ready?', $this->read( $cta['settings'], 'title.innerContent.desktop.value' ) );
+        $this->assertStringContainsString( '<h4>It only takes a minute</h4>', (string) $this->read( $cta['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertStringContainsString( '<p>Sign up today.</p>', (string) $this->read( $cta['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertSame( '#5472d2', $this->read( $cta['settings'], 'module.decoration.background.desktop.value.color' ) );
+        $this->assertSame( '#ffffff', $this->read( $cta['settings'], 'title.decoration.font.font.desktop.value.color' ) );
+        $this->assertSame( '4em', $this->read( $cta['settings'], 'module.decoration.border.desktop.value.radius.topLeft' ) );
+        $this->assertSame( 'center', $this->read( $cta['settings'], 'module.advanced.text.text.desktop.value.orientation' ) );
+        // The button is BtnConverter's own mapping, lifted onto the CTA.
+        $this->assertSame( 'Start', $this->read( $cta['settings'], 'button.innerContent.desktop.value.text' ) );
+        $this->assertSame( 'https://example.com/start', $this->read( $cta['settings'], 'button.innerContent.desktop.value.linkUrl' ) );
+    }
+
+    public function test_a_cta_takes_wpbakerys_own_default_padding_and_classic_colours(): void {
+        $result   = $this->convert( $this->row( '[vc_cta h2="Plain"]Body[/vc_cta]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        // `.vc_do_cta3{padding:28px;…}` and the classic style's own colours.
+        $this->assertSame( '28px', $this->read( $settings, 'module.decoration.spacing.desktop.value.padding.top' ) );
+        $this->assertSame( '#f7f7f7', $this->read( $settings, 'module.decoration.background.desktop.value.color' ) );
+        $this->assertSame( '#f0f0f0', $this->read( $settings, 'module.decoration.border.desktop.value.styles.all.color' ) );
+        $this->assertSame( '35px', $this->read( $settings, 'module.decoration.spacing.desktop.value.margin.bottom' ) );
+    }
+
+    public function test_a_legacy_cta_button2_converts_to_the_same_cta(): void {
+        // AttributeNormaliser rewrites vc_cta_button2 → vc_cta.
+        $result = $this->convert( $this->row(
+            '[vc_cta_button2 h2="Ready?" txt_align="center" title="Start" link="url:https%3A%2F%2Fexample.com%2Fstart"]Sign up today.[/vc_cta_button2]'
+        ) );
+
+        $this->assertSame( 'divi/cta', $this->firstModule( $result )['name'] );
+        $this->assertSame( [], $result['report']['skipped_settings'] );
+    }
+
+    public function test_a_hoverbox_is_a_blurb_and_its_flip_is_reported(): void {
+        $result = $this->convert(
+            $this->row( '[vc_hoverbox image="7" primary_title="Front" hover_title="Back" hover_custom_background="#5472d2" hover_add_button="true" hover_btn_title="Go" hover_btn_link="url:https%3A%2F%2Fexample.com"]Body copy.[/vc_hoverbox]' ),
+            [ 'attachments' => [ 7 => [ 'url' => 'https://example.com/a.jpg' ] ] ]
+        );
+
+        $blocks = $this->modules( $result );
+
+        $this->assertSame( 'divi/blurb', $blocks[0]['name'] );
+        $this->assertSame( 'Front', $this->read( $blocks[0]['settings'], 'title.innerContent.desktop.value.text' ) );
+        $this->assertStringContainsString( '<h4>Back</h4>', (string) $this->read( $blocks[0]['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertSame( 'https://example.com/a.jpg', $this->read( $blocks[0]['settings'], 'imageIcon.innerContent.desktop.value.src' ) );
+        $this->assertSame( '#5472d2', $this->read( $blocks[0]['settings'], 'module.decoration.background.desktop.value.color' ) );
+        // The hover button has no home on a blurb, so it follows it.
+        $this->assertSame( 'divi/button', $blocks[1]['name'] );
+        $this->assertSame( 'Go', $this->read( $blocks[1]['settings'], 'button.innerContent.desktop.value.text' ) );
+
+        $this->assertStringContainsString( 'flips between a picture and a coloured panel', $this->details( $result ) );
+    }
+
+    public function test_a_pricing_table_is_a_one_table_set(): void {
+        $result = $this->convert( $this->row(
+            '[vc_pricing_table heading="Basic" subheading="Per seat" currency="$" price="9" period="month" markers_color="#5472d2" add_button="true" btn_title="Buy"]<ul><li>One</li><li>Two</li></ul>[/vc_pricing_table]'
+        ) );
+
+        $tables = $this->firstModule( $result );
+
+        $this->assertSame( 'divi/pricing-tables', $tables['name'] );
+        $this->assertCount( 1, $tables['elements'] );
+
+        $table = $tables['elements'][0]['settings'];
+
+        $this->assertSame( 'divi/pricing-table', $tables['elements'][0]['name'] );
+        $this->assertSame( 'Basic', $this->read( $table, 'title.innerContent.desktop.value' ) );
+        $this->assertSame( 'Per seat', $this->read( $table, 'subtitle.innerContent.desktop.value' ) );
+        $this->assertSame( '9', $this->read( $table, 'price.innerContent.desktop.value' ) );
+        $this->assertSame( '$', $this->read( $table, 'currencyFrequency.innerContent.desktop.value.currency' ) );
+        $this->assertSame( 'month', $this->read( $table, 'currencyFrequency.innerContent.desktop.value.per' ) );
+        $this->assertStringContainsString( '<li>One</li>', (string) $this->read( $table, 'content.innerContent.desktop.value' ) );
+        $this->assertSame( '#5472d2', $this->read( $table, 'content.advanced.bulletColor.desktop.value' ) );
+        $this->assertSame( 'Buy', $this->read( $table, 'button.innerContent.desktop.value.text' ) );
+    }
+
+    public function test_a_pricing_table_has_no_default_bottom_margin(): void {
+        // `.vc_do_pricing_table` sets padding, radius, border and background —
+        // and no margin-bottom at all.
+        $result   = $this->convert( $this->row( '[vc_pricing_table heading="Basic" price="9"]<ul><li>One</li></ul>[/vc_pricing_table]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertNull( $this->read( $settings, 'module.decoration.spacing.desktop.value.margin' ) );
+        $this->assertSame( '30px', $this->read( $settings, 'module.decoration.spacing.desktop.value.padding.top' ) );
+        $this->assertSame( '20px', $this->read( $settings, 'module.decoration.spacing.desktop.value.padding.right' ) );
+        $this->assertSame( '#ececec', $this->read( $settings, 'module.decoration.background.desktop.value.color' ) );
+    }
+
+    public function test_a_basic_grid_is_a_blog_module_with_the_query_carried_over(): void {
+        $result   = $this->convert( $this->row( '[vc_basic_grid post_type="page" items_per_page="6" items_per_row="3" gap="10" taxonomies="4,9" style="load-more"]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'divi/blog', $this->firstModule( $result )['name'] );
+        $this->assertSame( 'page', $this->read( $settings, 'post.advanced.type.desktop.value' ) );
+        $this->assertSame( '6', $this->read( $settings, 'post.advanced.number.desktop.value' ) );
+        $this->assertSame( [ '4', '9' ], $this->read( $settings, 'post.advanced.categories.desktop.value' ) );
+        $this->assertSame( '3', $this->read( $settings, 'blogGrid.decoration.layout.desktop.value.gridColumnCount' ) );
+        $this->assertSame( 'on', $this->read( $settings, 'pagination.advanced.enable.desktop.value' ) );
+    }
+
+    public function test_a_posts_slider_maps_the_order_pair_divi_understands(): void {
+        $result   = $this->convert( $this->row( '[vc_posts_slider count="3" orderby="title" order="ASC" interval="5"]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'divi/post-slider', $this->firstModule( $result )['name'] );
+        $this->assertSame( 'title_asc', $this->read( $settings, 'post.advanced.orderby.desktop.value' ) );
+        $this->assertSame( '5000', $this->read( $settings, 'module.advanced.autoSpeed.desktop.value' ) );
+    }
+
+    public function test_an_order_divi_cannot_express_is_reported(): void {
+        $result = $this->convert( $this->row( '[vc_posts_slider count="3" orderby="comment_count" order="DESC"]' ) );
+
+        $this->assertStringContainsString( 'orderby="comment_count"', $this->details( $result ) );
+        $this->assertNull( $this->read( $this->firstModule( $result )['settings'], 'post.advanced.orderby.desktop.value' ) );
+    }
+
+    // -------------------------------------------------------------------------
+    // Widgets, social buttons, sliders, WooCommerce, Contact Form 7
+    // -------------------------------------------------------------------------
+
+    public function test_a_widget_sidebar_keeps_its_area(): void {
+        $result = $this->convert( $this->row( '[vc_widget_sidebar sidebar_id="sidebar-footer-col2" title="More"]' ) );
+        $blocks = $this->modules( $result );
+
+        $this->assertSame( 'divi/heading', $blocks[0]['name'] );
+        $this->assertSame( 'divi/sidebar', $blocks[1]['name'] );
+        $this->assertSame( 'sidebar-footer-col2', $this->read( $blocks[1]['settings'], 'sidebar.innerContent.desktop.value.area' ) );
+    }
+
+    public function test_a_custom_menu_keeps_its_menu_id_and_search_and_text_become_their_modules(): void {
+        $result = $this->convert( $this->row( '[vc_wp_custommenu nav_menu="7"][vc_wp_search][vc_wp_text]Hi[/vc_wp_text]' ) );
+        $blocks = $this->modules( $result );
+
+        $this->assertSame( 'divi/menu', $blocks[0]['name'] );
+        $this->assertSame( '7', $this->read( $blocks[0]['settings'], 'menu.advanced.menuId.desktop.value' ) );
+        $this->assertSame( 'divi/search', $blocks[1]['name'] );
+        $this->assertSame( 'divi/text', $blocks[2]['name'] );
+        $this->assertSame( '<p>Hi</p>', $this->read( $blocks[2]['settings'], 'content.innerContent.desktop.value' ) );
+    }
+
+    public function test_a_wp_archives_widget_is_rendered_on_this_site_and_a_placeholder_from_an_export(): void {
+        $GLOBALS['__test_rendered_widgets'] = [ 'WP_Widget_Archives' => '<ul><li>June 2026</li></ul>' ];
+
+        $direct = $this->convert( $this->row( '[vc_wp_archives title="Archives"]' ), [ 'mode' => 'direct', 'render_shortcodes' => true ] );
+        $blocks = $this->modules( $direct );
+
+        $this->assertSame( 'divi/code', $blocks[1]['name'] );
+        $this->assertStringContainsString( '<li>June 2026</li>', (string) $this->read( $blocks[1]['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertContains( 'vc_wp_archives-1', $direct['report']['static_copies'] );
+
+        wbdc_test_reset_hooks();
+
+        $import = $this->convert( $this->row( '[vc_wp_archives title="Archives" type="dropdown"]' ) );
+        $html   = (string) $this->read( $this->modules( $import )[1]['settings'], 'content.innerContent.desktop.value' );
+
+        $this->assertStringContainsString( 'wbdc-unconverted-element', $html );
+        $this->assertStringContainsString( 'WP_Widget_Archives', $html );
+        $this->assertStringContainsString( 'type: dropdown', $html );
+        $this->assertSame( [], $import['report']['static_copies'] );
+    }
+
+    public function test_a_share_button_is_a_placeholder_naming_its_network(): void {
+        $result = $this->convert( $this->row( '[vc_tweetmeme type="share"]' ) );
+
+        $this->assertSame( 'divi/code', $this->firstModule( $result )['name'] );
+        $this->assertStringContainsString( 'X (Twitter) widget', $this->details( $result ) );
+    }
+
+    public function test_a_slider_bridge_names_its_deck_and_is_filed_under_sliders(): void {
+        $result = $this->convert( $this->row( '[rev_slider_vc alias="home-slider"]' ) );
+
+        $this->assertSame( 'divi/code', $this->firstModule( $result )['name'] );
+        $this->assertStringContainsString( 'shows the "home-slider" slider', $this->details( $result ) );
+        $this->assertArrayHasKey( 'Sliders', $result['report']['theme_elements'] );
+        $this->assertSame( [], $result['unsupported'] );
+    }
+
+    public function test_a_woocommerce_shortcode_is_kept_as_the_shortcode(): void {
+        $result = $this->convert( $this->row( '[products limit="4" columns="4" category="hoodies" el_class="shop"]' ) );
+
+        $html = (string) $this->read( $this->firstModule( $result )['settings'], 'content.innerContent.desktop.value' );
+
+        $this->assertSame( 'divi/code', $this->firstModule( $result )['name'] );
+        $this->assertSame( '[products limit="4" columns="4" category="hoodies"]', $html );
+        // el_class went onto the block, not back into the shortcode.
+        $this->assertSame( 'shop', $this->read( $this->firstModule( $result )['settings'], 'module.advanced.htmlAttributes.desktop.value.class' ) );
+        $this->assertArrayHasKey( 'WooCommerce', $result['report']['theme_elements'] );
+    }
+
+    public function test_contact_form_7_becomes_divis_own_module(): void {
+        $result = $this->convert( $this->row( '[contact-form-7 id="1234" title="Contact form 1"]' ) );
+
+        $this->assertSame( 'divi/contact-form-7', $this->firstModule( $result )['name'] );
+        $this->assertSame( '1234', $this->read( $this->firstModule( $result )['settings'], 'form.advanced.formId.desktop.value' ) );
+        $this->assertCount( 1, $this->modules( $result ) );
+    }
+
+    /** Ids are generated from the source position, so two equivalent pages differ only there. */
     private static function withoutIds( array $block ): array {
         unset( $block['id'] );
 

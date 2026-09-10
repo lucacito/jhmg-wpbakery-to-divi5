@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_posts_slider type="flexslider_fade" count="5" interval="5" thumb_size="large" posttypes="post" slides_content="teaser" slides_title="1" link="link_post" categories="12" orderby="date" order="DESC" title="From the blog"][/vc_column][/vc_row]

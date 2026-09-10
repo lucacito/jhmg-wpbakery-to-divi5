@@ -50,6 +50,9 @@ foreach ( $names as $name ) {
     if ( isset( $sidecar['rendered'] ) && is_array( $sidecar['rendered'] ) ) {
         $GLOBALS['__test_rendered_shortcodes'] = $sidecar['rendered'];
     }
+    if ( isset( $sidecar['rendered_widgets'] ) && is_array( $sidecar['rendered_widgets'] ) ) {
+        $GLOBALS['__test_rendered_widgets'] = $sidecar['rendered_widgets'];
+    }
 
     $result = ( new $engine_class() )->convert(
         [ 'content' => $content, 'meta' => $meta ],
