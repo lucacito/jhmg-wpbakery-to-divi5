@@ -40,6 +40,28 @@ class ContentFlattener {
     }
 
     /**
+     * A tab's or an accordion item's children, converted and then rendered
+     * back to the HTML that item holds.
+     *
+     * The conversion runs inside `ConverterEngine::withConvertedCountSuppressed()`:
+     * the blocks it produces are read here and thrown away, so counting them
+     * would report modules the finished page does not contain. Everything else
+     * the children have to say — a warning, a `not_carried_over` entry, a
+     * static copy, a skipped setting — is still recorded, because that is
+     * about the source.
+     *
+     * @param array<int, array<string,mixed>> $nodes   The item's own child nodes.
+     * @param string                          $node_id The item, for the report.
+     */
+    public function flatten( array $nodes, string $node_id ): string {
+        $blocks = $this->engine->withConvertedCountSuppressed(
+            fn (): array => $this->engine->convertChildren( $nodes )
+        );
+
+        return $this->toHtml( is_array( $blocks ) ? $blocks : [], $node_id );
+    }
+
+    /**
      * @param array<int, array<string,mixed>> $blocks Blocks from `ConverterEngine::convertChildren()`.
      * @param string                          $node_id The node the content belongs to, for the report.
      */

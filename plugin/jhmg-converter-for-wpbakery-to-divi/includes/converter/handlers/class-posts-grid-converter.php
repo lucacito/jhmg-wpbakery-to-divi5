@@ -96,32 +96,17 @@ class PostsGridConverter extends BaseWPBakeryConverter {
     }
 
     /**
-     * `taxonomies` is a comma-separated list of term ids across every
-     * taxonomy the post type has; Divi's blog filters on category ids
-     * (`post.advanced.categories`). Numeric ids carry over as they are, and
-     * the element is told they may name a taxonomy Divi will not filter on.
+     * `taxonomies` is the grid's "narrow data source" autocomplete: term ids
+     * from *any* taxonomy the post type has (`class-vc-grids-common.php:428`).
+     * Divi's blog filters on categories, so only the ids that are category
+     * terms are written and everything else is reported (`categoryIds()`).
      */
     private function categories( array $atts, string $id, array &$attrs ): void {
-        $terms = [];
+        $terms = $this->categoryIds( $this->att( $atts, 'taxonomies' ), $id, 'taxonomies' );
 
-        foreach ( explode( ',', $this->att( $atts, 'taxonomies' ) ) as $term ) {
-            $term = trim( $term );
-            if ( $term !== '' && ctype_digit( $term ) ) {
-                $terms[] = $term;
-            }
+        if ( $terms !== [] ) {
+            StyleMapper::write( $attrs, 'post.advanced.categories.desktop.value', $terms );
         }
-
-        if ( $terms === [] ) {
-            return;
-        }
-
-        StyleMapper::write( $attrs, 'post.advanced.categories.desktop.value', $terms );
-
-        $this->engine->logNotCarriedOver(
-            'integration',
-            $id,
-            'taxonomies="' . implode( ',', $terms ) . '" are term ids from any taxonomy; Divi\'s blog module filters on categories, so check the module\'s category list'
-        );
     }
 
     /**

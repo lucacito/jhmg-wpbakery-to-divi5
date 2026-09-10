@@ -3,6 +3,7 @@
 namespace WPBakeryDivi5Converter\Converter\Handlers;
 
 use WPBakeryDivi5Converter\Converter\BaseWPBakeryConverter;
+use WPBakeryDivi5Converter\Helpers\PackedParams;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -53,7 +54,7 @@ class PostsSliderConverter extends BaseWPBakeryConverter {
             StyleMapper::write( $attrs, 'post.advanced.number.desktop.value', $count );
         }
 
-        $this->categories( $atts, $attrs );
+        $this->categories( $atts, $id, $attrs );
         $this->order( $atts, $id, $attrs );
         $this->content( $atts, $attrs );
         $this->rotation( $atts, $attrs );
@@ -73,16 +74,20 @@ class PostsSliderConverter extends BaseWPBakeryConverter {
         return count( $blocks ) === 1 ? $blocks[0] : $blocks;
     }
 
-    /** `categories` is a comma-separated list of category term ids. */
-    private function categories( array $atts, array &$attrs ): void {
-        $terms = [];
-
-        foreach ( explode( ',', $this->att( $atts, 'categories' ) ) as $term ) {
-            $term = trim( $term );
-            if ( $term !== '' && ctype_digit( $term ) ) {
-                $terms[] = $term;
-            }
-        }
+    /**
+     * `categories` is an `exploded_textarea_safe` of category *names* — "Enter
+     * categories by names to narrow output"
+     * (`config/content/shortcode-vc-posts-slider.php:134`) — though a page
+     * written by hand may hold ids. Divi's post slider filters on category
+     * ids, so `categoryIds()` keeps the ids that resolve to a category and
+     * reports every name and every other term rather than dropping them.
+     */
+    private function categories( array $atts, string $id, array &$attrs ): void {
+        $terms = $this->categoryIds(
+            PackedParams::safeValue( $this->att( $atts, 'categories' ) ),
+            $id,
+            'categories'
+        );
 
         if ( $terms !== [] ) {
             StyleMapper::write( $attrs, 'post.advanced.categories.desktop.value', $terms );

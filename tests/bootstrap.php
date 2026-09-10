@@ -43,6 +43,7 @@ if ( ! function_exists( 'wbdc_test_reset_hooks' ) ) {
         $GLOBALS['__test_attachments'] = [];
         $GLOBALS['__test_rendered_shortcodes'] = [];
         $GLOBALS['__test_rendered_widgets'] = [];
+        $GLOBALS['__test_terms'] = [];
         $GLOBALS['__test_is_rtl'] = false;
         if ( function_exists( 'wbdc_test_reset_divi' ) ) {
             wbdc_test_reset_divi();
@@ -297,6 +298,22 @@ if ( ! function_exists( 'the_widget' ) ) {
 
     function the_widget( $widget, $instance = [], $args = [] ) {
         echo $GLOBALS['__test_rendered_widgets'][ (string) $widget ] ?? '<div class="widget ' . $widget . '">…</div>';
+    }
+}
+if ( ! function_exists( 'get_term' ) ) {
+    // Tests seed $GLOBALS['__test_terms'] = [ 4 => [ 'taxonomy' => 'category', 'name' => 'News' ] ];
+    // an id that is not a key is a term that does not exist, which is what
+    // get_term() answers with null for.
+    $GLOBALS['__test_terms'] = [];
+
+    function get_term( $term, $taxonomy = '', $output = 'OBJECT' ) {
+        $entry = $GLOBALS['__test_terms'][ (int) $term ] ?? null;
+
+        if ( ! is_array( $entry ) ) {
+            return null;
+        }
+
+        return (object) array_merge( [ 'term_id' => (int) $term, 'taxonomy' => '', 'name' => '' ], $entry );
     }
 }
 if ( ! function_exists( 'do_blocks' ) ) {

@@ -486,7 +486,15 @@ final class ContentHandlersBTest extends TestCase {
     }
 
     public function test_a_basic_grid_is_a_blog_module_with_the_query_carried_over(): void {
-        $result   = $this->convert( $this->row( '[vc_basic_grid post_type="page" items_per_page="6" items_per_row="3" gap="10" taxonomies="4,9" style="load-more"]' ) );
+        $GLOBALS['__test_terms'] = [
+            4 => [ 'taxonomy' => 'category', 'name' => 'News' ],
+            9 => [ 'taxonomy' => 'category', 'name' => 'Guides' ],
+        ];
+
+        $result   = $this->convert(
+            $this->row( '[vc_basic_grid post_type="page" items_per_page="6" items_per_row="3" gap="10" taxonomies="4,9" style="load-more"]' ),
+            [ 'mode' => 'direct' ]
+        );
         $settings = $this->firstModule( $result )['settings'];
 
         $this->assertSame( 'divi/blog', $this->firstModule( $result )['name'] );
@@ -495,6 +503,54 @@ final class ContentHandlersBTest extends TestCase {
         $this->assertSame( [ '4', '9' ], $this->read( $settings, 'post.advanced.categories.desktop.value' ) );
         $this->assertSame( '3', $this->read( $settings, 'blogGrid.decoration.layout.desktop.value.gridColumnCount' ) );
         $this->assertSame( 'on', $this->read( $settings, 'pagination.advanced.enable.desktop.value' ) );
+    }
+
+    public function test_only_category_terms_reach_divis_category_filter(): void {
+        // `taxonomies` searches every taxonomy the post type has, and a term
+        // from another one would empty the module rather than narrow it.
+        $GLOBALS['__test_terms'] = [
+            4  => [ 'taxonomy' => 'category', 'name' => 'News' ],
+            9  => [ 'taxonomy' => 'portfolio_category', 'name' => 'Print' ],
+            31 => [ 'taxonomy' => 'post_tag', 'name' => 'featured' ],
+        ];
+
+        $result = $this->convert(
+            $this->row( '[vc_basic_grid post_type="post" taxonomies="4,9,31,404"]' ),
+            [ 'mode' => 'direct' ]
+        );
+
+        $this->assertSame( [ '4' ], $this->read( $this->firstModule( $result )['settings'], 'post.advanced.categories.desktop.value' ) );
+
+        $details = $this->details( $result );
+        $this->assertStringContainsString( '9 is a portfolio_category term', $details );
+        $this->assertStringContainsString( '31 is a post_tag term', $details );
+        $this->assertStringContainsString( '404 is not a term on this site', $details );
+        $this->assertStringContainsString( 'only the category terms were kept', $details );
+    }
+
+    public function test_a_grid_converted_from_an_export_is_left_unfiltered_and_says_so(): void {
+        // No database to ask, so no filter at all: an unfiltered module can be
+        // narrowed, an empty one has to be debugged.
+        $result = $this->convert( $this->row( '[vc_basic_grid post_type="post" taxonomies="4,9"]' ) );
+
+        $this->assertNull( $this->read( $this->firstModule( $result )['settings'], 'post.advanced.categories.desktop.value' ) );
+        $this->assertStringContainsString( 'there is no database to check them against', $this->details( $result ) );
+        $this->assertStringContainsString( 'taxonomies="4,9"', $this->details( $result ) );
+    }
+
+    public function test_a_posts_slider_category_name_is_reported_rather_than_dropped(): void {
+        // `vc_posts_slider`'s `categories` holds category *names*
+        // (config/content/shortcode-vc-posts-slider.php:134), which Divi's
+        // post slider cannot filter on.
+        $GLOBALS['__test_terms'] = [ 4 => [ 'taxonomy' => 'category', 'name' => 'News' ] ];
+
+        $result = $this->convert(
+            $this->row( '[vc_posts_slider count="3" categories="News' . "\n" . '4"]' ),
+            [ 'mode' => 'direct' ]
+        );
+
+        $this->assertSame( [ '4' ], $this->read( $this->firstModule( $result )['settings'], 'post.advanced.categories.desktop.value' ) );
+        $this->assertStringContainsString( '"News" is a name, not a term id', $this->details( $result ) );
     }
 
     public function test_a_posts_slider_maps_the_order_pair_divi_understands(): void {

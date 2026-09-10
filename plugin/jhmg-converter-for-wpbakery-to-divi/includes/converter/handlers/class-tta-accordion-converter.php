@@ -27,6 +27,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * blocks are then rendered to HTML by `ContentFlattener` (spec §6). Nothing is
  * dropped: what has no HTML form is a comment and a report entry.
  *
+ * The element and each of its panels are counted as converted — both are real
+ * blocks in the finished page — but the children are not: `ContentFlattener::flatten()`
+ * converts them inside `ConverterEngine::withConvertedCountSuppressed()`,
+ * because the blocks they produce are read for their HTML and thrown away.
+ *
  * **Which panel is open.** `active_section` is a number, and WPBakery opens
  * that panel. Divi 5.12.1 has no equivalent attribute: `AccordionItemModuleUtils::get_toggle_class_name()`
  * gives `et_pb_toggle_open` to the *first* item and `TabModule::_should_be_active_tab()`
@@ -163,8 +168,11 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
             }
         }
 
-        $html = $flattener->toHtml( $this->engine->convertChildren( $section['children'] ?? [] ), $id );
-        StyleMapper::write( $attrs, 'content.innerContent.desktop.value', $html );
+        StyleMapper::write(
+            $attrs,
+            'content.innerContent.desktop.value',
+            $flattener->flatten( is_array( $section['children'] ?? null ) ? $section['children'] : [], $id )
+        );
 
         $consumed = $this->sectionIcon( $atts, $id, $parent_tag );
 

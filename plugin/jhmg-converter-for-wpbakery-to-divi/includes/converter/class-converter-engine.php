@@ -66,6 +66,14 @@ class ConverterEngine {
 
     private bool $countingApproximate = false;
 
+    /**
+     * How many `withConvertedCountSuppressed()` scopes are open. A counter
+     * rather than a flag: a flattened accordion can hold a nested row whose
+     * own children are flattened again, and the inner scope closing must not
+     * un-suppress the outer one.
+     */
+    private int $suppressedConvertedCounts = 0;
+
     public function __construct() {
         $this->registry = new ConverterRegistry( $this );
     }
@@ -329,8 +337,41 @@ class ConverterEngine {
     // Reporting
     // -------------------------------------------------------------------------
 
+    /**
+     * Runs `$fn` with `logConverted()` switched off.
+     *
+     * `ContentFlattener` converts a tab's or an accordion item's children only
+     * to render them back to HTML: the blocks it produces are read and thrown
+     * away, and none of them is in the finished page. Counting them would
+     * inflate `converted` — and with it `quality.module_coverage`, which is
+     * the ratio of cleanly converted source elements — with modules that do
+     * not exist.
+     *
+     * Only the count is suppressed. Warnings, `not_carried_over`, static
+     * copies, skipped settings, unresolved media and theme-element counts all
+     * still record, because those describe the source, which is real whatever
+     * happened to the blocks.
+     *
+     * @template T
+     * @param callable(): T $fn
+     * @return T
+     */
+    public function withConvertedCountSuppressed( callable $fn ): mixed {
+        $this->suppressedConvertedCounts++;
+
+        try {
+            return $fn();
+        } finally {
+            $this->suppressedConvertedCounts--;
+        }
+    }
+
     /** One Divi module produced. `$type` is the module's short name (`section`, `text`). */
     public function logConverted( string $type ): void {
+        if ( $this->suppressedConvertedCounts > 0 ) {
+            return;
+        }
+
         if ( $this->countingApproximate ) {
             $this->approximateCounts[ $type ] = ( $this->approximateCounts[ $type ] ?? 0 ) + 1;
 

@@ -329,6 +329,96 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         return null;
     }
 
+    /**
+     * The `category` term ids in a WPBakery term list, with everything that is
+     * not one reported rather than passed on.
+     *
+     * Spec §6 asks for "categories when resolvable", and the difference is not
+     * cosmetic: `divi/blog` and `divi/post-slider` filter on category ids
+     * (`post.advanced.categories`), so a term id from another taxonomy — which
+     * is exactly what `vc_basic_grid`'s `taxonomies` autocomplete stores, since
+     * it searches every taxonomy the post type has — matches no post and empties
+     * the module, where writing no filter at all shows every post.
+     *
+     * On the site the page lives on `get_term()` says which taxonomy an id
+     * belongs to. From an export there is no database to ask, so nothing is
+     * written and every id is reported: an unfiltered module the reader can
+     * narrow is better than an empty one they have to debug.
+     *
+     * @param string $raw       A comma- or newline-separated list of term ids (or,
+     *                          for `vc_posts_slider`, category names).
+     * @param string $attribute The attribute's name, so the report says which field.
+     * @return string[] The ids Divi can filter on, in the order they were listed.
+     */
+    protected function categoryIds( string $raw, string $node_id, string $attribute ): array {
+        $terms = array_values( array_filter(
+            array_map( 'trim', preg_split( '/[\s,]+/', trim( $raw ) ) ?: [] ),
+            static fn( string $term ): bool => $term !== ''
+        ) );
+
+        if ( $terms === [] ) {
+            return [];
+        }
+
+        $options  = $this->engine->options();
+        $resolves = $options['mode'] === 'direct' && function_exists( 'get_term' );
+
+        if ( ! $resolves ) {
+            $this->engine->logNotCarriedOver(
+                'integration',
+                $node_id,
+                sprintf(
+                    '%s="%s" narrows the query to those terms; there is no database to check them against when converting from an export, so the module was left unfiltered — set its categories in Divi',
+                    $attribute,
+                    implode( ',', $terms )
+                )
+            );
+
+            return [];
+        }
+
+        $ids      = [];
+        $rejected = [];
+
+        foreach ( $terms as $term ) {
+            if ( ! ctype_digit( $term ) ) {
+                $rejected[] = sprintf( '"%s" is a name, not a term id', $term );
+
+                continue;
+            }
+
+            $resolved = get_term( (int) $term );
+            $taxonomy = is_object( $resolved ) ? (string) ( $resolved->taxonomy ?? '' ) : '';
+
+            if ( $taxonomy === 'category' ) {
+                $ids[] = $term;
+
+                continue;
+            }
+
+            $rejected[] = $taxonomy === ''
+                ? sprintf( '%s is not a term on this site', $term )
+                : sprintf( '%s is a %s term', $term, $taxonomy );
+        }
+
+        if ( $rejected !== [] ) {
+            $this->engine->logNotCarriedOver(
+                'integration',
+                $node_id,
+                sprintf(
+                    '%s: Divi filters this module on categories, and %s; %s',
+                    $attribute,
+                    implode( ', ', $rejected ),
+                    $ids === []
+                        ? 'the module was left unfiltered rather than filtered to nothing'
+                        : 'only the category terms were kept'
+                )
+            );
+        }
+
+        return $ids;
+    }
+
     // -------------------------------------------------------------------------
     // Style mapping
     // -------------------------------------------------------------------------

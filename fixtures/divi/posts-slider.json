@@ -191,13 +191,6 @@
                                                             "value": "5"
                                                         }
                                                     },
-                                                    "categories": {
-                                                        "desktop": {
-                                                            "value": [
-                                                                "12"
-                                                            ]
-                                                        }
-                                                    },
                                                     "orderby": {
                                                         "desktop": {
                                                             "value": "date_desc"

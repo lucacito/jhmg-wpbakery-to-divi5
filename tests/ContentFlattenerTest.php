@@ -112,6 +112,65 @@ final class ContentFlattenerTest extends TestCase {
         $this->assertSame( '<!-- wbdc: divi/gallery not representable inside this item -->', $html );
     }
 
+    // -------------------------------------------------------------------------
+    // What the flattener converts is not counted as converted
+    // -------------------------------------------------------------------------
+
+    public function test_flattened_children_are_not_counted_as_converted_modules(): void {
+        $flat = $this->flatten(
+            '[vc_custom_heading text="A title" font_container="tag:h3|text_align:left" use_theme_fonts="yes"]'
+            . '[vc_column_text]Body copy.[/vc_column_text]'
+            . '[vc_single_image image="7"]',
+            [ 'attachments' => [ 7 => [ 'url' => 'https://example.com/photo.jpg' ] ] ]
+        );
+
+        $converted = $flat['report']['converted'];
+
+        // The accordion and its one panel are real blocks in the page; the
+        // heading, the text and the image were read for their HTML and thrown
+        // away, so none of the three is counted.
+        $this->assertSame( 1, $converted['accordion'] ?? 0 );
+        $this->assertSame( 1, $converted['accordion-item'] ?? 0 );
+        $this->assertArrayNotHasKey( 'heading', $converted );
+        $this->assertArrayNotHasKey( 'text', $converted );
+        $this->assertArrayNotHasKey( 'image', $converted );
+
+        // …and the HTML still holds all three.
+        $this->assertStringContainsString( '<h3>A title</h3>', $flat['html'] );
+        $this->assertStringContainsString( '<img src="https://example.com/photo.jpg"', $flat['html'] );
+    }
+
+    public function test_a_suppressed_child_still_reports_what_it_could_not_carry(): void {
+        // Only the count is suppressed: everything the source has to say is
+        // still recorded while the scope is open.
+        $flat = $this->flatten( '[vc_toggle title="Inner"]Body[/vc_toggle]' );
+
+        $this->assertArrayNotHasKey( 'toggle', $flat['report']['converted'] );
+
+        $layout = array_values( array_filter(
+            $flat['report']['not_carried_over'],
+            static fn( array $entry ): bool => $entry['kind'] === 'layout'
+                && str_contains( $entry['detail'], 'divi/toggle sits inside a tab or accordion item' )
+        ) );
+
+        $this->assertCount( 1, $layout );
+    }
+
+    public function test_the_suppression_scope_is_a_depth_counter(): void {
+        $engine = new ConverterEngine();
+
+        $engine->withConvertedCountSuppressed( function () use ( $engine ): void {
+            $engine->withConvertedCountSuppressed( static function (): void {} );
+            // The inner scope closing must not un-suppress the outer one.
+            $engine->logConverted( 'text' );
+        } );
+
+        $this->assertSame( [], $engine->getReport()['converted'] );
+
+        $engine->logConverted( 'text' );
+        $this->assertSame( [ 'text' => 1 ], $engine->getReport()['converted'] );
+    }
+
     public function test_an_empty_block_list_is_an_empty_string(): void {
         $flattener = new ContentFlattener( new ConverterEngine() );
 
