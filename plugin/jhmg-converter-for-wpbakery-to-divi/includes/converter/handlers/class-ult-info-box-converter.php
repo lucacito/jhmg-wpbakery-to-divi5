@@ -56,7 +56,12 @@ class UltInfoBoxConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_info_box_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'blurb', $this->withCss( $node, 'css_info_box' ) );
+        // `assets/css/info-box.css`: `.aio-icon-component,
+        // .wpb_column>.wpb_wrapper .aio-icon-component{margin-bottom:35px}` —
+        // the add-on's own wrapper (`ultimate_info_box.php:95`), which happens
+        // to be the same 35 px `.wpb_content_element` gives, from a different
+        // stylesheet.
+        $style    = $this->mapStyle( 'blurb', $this->withCss( $node, 'css_info_box' ), 'content' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [
             'css_info_box', 'icon_type', 'icon', 'icon_img', 'img_width', 'icon_size', 'icon_color',
@@ -72,9 +77,13 @@ class UltInfoBoxConverter extends BaseWPBakeryConverter {
         $this->fonts( $atts, $id, $attrs, $consumed );
         $this->look( $atts, $id );
 
+        // Before the block is built: `block()` copies the settings by value, so
+        // the module link `read_more="box"` and the title link `read_more="title"`
+        // write have to be on `$attrs` by the time it is called.
+        $button = $this->readMore( $atts, $id, $attrs );
+
         $blocks = [ $this->block( $id, 'divi/blurb', $attrs ) ];
 
-        $button = $this->readMore( $atts, $id, $attrs );
         if ( $button !== null ) {
             $blocks[] = $button;
         }
@@ -229,9 +238,26 @@ class UltInfoBoxConverter extends BaseWPBakeryConverter {
                 StyleMapper::write( $attrs, $path . '.color', $color );
             }
 
-            // `font-weight:bold;` — the add-on stores a CSS fragment.
-            if ( str_contains( strtolower( $this->att( $atts, $prefix . '_font_style' ) ), 'bold' ) ) {
+            // `<prefix>_font` is the add-on's font-family field
+            // (`ultimate_info_box.php:68, :74`), a Google-font family name.
+            $family = trim( $this->att( $atts, $prefix . '_font' ) );
+            if ( $family !== '' ) {
+                StyleMapper::write( $attrs, $path . '.family', $family );
+            }
+
+            // `font-weight:bold;` — the add-on stores a CSS fragment. Anything
+            // else in it (italic, letter-spacing, text-transform) has no single
+            // Divi field, so it is reported rather than half-applied.
+            $font_style = trim( $this->att( $atts, $prefix . '_font_style' ) );
+            if ( str_contains( strtolower( $font_style ), 'bold' ) ) {
                 StyleMapper::write( $attrs, $path . '.weight', '700' );
+            }
+            if ( $font_style !== '' && ! preg_match( '/^font-weight:\s*(bold|normal);?$/i', $font_style ) ) {
+                $this->engine->logNotCarriedOver(
+                    'addon',
+                    $id,
+                    sprintf( 'bsf-info-box %s_font_style="%s" is a CSS fragment; only its font weight has a Divi field', $prefix, $font_style )
+                );
             }
         }
     }

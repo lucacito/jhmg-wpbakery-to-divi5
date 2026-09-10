@@ -827,6 +827,199 @@ final class ContentHandlersBTest extends TestCase {
         $this->assertStringContainsString( 'hover_bg_color', $this->details( $result ) );
     }
 
+    // -------------------------------------------------------------------------
+    // Fix round 1
+    // -------------------------------------------------------------------------
+
+    public function test_an_info_box_read_more_box_links_the_whole_module(): void {
+        $result = $this->convert( $this->row(
+            '[bsf-info-box title="Hosting" read_more="box" link="url:https%3A%2F%2Fexample.com%2Fhosting|target:_blank"]Copy.[/bsf-info-box]'
+        ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'https://example.com/hosting', $this->read( $settings, 'module.advanced.link.desktop.value.url' ) );
+        $this->assertSame( 'on', $this->read( $settings, 'module.advanced.link.desktop.value.target' ) );
+        $this->assertCount( 1, $this->modules( $result ) );
+    }
+
+    public function test_an_info_box_read_more_title_links_the_title(): void {
+        $result = $this->convert( $this->row(
+            '[bsf-info-box title="Hosting" read_more="title" link="url:https%3A%2F%2Fexample.com%2Fhosting"]Copy.[/bsf-info-box]'
+        ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'https://example.com/hosting', $this->read( $settings, 'title.innerContent.desktop.value.url' ) );
+        $this->assertSame( 'off', $this->read( $settings, 'title.innerContent.desktop.value.target' ) );
+        $this->assertNull( $this->read( $settings, 'module.advanced.link.desktop.value.url' ) );
+    }
+
+    public function test_a_pricing_tables_heading_font_lands_on_the_title(): void {
+        $result = $this->convert( $this->row(
+            '[vc_pricing_table heading="Basic" subheading="Per seat" price="9" use_custom_fonts_heading="true"'
+            . ' heading_font_container="tag:h3|font_size:28px|color:%23111111|text_align:center"'
+            . ' use_custom_fonts_subheading="true" subheading_font_container="font_size:14px|color:%23666666"]<ul><li>One</li></ul>[/vc_pricing_table]'
+        ) );
+
+        $table = $this->firstModule( $result )['elements'][0]['settings'];
+
+        $this->assertSame( '28px', $this->read( $table, 'title.decoration.font.font.desktop.value.size' ) );
+        $this->assertSame( '#111111', $this->read( $table, 'title.decoration.font.font.desktop.value.color' ) );
+        $this->assertSame( '14px', $this->read( $table, 'subtitle.decoration.font.font.desktop.value.size' ) );
+        $this->assertSame( '#666666', $this->read( $table, 'subtitle.decoration.font.font.desktop.value.color' ) );
+    }
+
+    public function test_a_hoverbox_primary_title_font_lands_on_the_blurb_title_and_the_hover_one_is_reported(): void {
+        $result = $this->convert( $this->row(
+            '[vc_hoverbox primary_title="Design" hover_title="What we do"'
+            . ' use_custom_fonts_primary_title="true" primary_title_font_container="font_size:30px|color:%23000000|line_height:40px"'
+            . ' use_custom_fonts_hover_title="true" hover_title_font_container="font_size:24px|color:%23575c71"]Copy.[/vc_hoverbox]'
+        ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( '30px', $this->read( $settings, 'title.decoration.font.font.desktop.value.size' ) );
+        $this->assertSame( '#000000', $this->read( $settings, 'title.decoration.font.font.desktop.value.color' ) );
+        $this->assertStringContainsString( 'the hover title\'s custom font', $this->details( $result ) );
+    }
+
+    public function test_an_ultimate_font_family_is_applied_and_its_style_fragment_reported(): void {
+        $result = $this->convert( $this->row(
+            '[bsf-info-box title="Hosting" title_font="Montserrat" title_font_style="font-weight:bold;font-style:italic;"]Copy.[/bsf-info-box]'
+        ) );
+
+        $settings = $this->firstModule( $result )['settings'];
+
+        $this->assertSame( 'Montserrat', $this->read( $settings, 'title.decoration.font.font.desktop.value.family' ) );
+        $this->assertSame( '700', $this->read( $settings, 'title.decoration.font.font.desktop.value.weight' ) );
+        $this->assertStringContainsString( 'title_font_style="font-weight:bold;font-style:italic;"', $this->details( $result ) );
+    }
+
+    public function test_an_ultimate_pricing_font_family_is_applied(): void {
+        $result = $this->convert( $this->row(
+            '[ultimate_pricing package_heading="Health" package_price="10" package_name_font_family="Montserrat" package_name_font_size="desktop:24px;"]One[/ultimate_pricing]'
+        ) );
+
+        $table = $this->firstModule( $result )['elements'][0]['settings'];
+
+        $this->assertSame( 'Montserrat', $this->read( $table, 'title.decoration.font.font.desktop.value.family' ) );
+        $this->assertSame( '24px', $this->read( $table, 'title.decoration.font.font.desktop.value.size' ) );
+    }
+
+    public function test_a_btn_field_the_button_handler_does_not_map_is_reported_inside_a_cta(): void {
+        // `embeddedButton()` returns the fields it actually read, re-prefixed,
+        // so anything else under `btn_` still reaches logUnmappedSettings().
+        $result = $this->convert( $this->row( '[vc_cta h2="Hi" add_button="bottom" btn_title="Go" btn_wbdc_unknown="42"]Body[/vc_cta]' ) );
+
+        $this->assertContains( 'vc_cta-1: btn_wbdc_unknown', $result['report']['skipped_settings'] );
+    }
+
+    public function test_a_posts_slider_with_no_description_keeps_divis_excerpt_and_says_so(): void {
+        $result   = $this->convert( $this->row( '[vc_posts_slider count="3" slides_content=""]' ) );
+        $settings = $this->firstModule( $result )['settings'];
+
+        // `content.advanced.showOnMobile` is a mobile-visibility toggle, not
+        // the content source: writing "off" there would lose the copy on phones
+        // and keep it on the desktop.
+        $this->assertNull( $this->read( $settings, 'content.advanced.showOnMobile.desktop.value' ) );
+        $this->assertStringContainsString( 'always prints an excerpt', $this->details( $result ) );
+    }
+
+    /** @return array<string, array{0: string, 1: ?string}> */
+    public static function marginProvider(): array {
+        return [
+            // element, expected bottom margin (null = none written at all)
+            'hoverbox has no wrapper margin'      => [ '[vc_hoverbox primary_title="A"]Copy.[/vc_hoverbox]', null ],
+            'contact-form-7 is not a wpb element' => [ '[contact-form-7 id="12"]', null ],
+            'just_icon has no wrapper margin'     => [ '[just_icon icon="Defaults-database"]', null ],
+            'ult_content_box is a container'      => [ '[ult_content_box][vc_column_text]A[/vc_column_text][/ult_content_box]', null ],
+            // .aio-icon-component / .stats-block / .ult_pricing_table_wrap
+            'bsf-info-box: info-box.css 35px'     => [ '[bsf-info-box title="A"]Copy.[/bsf-info-box]', '35px' ],
+            'stat_counter: stats-counter.css'     => [ '[stat_counter counter_title="A" counter_value="1"]', '35px' ],
+            'ultimate_pricing: pricing.css'       => [ '[ultimate_pricing package_heading="A" package_price="1"]One[/ultimate_pricing]', '35px' ],
+            // .ult-video{margin:20px}
+            'ultimate_video: video_module.css'    => [ '[ultimate_video u_video_url="https://youtu.be/abc"]', '20px' ],
+            // .fb_like / .wpb_pinterest / .wpb_googleplus beat .wpb_content_element
+            'vc_facebook: the later 21.74px rule' => [ '[vc_facebook type="standard"]', '21.74px' ],
+            'vc_pinterest: the later rule'        => [ '[vc_pinterest type="horizontal"]', '21.74px' ],
+            'vc_googleplus: the later rule'       => [ '[vc_googleplus type="standard"]', '21.74px' ],
+            // twitter-share-button is on the anchor, not the wrapper
+            'vc_tweetmeme keeps wpb_content_element' => [ '[vc_tweetmeme type="share"]', '35px' ],
+            'vc_flickr keeps wpb_content_element'    => [ '[vc_flickr flickr_id="1@N00"]', '35px' ],
+        ];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider( 'marginProvider' )]
+    public function test_each_element_takes_the_bottom_margin_its_own_stylesheet_gives_it( string $shortcode, ?string $expected ): void {
+        $result = $this->convert( $this->row( $shortcode ) );
+        $module = $this->firstModule( $result );
+
+        $path = $module['name'] === 'divi/image'
+            ? 'module.advanced.spacing.desktop.value.margin.bottom'
+            : 'module.decoration.spacing.desktop.value.margin.bottom';
+
+        $this->assertSame( $expected, $this->read( $module['settings'], $path ) );
+    }
+
+    public function test_an_ultimate_video_takes_its_margin_on_all_four_sides(): void {
+        // `assets/css/video_module.css`: `.ult-video{margin:20px}`.
+        $margin = $this->read(
+            $this->firstModule( $this->convert( $this->row( '[ultimate_video u_video_url="https://youtu.be/abc"]' ) ) )['settings'],
+            'module.decoration.spacing.desktop.value.margin'
+        );
+
+        $this->assertSame( '20px', $margin['top'] );
+        $this->assertSame( '20px', $margin['right'] );
+        $this->assertSame( '20px', $margin['bottom'] );
+        $this->assertSame( '20px', $margin['left'] );
+    }
+
+    public function test_an_element_that_writes_nothing_is_not_counted_as_converted(): void {
+        $result = $this->convert( $this->row(
+            '[vc_images_carousel][vc_progress_bar][vc_tta_accordion][/vc_tta_accordion]'
+        ) );
+
+        $converted = $result['report']['converted'];
+
+        $this->assertArrayNotHasKey( 'slider', $converted );
+        $this->assertArrayNotHasKey( 'counters', $converted );
+        $this->assertArrayNotHasKey( 'accordion', $converted );
+    }
+
+    public function test_a_toggle_containers_own_fill_switch_is_read_and_reported(): void {
+        // `vc_tta_toggle` is not in the normaliser's TTA_TAGS, so it keeps
+        // `no_fill_content_area` rather than the 9.0 spelling.
+        $result = $this->convert( $this->row(
+            '[vc_tta_toggle no_fill_content_area="true"][vc_tta_toggle_section title="A"][vc_column_text]A[/vc_column_text][/vc_tta_toggle_section][/vc_tta_toggle]'
+        ) );
+
+        $this->assertSame( [], $result['report']['skipped_settings'] );
+        $this->assertStringContainsString( 'fill_content_area is off', $this->details( $result ) );
+    }
+
+    public function test_a_pie_with_an_empty_colour_still_paints_wpbakerys_default(): void {
+        // `$custom_color ?: '#ebebeb'` — a blank value takes the default too.
+        $result = $this->convert( $this->row( '[vc_pie value="70" custom_color=""]' ) );
+
+        $this->assertSame(
+            '#ebebeb',
+            $this->read( $this->firstModule( $result )['settings'], 'circle.advanced.color.desktop.value' )
+        );
+    }
+
+    public function test_an_external_gallery_row_is_counted_by_the_blocks_it_writes(): void {
+        $result = $this->convert( $this->row(
+            '[vc_gallery source="external_link" custom_srcs="https://example.com/a.jpg"]'
+        ) );
+
+        $converted = $result['report']['converted'];
+
+        // The page's own `vc_row` plus the one the gallery built.
+        $this->assertSame( 2, $converted['row'] ?? 0 );
+        $this->assertArrayNotHasKey( 'row_inner', $converted );
+    }
+
     /** Ids are generated from the source position, so two equivalent pages differ only there. */
     private static function withoutIds( array $block ): array {
         unset( $block['id'] );

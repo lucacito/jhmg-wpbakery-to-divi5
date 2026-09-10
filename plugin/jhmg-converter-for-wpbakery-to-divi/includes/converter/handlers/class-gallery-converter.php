@@ -321,34 +321,11 @@ class GalleryConverter extends BaseWPBakeryConverter {
             $images[] = $this->delegate( SingleImageConverter::class, $id . '-image-' . ( $index + 1 ), $image_atts );
         }
 
-        $this->engine->logConverted( 'row_inner' );
+        // The blocks' own names, not the WPBakery kinds they stand in for.
+        $this->engine->logConverted( 'row' );
         $this->engine->logConverted( 'column' );
         $this->logUnmappedSettings( $id, $atts, $consumed, (string) ( $node['tag'] ?? '' ) );
 
-        $column = $this->block( $id . '-col', 'divi/column', $this->deepMergeSettings(
-            self::fullWidthColumnSettings(),
-            [ 'module' => [ 'decoration' => [
-                'spacing' => [ 'desktop' => [ 'value' => [ 'padding' => self::box( '0px', '0px', '0px', '0px' ) ] ] ],
-                'layout'  => [ 'desktop' => [ 'value' => [
-                    'display'   => 'flex',
-                    'flexWrap'  => 'wrap',
-                    'columnGap' => '0px',
-                    'rowGap'    => '0px',
-                ] ] ],
-            ] ] ]
-        ), $images );
-
-        return [ $this->block(
-            $id,
-            'divi/row',
-            $this->deepMergeSettings(
-                self::nestedRowSettings(),
-                $this->deepMergeSettings(
-                    $style['divi_attrs'],
-                    [ 'module' => [ 'advanced' => [ 'columnStructure' => [ 'desktop' => [ 'value' => '4_4' ] ] ] ] ]
-                )
-            ),
-            [ $column ]
-        ) ];
+        return [ $this->nestedFlexRow( $id, $images, $style['divi_attrs'] ) ];
     }
 }

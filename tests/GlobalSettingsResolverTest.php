@@ -38,6 +38,8 @@ final class GlobalSettingsResolverTest extends TestCase {
                     'message'   => '21.74px',
                     'toggle'    => '21.74px',
                     'tta'       => '21.74px',
+                    'social'    => '21.74px',
+                    'ult_video' => '20px',
                     'inner_row' => '0px',
                 ],
             ],
@@ -64,6 +66,10 @@ final class GlobalSettingsResolverTest extends TestCase {
         $this->assertSame( '21.74px', GlobalSettingsResolver::moduleMarginBottom( 'toggle' ) );
         // js_composer_tta.min.css: .vc_tta-container{margin-bottom:21.73913043px}
         $this->assertSame( '21.74px', GlobalSettingsResolver::moduleMarginBottom( 'tta' ) );
+        // js_composer.min.css byte 103390: .fb_like,.wpb_googleplus,.wpb_pinterest,…
+        $this->assertSame( '21.74px', GlobalSettingsResolver::moduleMarginBottom( 'social' ) );
+        // Ultimate Addons assets/css/video_module.css: .ult-video{margin:20px}
+        $this->assertSame( '20px', GlobalSettingsResolver::moduleMarginBottom( 'ult_video' ) );
         $this->assertSame( '0px', GlobalSettingsResolver::moduleMarginBottom( 'inner_row' ) );
     }
 

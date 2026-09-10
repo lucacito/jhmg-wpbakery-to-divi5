@@ -129,24 +129,6 @@
                                         "id": "contact-form-7-1",
                                         "name": "divi/contact-form-7",
                                         "settings": {
-                                            "module": {
-                                                "decoration": {
-                                                    "spacing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "margin": {
-                                                                    "top": "",
-                                                                    "right": "",
-                                                                    "bottom": "35px",
-                                                                    "left": "",
-                                                                    "syncVertical": "off",
-                                                                    "syncHorizontal": "off"
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            },
                                             "form": {
                                                 "advanced": {
                                                     "formId": {

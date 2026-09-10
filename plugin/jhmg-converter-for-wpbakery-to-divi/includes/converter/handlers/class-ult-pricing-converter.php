@@ -26,13 +26,30 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class UltPricingConverter extends BaseWPBakeryConverter {
 
+    /**
+     * The add-on's six typography groups, spelled as it spells them
+     * (`ultimate_pricing_tables.php`): the group name does not always match
+     * the field prefix — `package_typograpy` governs the `package_name_*`
+     * fields — so they are claimed by name.
+     */
+    const TYPOGRAPHY_GROUPS = [
+        'package_typograpy',
+        'subheading_typograpy',
+        'price_typograpy',
+        'price_unit_typograpy',
+        'features_typograpy',
+        'button_typograpy',
+    ];
+
     public function convert( array $node ): array {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_ult_pricing_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        // No margin of the add-on's own: `.ult_pricing_table` sits in the
-        // column with the theme's spacing, so the `content` default applies.
-        $style    = $this->mapStyle( 'generic', $this->withCss( $node, 'css_price_box' ) );
+        // `assets/css/pricing.css`: `.wpb_column .wpb_wrapper .ult_pricing_table_wrap,
+        // .wpb_column .wpb_wrapper .ult_pricing_table_wrap:last-child
+        // {display:block;margin-bottom:35px;float:left}` — the add-on's own
+        // wrapper (`templates/pricing/pricing-design0N.php`).
+        $style    = $this->mapStyle( 'generic', $this->withCss( $node, 'css_price_box' ), 'content' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [
             'css_price_box', 'package_heading', 'heading_tag', 'package_sub_heading', 'sub_heading_tag',
@@ -134,13 +151,17 @@ class UltPricingConverter extends BaseWPBakeryConverter {
             'button'       => 'button.decoration.font.font.desktop.value',
         ];
 
+        // The add-on's own (misspelled) typography-group names, which do not
+        // follow the field prefixes: `package_typograpy` goes with the
+        // `package_name_*` fields.
+        $consumed = array_merge( $consumed, self::TYPOGRAPHY_GROUPS );
+
         foreach ( $map as $prefix => $path ) {
             foreach ( array_keys( $atts ) as $key ) {
                 if ( is_string( $key ) && str_starts_with( $key, $prefix . '_' ) ) {
                     $consumed[] = $key;
                 }
             }
-            $consumed[] = $prefix . '_typograpy';
 
             $size = UltimateFields::responsive( $this->att( $atts, $prefix . '_font_size' ) );
             if ( $size !== '' ) {
@@ -155,6 +176,26 @@ class UltPricingConverter extends BaseWPBakeryConverter {
             $color = $this->color( $atts, $prefix . '_font_color', $id );
             if ( $color !== null ) {
                 StyleMapper::write( $table, $path . '.color', $color );
+            }
+
+            // `<prefix>_font_family` is the add-on's Google-font family name.
+            $family = trim( $this->att( $atts, $prefix . '_font_family' ) );
+            if ( $family !== '' ) {
+                StyleMapper::write( $table, $path . '.family', $family );
+            }
+
+            // `<prefix>_font_style` is a CSS fragment; only its weight has a
+            // Divi field, so the rest is reported.
+            $font_style = trim( $this->att( $atts, $prefix . '_font_style' ) );
+            if ( str_contains( strtolower( $font_style ), 'bold' ) ) {
+                StyleMapper::write( $table, $path . '.weight', '700' );
+            }
+            if ( $font_style !== '' && preg_match( '/^font-weight:\s*(bold|normal);?$/i', $font_style ) !== 1 ) {
+                $this->engine->logNotCarriedOver(
+                    'addon',
+                    $id,
+                    sprintf( 'ultimate_pricing %s_font_style="%s" is a CSS fragment; only its font weight has a Divi field', $prefix, $font_style )
+                );
             }
         }
     }

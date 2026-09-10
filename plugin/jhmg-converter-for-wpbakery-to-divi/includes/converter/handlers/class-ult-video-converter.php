@@ -4,6 +4,7 @@ namespace WPBakeryDivi5Converter\Converter\Handlers;
 
 use WPBakeryDivi5Converter\Converter\BaseWPBakeryConverter;
 use WPBakeryDivi5Converter\Helpers\UltimateFields;
+use WPBakeryDivi5Converter\StyleMapper\GlobalSettingsResolver;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -64,8 +65,14 @@ class UltVideoConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_ult_video_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'generic', $this->withCss( $node, 'css_video_design' ) );
+        // `assets/css/video_module.css`: `.ult-video{margin:20px}` — the
+        // add-on's own wrapper (`ultimate_videos.php:1208`), all four sides.
+        // `mapStyle()` fills the bottom from the `ult_video` kind; `boxMargin()`
+        // fills the other three.
+        $style    = $this->mapStyle( 'generic', $this->withCss( $node, 'css_video_design' ), 'ult_video' );
         $attrs    = $style['divi_attrs'];
+
+        $this->boxMargin( $attrs );
         $consumed = array_merge(
             $style['handled_keys'],
             [ 'css_video_design', 'video_setting', 'video_type', 'u_video_url', 'vimeo_video_url', 'video_option', 'playb', 'thum_over', 'thumbnail', 'custom_thumb', 'default_thumb', 'yt_sb_bar', 'yt_sb_setting', 'chanel_id_name', 'yt_channel_name', 'yt_channel_id', 'yt_channel_text', 'show_sub_count', 'yt_text_color', 'yt_background_color', 'padding', 'subscribe_bar_responsive' ],
@@ -97,6 +104,29 @@ class UltVideoConverter extends BaseWPBakeryConverter {
         $this->logUnmappedSettings( $id, $atts, $consumed, (string) ( $node['tag'] ?? '' ) );
 
         return $this->block( $id, 'divi/video', $attrs );
+    }
+
+    /**
+     * The three sides of `.ult-video{margin:20px}` that are not the bottom one
+     * `GlobalSettingsResolver`'s `ult_video` kind already wrote — unless the
+     * element's own design options set that side, which WPBakery emits
+     * `!important`.
+     */
+    private function boxMargin( array &$attrs ): void {
+        $margin = $this->read( $attrs, 'module.decoration.spacing.desktop.value.margin' );
+        $margin = is_array( $margin ) ? $margin : [];
+
+        foreach ( [ 'top', 'right', 'left' ] as $side ) {
+            if ( ! isset( $margin[ $side ] ) || $margin[ $side ] === '' ) {
+                $margin[ $side ] = GlobalSettingsResolver::moduleMarginBottom( 'ult_video' );
+            }
+        }
+
+        StyleMapper::write(
+            $attrs,
+            'module.decoration.spacing.desktop.value.margin',
+            array_merge( [ 'top' => '', 'right' => '', 'bottom' => '', 'left' => '' ], $margin, [ 'syncVertical' => 'off', 'syncHorizontal' => 'off' ] )
+        );
     }
 
     /**

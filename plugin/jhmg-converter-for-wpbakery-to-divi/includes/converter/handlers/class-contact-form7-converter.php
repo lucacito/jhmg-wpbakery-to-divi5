@@ -20,8 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  * styling changes hands, from the theme's CSS to the module's own fields.
  *
  * `contact-form-7` is not a WPBakery element, so it has no `css` design
- * options and no `.wpb_content_element` margin of its own: it sits in the
- * column with whatever the theme gives it, which is the `content` default.
+ * options, no `.wpb_content_element` wrapper and no margin of WPBakery's: it
+ * sits in the column with whatever the theme gives the form, and the converter
+ * writes no bottom margin at all rather than inventing one.
  */
 class ContactForm7Converter extends BaseWPBakeryConverter {
 
@@ -29,7 +30,10 @@ class ContactForm7Converter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_cf7_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style = $this->mapStyle( 'generic', $node );
+        // `contact-form-7` is the plugin's own shortcode, not a WPBakery
+        // element: it has no `element_default_class`, no `.wpb_content_element`
+        // wrapper and no margin rule of WPBakery's, so none is written.
+        $style = $this->mapStyle( 'generic', $node, 'none' );
         $attrs = $style['divi_attrs'];
 
         $form = trim( $this->att( $atts, 'id' ) );

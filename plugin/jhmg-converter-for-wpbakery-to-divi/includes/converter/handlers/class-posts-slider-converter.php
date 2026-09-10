@@ -56,7 +56,7 @@ class PostsSliderConverter extends BaseWPBakeryConverter {
 
         $this->categories( $atts, $id, $attrs );
         $this->order( $atts, $id, $attrs );
-        $this->content( $atts, $attrs );
+        $this->content( $atts, $id, $attrs );
         $this->rotation( $atts, $attrs );
         $this->report( $atts, $id );
 
@@ -121,13 +121,26 @@ class PostsSliderConverter extends BaseWPBakeryConverter {
         );
     }
 
-    /** `slides_content` is empty (no description) or `teaser`; Divi's is on/off for the full content. */
-    private function content( array $atts, array &$attrs ): void {
+    /**
+     * `slides_content` is empty (no description at all) or `teaser` (the
+     * excerpt). Divi's `post.advanced.contentSource` is "Show Excerpt" /
+     * "Show Content", with no third value for "show nothing" — and
+     * `content.advanced.showOnMobile` is a mobile-visibility toggle, not the
+     * content source, so hiding the excerpt there would leave it on the desktop
+     * and lose it on the phone. The excerpt is kept and the difference reported.
+     */
+    private function content( array $atts, string $id, array &$attrs ): void {
         StyleMapper::write( $attrs, 'post.advanced.contentSource.desktop.value', 'off' );
 
-        if ( trim( $this->att( $atts, 'slides_content' ) ) === '' ) {
-            StyleMapper::write( $attrs, 'content.advanced.showOnMobile.desktop.value', 'off' );
+        if ( trim( $this->att( $atts, 'slides_content' ) ) !== '' ) {
+            return;
         }
+
+        $this->engine->logNotCarriedOver(
+            'layout',
+            $id,
+            'slides_content is empty, so WPBakery shows the title alone; Divi\'s post slider always prints an excerpt under it'
+        );
     }
 
     /** `interval` in seconds → `module.advanced.auto` / `autoSpeed` in milliseconds. */

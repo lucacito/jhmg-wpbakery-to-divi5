@@ -33,7 +33,10 @@ class UltStatCounterConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_counter_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        $style    = $this->mapStyle( 'counter', $this->withCss( $node, 'css_stat_counter' ) );
+        // `assets/css/stats-counter.css`: `.stats-block,
+        // .wpb_row .wpb_column .wpb_wrapper .stats-block{display:block;margin-bottom:35px}`
+        // — the add-on's own wrapper (`ultimate_stats_counter.php:737`).
+        $style    = $this->mapStyle( 'counter', $this->withCss( $node, 'css_stat_counter' ), 'content' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [
             'css_stat_counter', 'counter_title', 'counter_value', 'counter_prefix', 'counter_suffix',
@@ -90,6 +93,8 @@ class UltStatCounterConverter extends BaseWPBakeryConverter {
             // `suf_pref` shares Divi's one number font, so only the caption and
             // the number carry their own size and line height.
             if ( $prefix === 'suf_pref' ) {
+                $this->reportFontStyle( $atts, $id, $prefix );
+
                 continue;
             }
 
@@ -108,9 +113,17 @@ class UltStatCounterConverter extends BaseWPBakeryConverter {
                 StyleMapper::write( $attrs, $path . '.color', $color );
             }
 
+            // `<prefix>_font` is the add-on's font-family field.
+            $family = trim( $this->att( $atts, $prefix . '_font' ) );
+            if ( $family !== '' ) {
+                StyleMapper::write( $attrs, $path . '.family', $family );
+            }
+
             if ( str_contains( strtolower( $this->att( $atts, $prefix . '_font_style' ) ), 'bold' ) ) {
                 StyleMapper::write( $attrs, $path . '.weight', '700' );
             }
+
+            $this->reportFontStyle( $atts, $id, $prefix );
         }
 
         // `counter_color_txt` is the caption colour in the add-on's own form.
@@ -118,6 +131,25 @@ class UltStatCounterConverter extends BaseWPBakeryConverter {
         if ( $caption !== null ) {
             StyleMapper::write( $attrs, 'title.decoration.font.font.desktop.value.color', $caption );
         }
+    }
+
+    /**
+     * The add-on stores its typography as a CSS fragment
+     * (`font-weight:bold;font-style:italic;`). Only the weight has a single
+     * Divi field, so anything else in it is reported rather than half-applied.
+     */
+    private function reportFontStyle( array $atts, string $id, string $prefix ): void {
+        $font_style = trim( $this->att( $atts, $prefix . '_font_style' ) );
+
+        if ( $font_style === '' || preg_match( '/^font-weight:\s*(bold|normal);?$/i', $font_style ) === 1 ) {
+            return;
+        }
+
+        $this->engine->logNotCarriedOver(
+            'addon',
+            $id,
+            sprintf( 'stat_counter %s_font_style="%s" is a CSS fragment; only its font weight has a Divi field', $prefix, $font_style )
+        );
     }
 
     private function report( array $atts, string $id ): void {

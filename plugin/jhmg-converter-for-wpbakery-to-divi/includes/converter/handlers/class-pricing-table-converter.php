@@ -3,6 +3,7 @@
 namespace WPBakeryDivi5Converter\Converter\Handlers;
 
 use WPBakeryDivi5Converter\Converter\BaseWPBakeryConverter;
+use WPBakeryDivi5Converter\Helpers\PackedParams;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -72,7 +73,7 @@ class PricingTableConverter extends BaseWPBakeryConverter {
         }
 
         $this->defaultBox( $attrs );
-        $this->fonts( $atts, $consumed );
+        $this->fonts( $atts, $table, $consumed );
         $this->button( $atts, $id, $table, $consumed );
 
         $this->engine->logConverted( 'pricing-tables' );
@@ -118,20 +119,41 @@ class PricingTableConverter extends BaseWPBakeryConverter {
 
     /**
      * `heading` and `subheading` each carry a `vc_custom_heading` field set
-     * under their own prefix; Divi's pricing table has its own title and
-     * subtitle fonts, and the packed `font_container` / `google_fonts` land on
-     * them.
+     * under their own prefix (`config/buttons/shortcode-vc-pricing-table.php`
+     * integrates one for each), and `pricing-table/module.json` has a font
+     * group for both — `title.decoration.font` and `subtitle.decoration.font`
+     * — so the packed `font_container` and `google_fonts` are applied through
+     * the StyleMapper the same way `CustomHeadingConverter` does.
      *
      * @param string[] $consumed
      */
-    private function fonts( array $atts, array &$consumed ): void {
-        $consumed[] = 'use_custom_fonts_heading';
-        $consumed[] = 'use_custom_fonts_subheading';
+    private function fonts( array $atts, array &$table, array &$consumed ): void {
+        $mapper = new StyleMapper();
 
-        foreach ( array_keys( $atts ) as $key ) {
-            if ( is_string( $key ) && ( str_starts_with( $key, 'heading_' ) || str_starts_with( $key, 'subheading_' ) ) ) {
-                $consumed[] = $key;
+        $paths = [
+            'heading'    => 'title.decoration.font.font',
+            'subheading' => 'subtitle.decoration.font.font',
+        ];
+
+        foreach ( $paths as $prefix => $path ) {
+            $consumed[] = 'use_custom_fonts_' . $prefix;
+
+            foreach ( array_keys( $atts ) as $key ) {
+                if ( is_string( $key ) && str_starts_with( $key, $prefix . '_' ) ) {
+                    $consumed[] = $key;
+                }
             }
+
+            $mapper->applyFontContainer(
+                PackedParams::fontContainer( $this->att( $atts, $prefix . '_font_container' ) ),
+                $path,
+                $table
+            );
+            $mapper->applyGoogleFonts(
+                PackedParams::googleFonts( $this->att( $atts, $prefix . '_google_fonts' ) ),
+                $path,
+                $table
+            );
         }
     }
 

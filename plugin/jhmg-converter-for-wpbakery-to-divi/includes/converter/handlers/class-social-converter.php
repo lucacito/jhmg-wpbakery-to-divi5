@@ -25,10 +25,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * On the site the page lives on the shortcode still renders — WPBakery is
  * active there — so `staticCopy()` keeps the live markup instead.
  *
- * `.wpb_content_element` — the 35 px `content` margin, except the inner button
- * markup, which `js_composer.min.css` gives 21.74 px
- * (`.fb_like,.twitter-share-button,.wpb_googleplus,.wpb_pinterest`); the outer
- * element is the one that spaces, so `content` is what applies.
+ * **Spacing.** Every one of the five carries `.wpb_content_element` and its
+ * 35 px (byte 103311 of `js_composer.min.css`), but the rule at byte 103390 —
+ * `.entry-content .twitter-share-button,.fb_like,.twitter-share-button,
+ * .wpb_accordion .wpb_content_element,.wpb_googleplus,.wpb_pinterest,
+ * .wpb_tab .wpb_content_element{margin-bottom:21.73913043px}` — comes later at
+ * equal specificity and wins wherever it matches. It matches the wrapper of
+ * three of them, so those take the `social` kind and the other two `content`
+ * (`NARROW_MARGIN`).
  */
 class SocialConverter extends BaseWPBakeryConverter {
 
@@ -40,6 +44,17 @@ class SocialConverter extends BaseWPBakeryConverter {
         'vc_googleplus' => 'Google+',
         'vc_flickr'     => 'Flickr',
     ];
+
+    /**
+     * The three whose wrapper class the 21.74 px rule names.
+     * `vc_facebook.php:39` writes `fb_like`, `vc_pinterest.php:53`
+     * `wpb_pinterest` and `vc_googleplus.php:51` `wpb_googleplus` — all three
+     * in that selector list. `vc_tweetmeme` puts `twitter-share-button` on the
+     * anchor inside and wraps it in `vc_tweetmeme-element`, and `vc_flickr`'s
+     * wrapper is `wpb_flickr_widget`, so neither matches and both keep the
+     * 35 px `.wpb_content_element` margin.
+     */
+    const NARROW_MARGIN = [ 'vc_facebook', 'vc_pinterest', 'vc_googleplus' ];
 
     private string $tag;
 
@@ -54,7 +69,7 @@ class SocialConverter extends BaseWPBakeryConverter {
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
         $network = self::NETWORKS[ $tag ] ?? $tag;
-        $style   = $this->mapStyle( 'generic', $node );
+        $style   = $this->mapStyle( 'generic', $node, in_array( $tag, self::NARROW_MARGIN, true ) ? 'social' : 'content' );
 
         // `staticCopy()` reports it under the kind given here, once, whichever
         // branch it takes.

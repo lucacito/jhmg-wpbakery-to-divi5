@@ -129,22 +129,48 @@
                                         "id": "vc_hoverbox-1",
                                         "name": "divi/blurb",
                                         "settings": {
-                                            "module": {
+                                            "imageIcon": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": {
+                                                            "useIcon": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "title": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": {
+                                                            "text": ""
+                                                        }
+                                                    }
+                                                },
                                                 "decoration": {
-                                                    "spacing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "margin": {
-                                                                    "top": "",
-                                                                    "right": "",
-                                                                    "bottom": "35px",
-                                                                    "left": "",
-                                                                    "syncVertical": "off",
-                                                                    "syncHorizontal": "off"
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "size": "30px",
+                                                                    "lineHeight": "40px",
+                                                                    "color": "#000000",
+                                                                    "family": "Montserrat Alternates",
+                                                                    "weight": "700"
                                                                 }
                                                             }
                                                         }
-                                                    },
+                                                    }
+                                                }
+                                            },
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<h4>Media Marketing</h4><p>The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested.</p>"
+                                                    }
+                                                }
+                                            },
+                                            "module": {
+                                                "decoration": {
                                                     "background": {
                                                         "desktop": {
                                                             "value": {
@@ -163,31 +189,6 @@
                                                                 }
                                                             }
                                                         }
-                                                    }
-                                                }
-                                            },
-                                            "imageIcon": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": {
-                                                            "useIcon": "off"
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "title": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": {
-                                                            "text": ""
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "content": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": "<h4>Media Marketing</h4><p>The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested.</p>"
                                                     }
                                                 }
                                             }

@@ -138,22 +138,6 @@
                                                             }
                                                         }
                                                     }
-                                                },
-                                                "decoration": {
-                                                    "spacing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "margin": {
-                                                                    "top": "",
-                                                                    "right": "",
-                                                                    "bottom": "35px",
-                                                                    "left": "",
-                                                                    "syncVertical": "off",
-                                                                    "syncHorizontal": "off"
-                                                                }
-                                                            }
-                                                        }
-                                                    }
                                                 }
                                             },
                                             "icon": {

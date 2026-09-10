@@ -75,6 +75,19 @@ final class GlobalSettingsResolver {
             // stylesheet, `assets/css/js_composer_tta.min.css`, and carries no
             // `.wpb_content_element` class at all.
             'tta'       => '21.74px',
+            // `.entry-content .twitter-share-button,.fb_like,.twitter-share-button,
+            // .wpb_accordion .wpb_content_element,.wpb_googleplus,.wpb_pinterest,
+            // .wpb_tab .wpb_content_element{margin-bottom:21.73913043px}` — byte
+            // 103390, after the 35px rule at byte 103311, so at equal
+            // specificity this one wins. It reaches the wrapper of
+            // `vc_facebook` (`.fb_like`), `vc_pinterest` and `vc_googleplus`
+            // only; `vc_tweetmeme` puts `twitter-share-button` on the anchor
+            // inside, not on its `vc_tweetmeme-element` wrapper, and
+            // `vc_flickr`'s wrapper is `wpb_flickr_widget`.
+            'social'    => '21.74px',
+            // Ultimate Addons' `assets/css/video_module.css` `.ult-video{margin:20px}`
+            // — all four sides; `UltVideoConverter` writes the other three.
+            'ult_video' => '20px',
             // `vc_row_inner` carries no default margin (measured 0px).
             'inner_row' => '0px',
         ],
@@ -136,7 +149,7 @@ final class GlobalSettingsResolver {
      * WPBakery's default bottom margin for one kind of element, as read from
      * `js_composer.min.css`. An unknown kind falls back to `content` (35 px).
      *
-     * @param string $element_kind content | button | message | toggle | tta | inner_row
+     * @param string $element_kind content | button | message | toggle | tta | social | ult_video | inner_row
      */
     public static function moduleMarginBottom( string $element_kind = 'content' ): string {
         $margins = self::layoutDefaults()['module_margins'] ?? [];

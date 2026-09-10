@@ -3,6 +3,7 @@
 namespace WPBakeryDivi5Converter\Converter\Handlers;
 
 use WPBakeryDivi5Converter\Converter\BaseWPBakeryConverter;
+use WPBakeryDivi5Converter\Helpers\PackedParams;
 use WPBakeryDivi5Converter\StyleMapper\StyleMapper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,10 +27,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  * `content.innerContent`.
  *
  * `config/content/shortcode-vc-hoverbox.php` calls `vc_config()->merge_default_params( $params )`
- * with no design value, so the element gets no default class CSS of its own
- * and its wrapper carries no `.wpb_content_element`; the 35 px `content`
- * margin is still what a WPBakery column puts between elements, so that is
- * what the blurb takes.
+ * with no design value, so the element gets no default class CSS of its own,
+ * and its wrapper (`.vc-hoverbox-wrapper`) is not `.wpb_content_element` and
+ * has no margin rule in `js_composer.min.css`: it carries no bottom margin at
+ * all, so none is written.
  */
 class HoverboxConverter extends BaseWPBakeryConverter {
 
@@ -48,7 +49,11 @@ class HoverboxConverter extends BaseWPBakeryConverter {
         $atts    = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
         $content = (string) ( $node['content'] ?? '' );
 
-        $style    = $this->mapStyle( 'blurb', $node );
+        // `include/templates/shortcodes/vc_hoverbox.php:58` prints
+        // `.vc-hoverbox-wrapper`; the element's config sets no
+        // `element_default_class`, and `js_composer.min.css` gives that class
+        // no margin, so the element carries none of its own.
+        $style    = $this->mapStyle( 'blurb', $node, 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [
             'image', 'primary_title', 'hover_title', 'align', 'reverse', 'shape', 'el_width',
@@ -67,7 +72,7 @@ class HoverboxConverter extends BaseWPBakeryConverter {
         StyleMapper::write( $attrs, 'module.decoration.border.desktop.value.radius', self::radius( $radius ) );
 
         $this->width( $atts, $attrs );
-        $this->fonts( $atts, $consumed );
+        $this->fonts( $atts, $id, $attrs, $consumed );
 
         $this->engine->logNotCarriedOver(
             'interaction',
@@ -126,23 +131,50 @@ class HoverboxConverter extends BaseWPBakeryConverter {
     }
 
     /**
-     * The two titles are `vc_custom_heading` field sets under
-     * `primary_title_` and `hover_title_` prefixes
-     * (`config/content/shortcode-vc-hoverbox.php:28, :62`). Divi's blurb has
-     * one title font, and the hover title lives inside the body, so both sets
-     * are claimed and the one that cannot land is reported by the caller's
-     * flip note.
+     * The two titles are `vc_custom_heading` field sets under `primary_title_`
+     * and `hover_title_` prefixes (`config/content/shortcode-vc-hoverbox.php:28, :62`,
+     * rendered by `WPBakeryShortCode_Vc_Hoverbox::getHeading()`).
+     *
+     * Divi's blurb has one title font (`blurb/module.json`
+     * `title.decoration.font`), and the primary title *is* that title, so its
+     * packed `font_container` and `google_fonts` are applied through the
+     * StyleMapper the same way `CustomHeadingConverter` and `CtaConverter` do.
+     * The hover title lives inside the body, where there is no field for it,
+     * so its set is reported.
      *
      * @param string[] $consumed
      */
-    private function fonts( array $atts, array &$consumed ): void {
-        $consumed[] = 'use_custom_fonts_primary_title';
-        $consumed[] = 'use_custom_fonts_hover_title';
+    private function fonts( array $atts, string $id, array &$attrs, array &$consumed ): void {
+        $mapper = new StyleMapper();
 
-        foreach ( array_keys( $atts ) as $key ) {
-            if ( is_string( $key ) && ( str_starts_with( $key, 'primary_title_' ) || str_starts_with( $key, 'hover_title_' ) ) ) {
-                $consumed[] = $key;
+        foreach ( [ 'primary_title', 'hover_title' ] as $prefix ) {
+            $consumed[] = 'use_custom_fonts_' . $prefix;
+
+            foreach ( array_keys( $atts ) as $key ) {
+                if ( is_string( $key ) && str_starts_with( $key, $prefix . '_' ) ) {
+                    $consumed[] = $key;
+                }
             }
+
+            $container = trim( $this->att( $atts, $prefix . '_font_container' ) );
+            $google    = trim( $this->att( $atts, $prefix . '_google_fonts' ) );
+
+            if ( $container === '' && $google === '' ) {
+                continue;
+            }
+
+            if ( $prefix === 'hover_title' ) {
+                $this->engine->logNotCarriedOver(
+                    'layout',
+                    $id,
+                    'the hover title\'s custom font (hover_title_font_container / hover_title_google_fonts); Divi\'s blurb has one title field, so the hover title is a plain <h4> inside the body'
+                );
+
+                continue;
+            }
+
+            $mapper->applyFontContainer( PackedParams::fontContainer( $container ), 'title.decoration.font.font', $attrs );
+            $mapper->applyGoogleFonts( PackedParams::googleFonts( $google ), 'title.decoration.font.font', $attrs );
         }
     }
 

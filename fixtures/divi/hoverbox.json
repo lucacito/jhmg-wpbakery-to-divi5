@@ -129,22 +129,34 @@
                                         "id": "vc_hoverbox-1",
                                         "name": "divi/blurb",
                                         "settings": {
+                                            "imageIcon": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": {
+                                                            "useIcon": "off",
+                                                            "src": "https://example.com/photo.jpg"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "title": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": {
+                                                            "text": "Design"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "content": {
+                                                "innerContent": {
+                                                    "desktop": {
+                                                        "value": "<h4>What we do</h4><p>We design things people like.</p>"
+                                                    }
+                                                }
+                                            },
                                             "module": {
                                                 "decoration": {
-                                                    "spacing": {
-                                                        "desktop": {
-                                                            "value": {
-                                                                "margin": {
-                                                                    "top": "",
-                                                                    "right": "",
-                                                                    "bottom": "35px",
-                                                                    "left": "",
-                                                                    "syncVertical": "off",
-                                                                    "syncHorizontal": "off"
-                                                                }
-                                                            }
-                                                        }
-                                                    },
                                                     "background": {
                                                         "desktop": {
                                                             "value": {
@@ -170,32 +182,6 @@
                                                                 "width": "80%"
                                                             }
                                                         }
-                                                    }
-                                                }
-                                            },
-                                            "imageIcon": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": {
-                                                            "useIcon": "off",
-                                                            "src": "https://example.com/photo.jpg"
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "title": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": {
-                                                            "text": "Design"
-                                                        }
-                                                    }
-                                                }
-                                            },
-                                            "content": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": "<h4>What we do</h4><p>We design things people like.</p>"
                                                     }
                                                 }
                                             }

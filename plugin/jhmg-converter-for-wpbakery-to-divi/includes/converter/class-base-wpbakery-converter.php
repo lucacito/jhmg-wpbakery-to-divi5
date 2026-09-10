@@ -102,6 +102,47 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
         return $settings;
     }
 
+    /**
+     * A run of blocks that has to sit side by side, in the one shape Divi
+     * allows for it: a nested row holding a single flexed, wrapping column.
+     *
+     * Divi stacks a column's modules and has no inline mode for them
+     * (CLAUDE.md), so a row of inline buttons, a row of external gallery
+     * pictures and anything else of that kind all take this. The row keeps
+     * `ROW_RESET` and the nested bleed; the column loses its 15 px sides,
+     * because the run's own members carry their spacing.
+     *
+     * @param array<int,array<string,mixed>> $blocks
+     * @param array<string,mixed>            $row_attrs Design options for the row itself.
+     */
+    protected function nestedFlexRow( string $id, array $blocks, array $row_attrs = [] ): array {
+        $column = $this->block( $id . '-col', 'divi/column', $this->deepMergeSettings(
+            self::fullWidthColumnSettings(),
+            [ 'module' => [ 'decoration' => [
+                'spacing' => [ 'desktop' => [ 'value' => [ 'padding' => self::box( '0px', '0px', '0px', '0px' ) ] ] ],
+                'layout'  => [ 'desktop' => [ 'value' => [
+                    'display'   => 'flex',
+                    'flexWrap'  => 'wrap',
+                    'columnGap' => '0px',
+                    'rowGap'    => '0px',
+                ] ] ],
+            ] ] ]
+        ), $blocks );
+
+        return $this->block(
+            $id,
+            'divi/row',
+            $this->deepMergeSettings(
+                self::nestedRowSettings(),
+                $this->deepMergeSettings(
+                    $row_attrs,
+                    [ 'module' => [ 'advanced' => [ 'columnStructure' => [ 'desktop' => [ 'value' => '4_4' ] ] ] ] ]
+                )
+            ),
+            [ $column ]
+        );
+    }
+
     /** WPBakery contributes no section padding of its own; Divi's 56 px default has to go. */
     public static function sectionResetSettings(): array {
         $padding = GlobalSettingsResolver::sectionPadding();
@@ -368,9 +409,12 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
                 'integration',
                 $node_id,
                 sprintf(
-                    '%s="%s" narrows the query to those terms; there is no database to check them against when converting from an export, so the module was left unfiltered — set its categories in Divi',
+                    '%s="%s" narrows the query to those terms; %s, so the module was left unfiltered — set its categories in Divi',
                     $attribute,
-                    implode( ',', $terms )
+                    implode( ',', $terms ),
+                    $options['mode'] === 'direct'
+                        ? 'WordPress\'s term functions are not loaded here, so which taxonomy each id belongs to could not be checked'
+                        : 'there is no database to check them against when converting from an export'
                 )
             );
 

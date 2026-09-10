@@ -78,39 +78,56 @@ class BtnConverter extends BaseWPBakeryConverter {
      * once, rather than copied into three places.
      *
      * `align` is deliberately not read: an embedded button is placed by its
-     * host (`btn_position`), not by its own alignment.
+     * host (`btn_position`), not by its own alignment — so it is added to the
+     * consumed list explicitly rather than left for the host to trip over.
+     *
+     * What comes back as `consumed` is the sub-methods' own list, re-prefixed:
+     * a `btn_*` field this handler does not map has to reach the host's
+     * `logUnmappedSettings()` and be reported, exactly as it would on a
+     * standalone `vc_btn`. Sweeping every `<prefix>*` key into the list would
+     * hide it.
      *
      * @param array<string,string> $atts   The host element's attributes.
      * @param string               $prefix The prefix its button fields carry (`btn_`).
      * @return array{settings: array, consumed: string[]} `settings` is the `button` sub-tree;
-     *   `consumed` holds the prefixed keys, so the host reports nothing twice.
+     *   `consumed` holds the prefixed names of the fields this actually read.
      */
     public static function embeddedButton( ConverterEngine $engine, array $atts, string $prefix, string $node_id ): array {
-        $fields   = [];
-        $consumed = [];
+        $fields = [];
 
         foreach ( $atts as $key => $value ) {
             if ( is_string( $key ) && $prefix !== '' && str_starts_with( $key, $prefix ) ) {
                 $fields[ substr( $key, strlen( $prefix ) ) ] = $value;
-                $consumed[]                                 = $key;
             }
         }
 
         $handler = new self( $engine );
         $attrs   = [];
-        $ignored = [];
+        $read    = [ 'align' ];
 
-        $handler->text( $fields, $node_id, $attrs, $ignored );
-        $handler->size( $fields, $attrs, $ignored );
-        $handler->shape( $fields, $attrs, $ignored );
-        $handler->colours( $fields, $node_id, $attrs, $ignored );
-        $handler->icon( $fields, $node_id, $attrs, $ignored );
-        $handler->width( $fields, $attrs, $ignored );
-        $handler->interaction( $fields, $node_id, $ignored );
+        $handler->text( $fields, $node_id, $attrs, $read );
+        $handler->size( $fields, $attrs, $read );
+        $handler->shape( $fields, $attrs, $read );
+        $handler->colours( $fields, $node_id, $attrs, $read );
+        $handler->icon( $fields, $node_id, $attrs, $read );
+        $handler->width( $fields, $attrs, $read );
+        $handler->interaction( $fields, $node_id, $read );
+
+        // The icon-library fields WPBakery's form fills whether or not the icon
+        // is on: `logUnmappedSettings()` skips them on a standalone `vc_btn`
+        // through `isInertIconLibrary()`, which cannot see them under a prefix.
+        foreach ( array_keys( $fields ) as $field ) {
+            if ( preg_match( '/^i_icon_[a-z]+$/', (string) $field ) === 1 ) {
+                $read[] = (string) $field;
+            }
+        }
 
         return [
             'settings' => is_array( $attrs['button'] ?? null ) ? $attrs['button'] : [],
-            'consumed' => $consumed,
+            'consumed' => array_map(
+                static fn( string $field ): string => $prefix . $field,
+                array_values( array_unique( $read ) )
+            ),
         ];
     }
 

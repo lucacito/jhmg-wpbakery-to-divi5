@@ -45,7 +45,11 @@ class UltJustIconConverter extends BaseWPBakeryConverter {
 
         $custom = $this->att( $atts, 'icon_type', 'selector' ) === 'custom';
 
-        $style    = $this->mapStyle( $custom ? 'image' : 'icon', $this->withCss( $node, 'css_just_icon' ) );
+        // `ultimate_just_icon.php:498` wraps the glyph in `.ult-just-icon-wrapper`,
+        // and the add-on's stylesheets give that class no margin at all (only
+        // `expandable-section.css` touches it, and then only inside an
+        // expandable section), so the element carries none of its own.
+        $style    = $this->mapStyle( $custom ? 'image' : 'icon', $this->withCss( $node, 'css_just_icon' ), 'none' );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], [
             'css_just_icon', 'icon_type', 'icon', 'icon_img', 'img_width', 'icon_size', 'icon_color',

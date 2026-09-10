@@ -37,7 +37,10 @@ class UltContentBoxConverter extends BaseWPBakeryConverter {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_content_box_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
 
-        // A container is structure: no default module margin of its own.
+        // A container is structure, and `assets/css/content-box.css` gives
+        // `.ult-content-box-container` (`ultimate_content_box.php:184`) no
+        // margin at all: no default module margin either way (the `group` kind
+        // skips it).
         $style    = $this->mapStyle( 'group', $node );
         $attrs    = $style['divi_attrs'];
         $consumed = array_merge( $style['handled_keys'], self::PACKED, [

@@ -60,7 +60,6 @@ class ProgressBarConverter extends BaseWPBakeryConverter {
 
         $this->options( $atts, $id, $consumed );
 
-        $this->engine->logConverted( 'counters' );
         $this->logUnmappedSettings( $id, $atts, $consumed, (string) ( $node['tag'] ?? '' ) );
 
         if ( $bars === [] ) {
@@ -68,6 +67,8 @@ class ProgressBarConverter extends BaseWPBakeryConverter {
 
             return [];
         }
+
+        $this->engine->logConverted( 'counters' );
 
         $blocks = [ $this->block( $id, 'divi/counters', $attrs, $bars ) ];
 

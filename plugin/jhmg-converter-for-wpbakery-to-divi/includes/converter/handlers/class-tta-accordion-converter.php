@@ -88,7 +88,6 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
 
         $items = $this->items( $node );
 
-        $this->engine->logConverted( $this->countedAs() );
         $this->logUnmappedSettings( $id, $atts, array_merge( $consumed, [ 'title' ] ), (string) ( $node['tag'] ?? '' ) );
 
         if ( $items === [] ) {
@@ -96,6 +95,8 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
 
             return [];
         }
+
+        $this->engine->logConverted( $this->countedAs() );
 
         $blocks = [ $this->block( $id, $this->parentName(), $attrs, $items ) ];
 
@@ -254,6 +255,10 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
             'collapsible_all',
             'autoplay',
             'fill_content_area',
+            // `vc_tta_toggle`'s own name for the same switch
+            // (`config/tta/shortcode-vc-tta-toggle.php`); the normaliser only
+            // rewrites it when `fill_content_area` is absent, so both are read.
+            'no_fill_content_area',
             'section_title_tag',
             'active_tab',
             'collapsible',
@@ -263,6 +268,13 @@ class TtaAccordionConverter extends BaseWPBakeryConverter {
 
         $atts['active_section']  = $this->att( $atts, 'active_section', $this->att( $atts, 'active_tab' ) );
         $atts['collapsible_all'] = $this->att( $atts, 'collapsible_all', $this->att( $atts, 'collapsible' ) );
+
+        // `convert_tta_no_fill_to_fill_content_area()` inverts one into the
+        // other, but only when `fill_content_area` is absent; a page carrying
+        // both keeps both, so the legacy name is read here too.
+        if ( ! array_key_exists( 'fill_content_area', $atts ) && array_key_exists( 'no_fill_content_area', $atts ) ) {
+            $atts['fill_content_area'] = $this->on( $atts, 'no_fill_content_area' ) ? '' : 'true';
+        }
 
         if ( $this->on( $atts, 'disable_keyboard' ) ) {
             $this->engine->logNotCarriedOver(

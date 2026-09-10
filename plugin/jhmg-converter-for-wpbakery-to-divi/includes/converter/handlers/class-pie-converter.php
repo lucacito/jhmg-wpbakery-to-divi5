@@ -29,6 +29,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class PieConverter extends BaseWPBakeryConverter {
 
+    /** `include/templates/shortcodes/vc_pie.php`: `else { $color = '#ebebeb'; }`. */
+    const DEFAULT_COLOR = '#ebebeb';
+
     public function convert( array $node ): array {
         $id   = (string) ( $node['id'] ?? uniqid( 'wbdc_pie_' ) );
         $atts = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
@@ -48,7 +51,10 @@ class PieConverter extends BaseWPBakeryConverter {
         $this->units( $atts, $id, $attrs );
 
         // `if ( $custom_color ) { $color = $custom_color; } else { $color = '#ebebeb'; }`
-        $color = $this->color( array_merge( [ 'custom_color' => '#ebebeb' ], $atts ), 'custom_color', $id );
+        // — an *empty* `custom_color` still paints the default, so the fallback
+        // replaces a blank value rather than only a missing key.
+        $color = $this->color( $atts, 'custom_color', $id )
+            ?? $this->color( [ 'custom_color' => self::DEFAULT_COLOR ], 'custom_color', $id );
         if ( $color !== null ) {
             StyleMapper::write( $attrs, 'circle.advanced.color.desktop.value', $color );
         }

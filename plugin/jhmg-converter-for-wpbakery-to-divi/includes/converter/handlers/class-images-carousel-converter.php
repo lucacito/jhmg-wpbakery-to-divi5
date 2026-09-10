@@ -43,7 +43,6 @@ class ImagesCarouselConverter extends BaseWPBakeryConverter {
         $this->controls( $atts, $attrs, $consumed );
         $this->reportSwiperOnly( $atts, $id, $consumed );
 
-        $this->engine->logConverted( 'slider' );
         $this->logUnmappedSettings( $id, $atts, $consumed, (string) ( $node['tag'] ?? '' ) );
 
         if ( $slides === [] ) {
@@ -51,6 +50,8 @@ class ImagesCarouselConverter extends BaseWPBakeryConverter {
 
             return [];
         }
+
+        $this->engine->logConverted( 'slider' );
 
         $blocks = [ $this->block( $id, 'divi/slider', $attrs, $slides ) ];
 

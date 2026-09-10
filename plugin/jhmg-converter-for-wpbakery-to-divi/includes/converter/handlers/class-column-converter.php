@@ -351,24 +351,6 @@ class ColumnConverter extends BaseWPBakeryConverter {
 
     /** @param array<int,array<string,mixed>> $blocks */
     private function inlineRow( string $id, array $blocks ): array {
-        $column = $this->block( $id . '-col', 'divi/column', $this->deepMergeSettings(
-            self::fullWidthColumnSettings(),
-            [ 'module' => [ 'decoration' => [
-                'spacing' => [ 'desktop' => [ 'value' => [ 'padding' => self::box( '0px', '0px', '0px', '0px' ) ] ] ],
-                'layout'  => [ 'desktop' => [ 'value' => [
-                    'display'   => 'flex',
-                    'flexWrap'  => 'wrap',
-                    'columnGap' => '0px',
-                    'rowGap'    => '0px',
-                ] ] ],
-            ] ] ]
-        ), $blocks );
-
-        return $this->block(
-            $id,
-            'divi/row',
-            $this->deepMergeSettings( self::nestedRowSettings(), [ 'module' => [ 'advanced' => [ 'columnStructure' => [ 'desktop' => [ 'value' => '4_4' ] ] ] ] ] ),
-            [ $column ]
-        );
+        return $this->nestedFlexRow( $id, $blocks );
     }
 }
