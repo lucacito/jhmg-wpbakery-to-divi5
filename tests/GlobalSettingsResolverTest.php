@@ -37,6 +37,7 @@ final class GlobalSettingsResolverTest extends TestCase {
                     'button'    => '22px',
                     'message'   => '21.74px',
                     'toggle'    => '21.74px',
+                    'tta'       => '21.74px',
                     'inner_row' => '0px',
                 ],
             ],
@@ -61,6 +62,8 @@ final class GlobalSettingsResolverTest extends TestCase {
         $this->assertSame( '22px', GlobalSettingsResolver::moduleMarginBottom( 'button' ) );
         $this->assertSame( '21.74px', GlobalSettingsResolver::moduleMarginBottom( 'message' ) );
         $this->assertSame( '21.74px', GlobalSettingsResolver::moduleMarginBottom( 'toggle' ) );
+        // js_composer_tta.min.css: .vc_tta-container{margin-bottom:21.73913043px}
+        $this->assertSame( '21.74px', GlobalSettingsResolver::moduleMarginBottom( 'tta' ) );
         $this->assertSame( '0px', GlobalSettingsResolver::moduleMarginBottom( 'inner_row' ) );
     }
 

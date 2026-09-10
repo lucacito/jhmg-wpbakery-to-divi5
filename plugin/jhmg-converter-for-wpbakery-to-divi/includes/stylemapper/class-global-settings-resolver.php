@@ -70,6 +70,11 @@ final class GlobalSettingsResolver {
             'message'   => '21.74px',
             // `.vc_toggle_content`; the last toggle of a run takes 'content'.
             'toggle'    => '21.74px',
+            // `.vc_tta-container{margin-bottom:21.73913043px}` — the tta family
+            // (accordion, tabs, tour, pageable, toggle) is styled by its own
+            // stylesheet, `assets/css/js_composer_tta.min.css`, and carries no
+            // `.wpb_content_element` class at all.
+            'tta'       => '21.74px',
             // `vc_row_inner` carries no default margin (measured 0px).
             'inner_row' => '0px',
         ],
@@ -131,7 +136,7 @@ final class GlobalSettingsResolver {
      * WPBakery's default bottom margin for one kind of element, as read from
      * `js_composer.min.css`. An unknown kind falls back to `content` (35 px).
      *
-     * @param string $element_kind content | button | message | toggle | inner_row
+     * @param string $element_kind content | button | message | toggle | tta | inner_row
      */
     public static function moduleMarginBottom( string $element_kind = 'content' ): string {
         $margins = self::layoutDefaults()['module_margins'] ?? [];

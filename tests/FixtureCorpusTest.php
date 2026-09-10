@@ -2,13 +2,16 @@
 
 namespace WPBakeryDivi5Converter\Tests;
 
+use Divi5Validator\Validator;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use WPBakeryDivi5Converter\Converter\ConverterEngine;
+use WPBakeryDivi5Converter\Exporters\DiviBlockSerializer;
 use WPBakeryDivi5Converter\Parsers\NodeTree;
 use WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser;
 
 /**
- * Every fixture in both corpora, through the whole parsing layer.
+ * Every fixture in both corpora, through the parser and then the converter.
  *
  * `fixtures/wpbakery-templates/` is WPBakery's own default template list
  * (config/templates.php, written by scripts/wpb-templates-to-fixtures.php) and
@@ -18,11 +21,15 @@ use WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser;
  * the parser copes with real content rather than with the examples its unit
  * tests were built around.
  *
- * What is asserted is structural, not per-element: a page has to come out as
- * sections, and WPBakery's own templates — which its editor wrote — have to
- * come out with no stray text at all. Warnings are counted, not asserted:
- * a layout that needs repairing is not a failure, it is what the conversion
- * report is for; the counts only surface when something else fails.
+ * Two things are asserted. **Parsing** is structural, not per-element: a page
+ * has to come out as sections, and WPBakery's own templates — which its editor
+ * wrote — have to come out with no stray text at all. **Conversion** has to
+ * produce a valid Divi 5 document with no skipped settings, which is the
+ * integration gate every handler batch keeps green.
+ *
+ * Warnings are counted, not asserted: a layout that needs repairing is not a
+ * failure, it is what the conversion report is for; the counts only surface
+ * when something else fails.
  */
 final class FixtureCorpusTest extends TestCase {
 
@@ -81,6 +88,52 @@ final class FixtureCorpusTest extends TestCase {
                 'a root that is not a section; warnings: ' . count( $tree['warnings'] )
             );
         }
+    }
+
+    /**
+     * The whole corpus through the converter, not just the parser: both
+     * corpora are documents nobody here wrote, so they are the integration
+     * gate every handler batch has to keep green — a valid Divi 5 document out
+     * the other end, and no setting reported as skipped.
+     *
+     * A skipped setting is not a crash, it is an attribute no handler claimed;
+     * on 110 real documents that is exactly the signal that a handler has a
+     * gap, so it is asserted at zero rather than counted.
+     */
+    #[DataProvider( 'templateProvider' )]
+    public function test_a_default_template_converts_clean( string $file ): void {
+        $this->assertConvertsClean( $file );
+    }
+
+    #[DataProvider( 'layoutProvider' )]
+    public function test_a_layout_converts_clean( string $file ): void {
+        $this->assertConvertsClean( $file );
+    }
+
+    private function assertConvertsClean( string $file ): void {
+        wbdc_test_reset_hooks();
+
+        $result = ( new ConverterEngine() )->convert(
+            [ 'content' => (string) file_get_contents( $file ) ],
+            [ 'mode' => 'import' ]
+        );
+
+        $this->assertSame(
+            [],
+            $result['report']['skipped_settings'],
+            basename( $file ) . ': an attribute no handler claimed'
+        );
+
+        $content = ( new DiviBlockSerializer() )->serialize( [ 'divi' => $result['divi'] ] );
+
+        // Headings keep the author's level (task-8-fix-round-1.md, R1), so a
+        // converted page may legitimately carry more than one <h1>.
+        $validation = ( new Validator() )->validateContent( $content, [ Validator::E_MULTIPLE_H1 ] );
+
+        $this->assertTrue(
+            $validation->isValid(),
+            basename( $file ) . " is not a valid Divi 5 document:\n" . json_encode( $validation->toArray(), JSON_PRETTY_PRINT )
+        );
     }
 
     /** @return array{roots: array, warnings: string[]} */

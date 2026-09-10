@@ -217,6 +217,19 @@ class ConverterRegistry {
             'vc_gutenberg'      => [ Handlers\GutenbergConverter::class, true ],
             // WPBakery resolves its meta token only inside a grid item.
             'vc_custom_field'   => [ Handlers\CustomFieldConverter::class, true ],
+
+            // Composites. Their panels hold blocks in WPBakery and HTML in
+            // Divi, so `ContentFlattener` renders the converted children back
+            // to HTML (spec §6).
+            'vc_tta_accordion'  => [ Handlers\TtaAccordionConverter::class, false ],
+            'vc_tta_tabs'       => [ Handlers\TtaTabsConverter::class, false ],
+            // A tour stacks its controls down one side and a pageable
+            // container replaces them with dots; Divi draws one horizontal
+            // tab strip either way.
+            'vc_tta_tour'       => [ Handlers\TtaTabsConverter::class, true ],
+            'vc_tta_pageable'   => [ Handlers\TtaTabsConverter::class, true ],
+            // A two-state switch has no Divi module at all.
+            'vc_tta_toggle'     => [ Handlers\TtaToggleConverter::class, true ],
         ];
 
         foreach ( $elements as $tag => [ $class, $approximate ] ) {
