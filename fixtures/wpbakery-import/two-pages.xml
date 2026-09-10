@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Three WPBakery items of three post types: the free plugin converts the
+     first and says what it left, and the `vc4_templates` item is the one the
+     Pro add-on turns into a Divi Library layout. -->
+<rss version="2.0"
+	xmlns:excerpt="http://wordpress.org/export/1.2/excerpt/"
+	xmlns:content="http://purl.org/rss/1.0/modules/content/"
+	xmlns:dc="http://purl.org/dc/elements/1.1/"
+	xmlns:wp="http://wordpress.org/export/1.2/"
+>
+<channel>
+	<title>Import Fixture — three items</title>
+	<link>https://source.example</link>
+	<wp:wxr_version>1.2</wp:wxr_version>
+
+	<item>
+		<title><![CDATA[Home]]></title>
+		<content:encoded><![CDATA[[vc_row][vc_column][vc_custom_heading text="Welcome home" font_container="tag:h1|text_align:center"][/vc_column][/vc_row]]]></content:encoded>
+		<wp:post_id>2</wp:post_id>
+		<wp:post_name><![CDATA[home]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_type><![CDATA[page]]></wp:post_type>
+		<wp:postmeta>
+			<wp:meta_key><![CDATA[_wpb_vc_js_status]]></wp:meta_key>
+			<wp:meta_value><![CDATA[true]]></wp:meta_value>
+		</wp:postmeta>
+	</item>
+
+	<item>
+		<title><![CDATA[Saved Section]]></title>
+		<content:encoded><![CDATA[[vc_row][vc_column][vc_column_text]A template somebody saved in the WPBakery template library.[/vc_column_text][/vc_column][/vc_row]]]></content:encoded>
+		<wp:post_id>3</wp:post_id>
+		<wp:post_name><![CDATA[saved-section]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_type><![CDATA[vc4_templates]]></wp:post_type>
+	</item>
+
+	<item>
+		<title><![CDATA[A builder post]]></title>
+		<content:encoded><![CDATA[[vc_row][vc_column][vc_column_text]A blog post built with the builder.[/vc_column_text][/vc_column][/vc_row]]]></content:encoded>
+		<wp:post_id>4</wp:post_id>
+		<wp:post_name><![CDATA[a-builder-post]]></wp:post_name>
+		<wp:status><![CDATA[publish]]></wp:status>
+		<wp:post_type><![CDATA[post]]></wp:post_type>
+	</item>
+</channel>
+</rss>

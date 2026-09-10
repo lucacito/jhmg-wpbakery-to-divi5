@@ -23,24 +23,27 @@
  *   fixtures/wpbakery/<name>.txt    `[vc_row][vc_column]…[/vc_column][/vc_row]`
  *   fixtures/wpbakery/<name>.json   { mode: "import", source: "<file>#<n>", attachments: {…} }
  *
- * **The attachment map.** Task 11's WXR reader does not exist yet, and a
- * fixture cut from an export has no media library to ask, so the map the
- * conversion needs is built here: every attachment id the cut element
- * references is looked up in the export's own `<item>` list
- * (`wp:post_type=attachment`) and written as `id => { url }`. Which attributes
- * hold an id is not guessed — `ATTACHMENT_ATTRIBUTES` is every `attach_image` /
- * `attach_images` param name in Ronneby Core 1.5.74
- * (`inc/vc_custom/dfd_vc_addons/modules/*.php`), because an attribute like
- * `image_width` is also numeric and is not an id. An id the export does not
- * carry is left out of the map and the handler reports it as unresolved media,
- * which is the true answer.
+ * **The attachment map.** A fixture cut from an export has no media library to
+ * ask, so the map the conversion needs is built here, out of the export's own
+ * `attachment` items — `WxrReader::attachments()`, the same map the import
+ * parser hands a real conversion. Which attributes hold an id is not guessed:
+ * `ATTACHMENT_ATTRIBUTES` is every `attach_image` / `attach_images` param name
+ * in Ronneby Core 1.5.74 (`inc/vc_custom/dfd_vc_addons/modules/*.php`), because
+ * an attribute like `image_width` is also numeric and is not an id. An id the
+ * export does not carry is left out of the map and the handler reports it as
+ * unresolved media, which is the true answer. The sidecar keeps `id => { url }`:
+ * a fixture cut from one element needs the URL, and a size map it never asks
+ * for would only be noise in the file a reviewer reads.
  *
- * Exports are 10-40 MB, so the content is read with a streaming regex rather
- * than a DOM parse; `<content:encoded>` is CDATA, so the shortcode inside it is
- * already literal text.
+ * The export is read with `WxrReader` — the plugin's own, and the only WXR
+ * parser in the repository (task-11-amendments §6), so a fixture is cut out of
+ * exactly the document a conversion would read.
  */
 
+require __DIR__ . '/../tests/bootstrap.php';
 require __DIR__ . '/lib/corpus-shortcodes.php';
+
+use WPBakeryDivi5Converter\Parsers\WxrReader;
 
 $root = dirname( __DIR__ );
 
@@ -108,9 +111,16 @@ if ( ! is_file( $path ) ) {
     exit( 2 );
 }
 
-$xml = (string) file_get_contents( $path );
+$items = ( new WxrReader() )->read( (string) file_get_contents( $path ) );
 
-$matches = wbdc_find_shortcodes( $xml, $tag );
+// Every occurrence in every item's content, in document order — a shortcode
+// in a postmeta or an excerpt is not a page element and is not cut.
+$matches = [];
+foreach ( $items as $item ) {
+    foreach ( wbdc_find_shortcodes( (string) $item['content'], $tag ) as $match ) {
+        $matches[] = $match + [ 'item' => (string) $item['title'] ];
+    }
+}
 
 if ( $matches === [] ) {
     fwrite( STDERR, sprintf( "[%s] does not appear in %s\n", $tag, basename( $path ) ) );
@@ -119,7 +129,13 @@ if ( $matches === [] ) {
 
 if ( $options['list'] ) {
     foreach ( $matches as $index => $match ) {
-        printf( "%3d  offset %-10d %s\n", $index + 1, $match['offset'], substr( preg_replace( '/\s+/', ' ', $match['text'] ), 0, 150 ) );
+        printf(
+            "%3d  %-28s offset %-8d %s\n",
+            $index + 1,
+            substr( $match['item'], 0, 28 ),
+            $match['offset'],
+            substr( preg_replace( '/\s+/', ' ', $match['text'] ), 0, 120 )
+        );
     }
     exit( 0 );
 }
@@ -137,7 +153,7 @@ $fixture = '[vc_row][vc_column]' . $element . '[/vc_column][/vc_row]';
 $sidecar = [
     'meta'        => new stdClass(),
     'mode'        => 'import',
-    'attachments' => attachments_for( $element, $xml ),
+    'attachments' => attachments_for( $element, WxrReader::attachments( $items ) ),
     'source'      => basename( $path ) . '#' . $occurrence,
 ];
 
@@ -160,9 +176,10 @@ printf(
 /**
  * The `id => ['url' => …]` map for every attachment the cut element names.
  *
+ * @param array<int, array{url: string, sizes: array<string,string>}> $library The export's whole media library.
  * @return array<string, array{url: string}>
  */
-function attachments_for( string $element, string $document ): array {
+function attachments_for( string $element, array $library ): array {
     $ids = [];
 
     foreach ( ATTACHMENT_ATTRIBUTES as $attribute ) {
@@ -183,12 +200,11 @@ function attachments_for( string $element, string $document ): array {
         return [];
     }
 
-    $urls = attachment_urls( $document, array_keys( $ids ) );
-    $map  = [];
+    $map = [];
 
     foreach ( array_keys( $ids ) as $id ) {
-        if ( isset( $urls[ $id ] ) ) {
-            $map[ $id ] = [ 'url' => $urls[ $id ] ];
+        if ( isset( $library[ (int) $id ]['url'] ) ) {
+            $map[ $id ] = [ 'url' => $library[ (int) $id ]['url'] ];
         } else {
             fwrite( STDERR, "  attachment {$id} is not in this export; the handler will report it as unresolved media\n" );
         }
@@ -197,44 +213,4 @@ function attachments_for( string $element, string $document ): array {
     ksort( $map, SORT_NUMERIC );
 
     return $map;
-}
-
-/**
- * `<wp:post_id>` ⇒ `<wp:attachment_url>` for the attachment items of a WXR
- * document, restricted to the ids asked for.
- *
- * @param string[] $ids
- * @return array<string,string>
- */
-function attachment_urls( string $document, array $ids ): array {
-    $wanted = array_flip( $ids );
-    $found  = [];
-    $offset = 0;
-
-    while ( ( $start = strpos( $document, '<item>', $offset ) ) !== false ) {
-        $end = strpos( $document, '</item>', $start );
-        if ( $end === false ) {
-            break;
-        }
-
-        $item   = substr( $document, $start, $end - $start );
-        $offset = $end + 7;
-
-        if ( ! str_contains( $item, '<wp:post_type><![CDATA[attachment]]></wp:post_type>' ) ) {
-            continue;
-        }
-        if ( preg_match( '#<wp:post_id>(\d+)</wp:post_id>#', $item, $m ) !== 1 ) {
-            continue;
-        }
-        if ( ! isset( $wanted[ $m[1] ] ) ) {
-            continue;
-        }
-        if ( preg_match( '#<wp:attachment_url>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?</wp:attachment_url>#s', $item, $u ) !== 1 ) {
-            continue;
-        }
-
-        $found[ $m[1] ] = trim( $u[1] );
-    }
-
-    return $found;
 }

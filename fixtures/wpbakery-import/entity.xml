@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE rss [
+  <!ENTITY passwd SYSTEM "file:///etc/passwd">
+]>
+<rss version="2.0" xmlns:wp="http://wordpress.org/export/1.2/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+<channel>
+	<title>Not an export</title>
+	<item>
+		<title>&passwd;</title>
+		<content:encoded><![CDATA[[vc_row][vc_column][vc_column_text]&passwd;[/vc_column_text][/vc_column][/vc_row]]]></content:encoded>
+		<wp:post_type><![CDATA[page]]></wp:post_type>
+	</item>
+</channel>
+</rss>

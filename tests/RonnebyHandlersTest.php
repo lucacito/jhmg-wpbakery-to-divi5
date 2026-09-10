@@ -6,6 +6,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use WPBakeryDivi5Converter\Converter\ConverterEngine;
 use WPBakeryDivi5Converter\Helpers\RonnebyParams;
+use WPBakeryDivi5Converter\Parsers\WxrReader;
 
 /**
  * The DFD Ronneby element handlers (Task 9b), against the theme's own demo
@@ -884,9 +885,23 @@ final class RonnebyHandlersTest extends TestCase {
         $this->assertStringContainsString( $needle, $text, "{$name} did not report \"{$needle}\"." );
     }
 
+    /**
+     * One export's page content, read the way a conversion reads it.
+     *
+     * `WxrReader` is the repository's one WXR parser (task-11-amendments §6),
+     * so the elements this gate converts are the elements an import would hand
+     * the converter — not every bracketed run in the file, which is what
+     * scanning the raw XML gives: `03_elements.xml` holds an attachment titled
+     * "announcement", and `<title><![CDATA[announcement]]></title>` reads as a
+     * shortcode to any scanner that does not know what an item is.
+     */
     private static function export( string $file ): string {
         if ( ! isset( self::$exports[ $file ] ) ) {
-            self::$exports[ $file ] = (string) file_get_contents( __DIR__ . '/../wpbakery templates/ronneby/' . $file );
+            $items = ( new WxrReader() )->read(
+                (string) file_get_contents( __DIR__ . '/../wpbakery templates/ronneby/' . $file )
+            );
+
+            self::$exports[ $file ] = implode( "\n", array_column( $items, 'content' ) );
         }
 
         return self::$exports[ $file ];

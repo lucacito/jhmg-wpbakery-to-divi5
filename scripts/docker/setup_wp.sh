@@ -66,11 +66,18 @@ if [ -z "$PAGE_ID" ]; then
   PAGE_ID=$(run "wp post create --post_type=page --post_status=publish --post_name=wpbakery-source --post_title='Box Model (WPBakery)' --porcelain --allow-root")
 fi
 run "FIXTURE=wpbakery/box-model PAGE_ID=$PAGE_ID wp eval-file /tmp/set-wpbakery-content.php --allow-root"
-NEW_ID=$(run "SOURCE_PAGE_ID=$PAGE_ID wp eval-file /tmp/convert-to-new-page.php --allow-root" || echo "(converter not built yet)")
+# The converter is built, so a conversion that fails here is a real failure:
+# the helper prints why on stderr and this stops rather than seeding a site
+# whose "converted" page does not exist.
+if ! NEW_ID=$(run "SOURCE_PAGE_ID=$PAGE_ID wp eval-file /tmp/convert-to-new-page.php --allow-root"); then
+  echo "Converting the seeded fixture failed (message above)." >&2
+  exit 1
+fi
 
 echo
 echo "Setup complete."
-echo "  Site:        $WP_URL  (admin: $ADMIN_USER / $ADMIN_PASS)"
-echo "  Converter:   $WP_URL/wp-admin/tools.php?page=wbdc-converter"
-echo "  Source page: $WP_URL/?page_id=$PAGE_ID   →   converted: $WP_URL/?page_id=$NEW_ID"
+echo "  Site:            $WP_URL  (admin: $ADMIN_USER / $ADMIN_PASS)"
+echo "  Converter:       $WP_URL/wp-admin/tools.php?page=wbdc-converter"
+echo "  Source page:     $WP_URL/?page_id=$PAGE_ID"
+echo "  Converted page:  $WP_URL/?page_id=$NEW_ID"
 echo "  WordPress $(run 'wp core version --allow-root') · Divi $(run "wp theme get Divi --field=version --allow-root") · WPBakery $(run "wp plugin get js_composer --field=version --allow-root")"

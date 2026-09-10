@@ -1,0 +1,1 @@
+[vc_row][vc_column][vc_custom_heading text="Pasted from the editor" font_container="tag:h2|text_align:center"][vc_column_text]A page somebody copied out of the WPBakery text editor and saved as a file.[/vc_column_text][/vc_column][/vc_row]

@@ -114,12 +114,13 @@ if ( is_dir( $root . '/wpbakery templates' ) ) {
 /**
  * The WPBakery documents in one corpus file.
  *
- * A `.txt` fixture is one document. A WXR export is a whole site: its
- * `<content:encoded>` blocks are the pages, and most of them were not built
- * with WPBakery at all — a blog post, a product description, a widget's
- * serialized options. Counting tags over the raw XML would count `[caption]`,
- * `[embed]` and every bracket in a stylesheet as elements, so only the items
- * `WPBakeryDocumentParser::isWPBakeryContent()` recognises are read.
+ * A `.txt` fixture is one document. A WXR export is a whole site: its items'
+ * `content:encoded` blocks are the pages, and most of them were not built with
+ * WPBakery at all — a blog post, a product description, a widget's serialized
+ * options. Counting tags over the raw XML would count `[caption]`, `[embed]`
+ * and every bracket in a stylesheet as elements, so the export is read with
+ * `WxrReader` (the repository's one WXR parser) and only the items
+ * `WPBakeryDocumentParser::isWPBakeryContent()` recognises are counted.
  *
  * @return string[]
  */
@@ -130,12 +131,10 @@ $documents_in = static function ( string $file ): array {
         return [ $raw ];
     }
 
-    if ( preg_match_all( '#<content:encoded><!\[CDATA\[(.*?)\]\]></content:encoded>#s', $raw, $matches ) === 0 ) {
-        return [];
-    }
+    $items = ( new \WPBakeryDivi5Converter\Parsers\WxrReader() )->read( $raw );
 
     return array_values( array_filter(
-        $matches[1],
+        array_column( $items, 'content' ),
         static fn( string $content ): bool => \WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser::isWPBakeryContent( $content )
     ) );
 };

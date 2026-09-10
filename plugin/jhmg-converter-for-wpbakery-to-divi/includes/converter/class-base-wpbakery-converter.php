@@ -980,7 +980,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
      * field WPBakery does not declare for this element at all, which somebody
      * else added whoever they were (`isUndeclaredParam()`).
      *
-     * A sixth thing is not a skipped setting either but must not be silent: an
+     * A seventh thing is not a skipped setting either but must not be silent: an
      * attribute with a **numeric** key (`reportPositionalAttributes()`). Those
      * are the values `shortcode_parse_atts()` read positionally rather than as
      * `key="value"` pairs. No WPBakery element takes a positional attribute, so
@@ -1088,7 +1088,7 @@ abstract class BaseWPBakeryConverter implements ConverterInterface {
                 implode( ', ', $keys ),
                 count( $keys ) === 1 ? 'a parameter' : 'parameters',
                 $family === null
-                    ? '. It is drawn by whatever added it, and has no Divi equivalent'
+                    ? sprintf( '. %s drawn by whatever added it, and %s no Divi equivalent', count( $keys ) === 1 ? 'It is' : 'They are', count( $keys ) === 1 ? 'has' : 'have' )
                     : sprintf( '. The only theme or add-on family on this page is %s', $family )
             )
         );

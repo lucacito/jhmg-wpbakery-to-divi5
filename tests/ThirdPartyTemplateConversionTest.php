@@ -7,6 +7,7 @@ use PHPUnit\Framework\TestCase;
 use WPBakeryDivi5Converter\Converter\ConverterEngine;
 use WPBakeryDivi5Converter\Helpers\ThemeShortcodes;
 use WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser;
+use WPBakeryDivi5Converter\Parsers\WPBakeryImportParser;
 
 /**
  * Real theme exports: whole sites, as their authors shipped them.
@@ -31,20 +32,14 @@ use WPBakeryDivi5Converter\Parsers\WPBakeryDocumentParser;
  *
  * ### Why this can be incomplete
  *
- * Two ways, and both are honest rather than a way round a failure.
- * `WPBakeryImportParser` — the WXR reader — arrives in Task 11; until it
- * exists there is nothing here that can turn an export into items, and the
- * test says so and stops. And 93 of the 96 exports are gitignored (43 MB of
- * commercial demo content), so a clean checkout runs this over the three
- * committed samples; with the theme archive in `references/` it runs over all
- * 96.
+ * One way, and it is honest rather than a way round a failure: 93 of the 96
+ * exports are gitignored (43 MB of commercial demo content), so a clean
+ * checkout runs this over the three committed samples; with the theme archive
+ * in `references/` it runs over all 96.
  */
 final class ThirdPartyTemplateConversionTest extends TestCase {
 
     use CorpusAssertions;
-
-    /** Task 11's WXR-backed source. */
-    private const PARSER = 'WPBakeryDivi5Converter\Parsers\WPBakeryImportParser';
 
     /**
      * The one case an empty corpus provides.
@@ -54,7 +49,7 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
      * the test body runs — so a guard inside the body cannot save a checkout
      * with no exports. The empty case therefore has to *be* a case: one whose
      * file is the empty string, which `requireCorpus()` recognises and marks
-     * incomplete on, exactly as the missing-parser guard does.
+     * incomplete on.
      */
     private const NO_CORPUS = '(no exports)';
 
@@ -100,23 +95,27 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
     #[DataProvider( 'exportProvider' )]
     public function test_a_real_theme_export_converts_to_valid_divi_5( string $file ): void {
         $this->requireCorpus( $file );
-        $this->requireParser();
 
-        $items    = self::PARSER::parse( $file );
-        $wpbakery = array_values( array_filter(
-            $items,
-            static fn( array $item ): bool => WPBakeryDocumentParser::isWPBakeryContent( (string) ( $item['content'] ?? '' ) )
-        ) );
+        // The parser's contract is that every item it returns holds a WPBakery
+        // layout, so there is nothing to filter here — and an export that
+        // yields none is a failure of this reader, not a property of the file:
+        // all 96 of these are WPBakery sites.
+        $items = ( new WPBakeryImportParser() )->parse( $file );
 
         // `summary()` walks every item of a 40 MB export, so it is built only
         // when it is about to be printed — never as an eagerly evaluated
         // assertion message, once per assertion, once per item.
         $this->assertTrue(
-            $wpbakery !== [],
-            $wpbakery !== [] ? '' : self::summary( $file, $items ) . ': no item in this export holds a WPBakery layout'
+            $items !== [],
+            $items !== [] ? '' : basename( $file ) . ': no item in this export holds a WPBakery layout'
         );
 
-        foreach ( $wpbakery as $item ) {
+        foreach ( $items as $item ) {
+            $this->assertTrue(
+                WPBakeryDocumentParser::isWPBakeryContent( (string) ( $item['content'] ?? '' ) ),
+                sprintf( '%s: the parser returned "%s", which is not a WPBakery layout', basename( $file ), (string) ( $item['title'] ?? '' ) )
+            );
+
             $where = sprintf( '%s / %s', basename( $file ), (string) ( $item['title'] ?? 'untitled' ) );
 
             $result = $this->assertCorpusDocumentConverts(
@@ -204,7 +203,7 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
      * What the export held, for a failure message only: the reader needs to
      * know whether one page broke or the whole file was read wrong.
      *
-     * @param array<int,array<string,mixed>> $items
+     * @param array<int,array<string,mixed>> $items The WPBakery items the parser returned.
      */
     private static function summary( string $file, array $items ): string {
         $elements = 0;
@@ -223,7 +222,7 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
         ksort( $families );
 
         return sprintf(
-            '%s: %d items, %d elements, families %s',
+            '%s: %d WPBakery items, %d elements, families %s',
             basename( $file ),
             count( $items ),
             $elements,
@@ -237,12 +236,6 @@ final class ThirdPartyTemplateConversionTest extends TestCase {
             $this->markTestIncomplete(
                 'No exports in "wpbakery templates/". Three are committed; run scripts/extract-ronneby-corpus.sh for the other 93.'
             );
-        }
-    }
-
-    private function requireParser(): void {
-        if ( ! class_exists( self::PARSER ) ) {
-            $this->markTestIncomplete( 'WPBakeryImportParser arrives in Task 11; there is nothing yet that reads a WXR export.' );
         }
     }
 
