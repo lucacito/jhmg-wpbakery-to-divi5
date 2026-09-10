@@ -44,6 +44,7 @@ if ( ! function_exists( 'wbdc_test_reset_hooks' ) ) {
         $GLOBALS['__test_rendered_shortcodes'] = [];
         $GLOBALS['__test_rendered_widgets'] = [];
         $GLOBALS['__test_terms'] = [];
+        $GLOBALS['__test_object_terms'] = [];
         $GLOBALS['__test_is_rtl'] = false;
         if ( function_exists( 'wbdc_test_reset_divi' ) ) {
             wbdc_test_reset_divi();
@@ -229,8 +230,35 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
         $p = get_post( (int) $post );
         return $p ? $p->post_type : null;
     }
-    function wp_set_post_terms( $post_id, $terms, $taxonomy ) { return true; }
-    function wp_set_object_terms( $post_id, $terms, $taxonomy, $append = false ) { return []; }
+    // Object terms are recorded, not discarded: the Divi Library exporter's
+    // layout_type/scope terms are what make a layout a layout, so a test has to
+    // be able to read them back. $GLOBALS['__test_object_terms'][ post_id ][ taxonomy ] => slugs.
+    $GLOBALS['__test_object_terms'] = [];
+
+    function wp_set_object_terms( $post_id, $terms, $taxonomy, $append = false ) {
+        $terms = is_array( $terms )
+            ? array_map( 'strval', $terms )
+            : array_filter( array_map( 'trim', explode( ',', (string) $terms ) ), static fn( $t ): bool => $t !== '' );
+
+        $existing = $append ? ( $GLOBALS['__test_object_terms'][ (int) $post_id ][ $taxonomy ] ?? [] ) : [];
+        $merged   = array_values( array_unique( array_merge( $existing, array_values( $terms ) ) ) );
+
+        $GLOBALS['__test_object_terms'][ (int) $post_id ][ $taxonomy ] = $merged;
+
+        return $merged;
+    }
+    function wp_set_post_terms( $post_id, $terms, $taxonomy ) { return wp_set_object_terms( $post_id, $terms, $taxonomy ); }
+    function wp_get_object_terms( $post_ids, $taxonomies, $args = [] ) {
+        $out = [];
+        foreach ( (array) $post_ids as $post_id ) {
+            foreach ( (array) $taxonomies as $taxonomy ) {
+                foreach ( $GLOBALS['__test_object_terms'][ (int) $post_id ][ $taxonomy ] ?? [] as $slug ) {
+                    $out[] = (object) [ 'slug' => $slug, 'name' => $slug, 'taxonomy' => $taxonomy ];
+                }
+            }
+        }
+        return $out;
+    }
 }
 if ( ! function_exists( 'wp_trash_post' ) ) {
     $GLOBALS['__test_trashed']     = [];
