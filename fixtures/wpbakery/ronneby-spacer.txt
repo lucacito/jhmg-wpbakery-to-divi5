@@ -1,0 +1,1 @@
+[vc_row][vc_column][dfd_spacer screen_wide_resolution="1280" screen_wide_spacer_size="120" screen_normal_resolution="1024" screen_tablet_resolution="800" screen_mobile_resolution="480" screen_normal_spacer_size="100" screen_tablet_spacer_size="100" screen_mobile_spacer_size="100"][/vc_column][/vc_row]

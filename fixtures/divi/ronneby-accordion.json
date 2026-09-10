@@ -1,0 +1,328 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "4_4"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "4_4"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "dfd_accordion-1",
+                                        "name": "divi/accordion",
+                                        "settings": {
+                                            "module": {
+                                                "advanced": {
+                                                    "htmlAttributes": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "class": "custom-text-transform-class"
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "closedToggle": {
+                                                "decoration": {
+                                                    "background": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "color": "rgba(255,255,255,0.01)"
+                                                            }
+                                                        }
+                                                    },
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "color": "#001d63",
+                                                                    "letterSpacing": "0px",
+                                                                    "family": "Raleway",
+                                                                    "weight": "700"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "openToggle": {
+                                                "decoration": {
+                                                    "background": {
+                                                        "desktop": {
+                                                            "value": {
+                                                                "color": "rgba(255,255,255,0.01)"
+                                                            }
+                                                        }
+                                                    },
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "color": "#001d63",
+                                                                    "letterSpacing": "0px",
+                                                                    "family": "Raleway",
+                                                                    "weight": "700"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": [
+                                            {
+                                                "id": "vc_tta_section-1",
+                                                "name": "divi/accordion-item",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "What does all of this mean?"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p style=\"color: #a5aac5;\">We created an innovative, fully protected platform for the purchase and sale of our tokens.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-2",
+                                                "name": "divi/accordion-item",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "Why is Cryptox raising money in an ICO?"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p style=\"color: #a5aac5;\">We created an innovative, fully protected platform for the purchase and sale of our tokens.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-3",
+                                                "name": "divi/accordion-item",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "When will the ICO take place?"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p style=\"color: #a5aac5;\">We created an innovative, fully protected platform for the purchase and sale of our tokens.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-4",
+                                                "name": "divi/accordion-item",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "What is the Cryptox potential?"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p style=\"color: #a5aac5;\">We created an innovative, fully protected platform for the purchase and sale of our tokens.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-5",
+                                                "name": "divi/accordion-item",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "What are the Benefits of CRX Token Holders?"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p style=\"color: #a5aac5;\">We created an innovative, fully protected platform for the purchase and sale of our tokens.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-6",
+                                                "name": "divi/accordion-item",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "Is there a step-by-step instruction on how to buy CRX?"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p style=\"color: #a5aac5;\">We created an innovative, fully protected platform for the purchase and sale of our tokens.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": []
+}

@@ -1,0 +1,1 @@
+[vc_row][vc_column][dfd_google_map zoom="14" marker_image="219" enable_responsive="enable" map_style="calm-grayscale" size="1180" map_markers="Washington" tablet_size="600" mobile_size="500"][/dfd_google_map][/vc_column][/vc_row]

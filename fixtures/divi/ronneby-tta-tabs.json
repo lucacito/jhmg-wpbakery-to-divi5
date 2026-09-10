@@ -1,0 +1,221 @@
+{
+    "divi": {
+        "elements": [
+            {
+                "id": "vc_row-1-section",
+                "name": "divi/section",
+                "settings": {
+                    "module": {
+                        "decoration": {
+                            "spacing": {
+                                "desktop": {
+                                    "value": {
+                                        "padding": {
+                                            "top": "0px",
+                                            "right": "0px",
+                                            "bottom": "0px",
+                                            "left": "0px",
+                                            "syncVertical": "off",
+                                            "syncHorizontal": "off"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "elements": [
+                    {
+                        "id": "vc_row-1",
+                        "name": "divi/row",
+                        "settings": {
+                            "module": {
+                                "decoration": {
+                                    "spacing": {
+                                        "desktop": {
+                                            "value": {
+                                                "padding": {
+                                                    "top": "0px",
+                                                    "right": "0px",
+                                                    "bottom": "0px",
+                                                    "left": "0px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                },
+                                                "margin": {
+                                                    "top": "0px",
+                                                    "right": "-15px",
+                                                    "bottom": "0px",
+                                                    "left": "-15px",
+                                                    "syncVertical": "off",
+                                                    "syncHorizontal": "off"
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "layout": {
+                                        "desktop": {
+                                            "value": {
+                                                "columnGap": "0px",
+                                                "rowGap": "0px"
+                                            }
+                                        }
+                                    },
+                                    "sizing": {
+                                        "desktop": {
+                                            "value": {
+                                                "width": "calc(var(--content-width, 80%) + 30px)",
+                                                "maxWidth": "calc(var(--content-max-width, 1080px) + 30px)"
+                                            }
+                                        }
+                                    }
+                                },
+                                "advanced": {
+                                    "columnStructure": {
+                                        "desktop": {
+                                            "value": "4_4"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "elements": [
+                            {
+                                "id": "vc_column-1",
+                                "name": "divi/column",
+                                "settings": {
+                                    "module": {
+                                        "decoration": {
+                                            "sizing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "flexType": "24_24"
+                                                    }
+                                                }
+                                            },
+                                            "spacing": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "padding": {
+                                                            "top": "0px",
+                                                            "right": "15px",
+                                                            "bottom": "0px",
+                                                            "left": "15px",
+                                                            "syncVertical": "off",
+                                                            "syncHorizontal": "off"
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            "layout": {
+                                                "desktop": {
+                                                    "value": {
+                                                        "rowGap": "0px"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "advanced": {
+                                            "type": {
+                                                "desktop": {
+                                                    "value": "4_4"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "elements": [
+                                    {
+                                        "id": "dfd_tta_tabs-1",
+                                        "name": "divi/tabs",
+                                        "settings": {
+                                            "activeTab": {
+                                                "decoration": {
+                                                    "font": {
+                                                        "font": {
+                                                            "desktop": {
+                                                                "value": {
+                                                                    "color": "#ffffff"
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "elements": [
+                                            {
+                                                "id": "vc_tta_section-1",
+                                                "name": "divi/tab",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "Start the journey"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p>Praesent eu massa vel diam laoreet elementum ac sed felis. Donec suscipit ultricies risus sed mollis. Donec volutpat porta risus posuere imperdiet. Sed viverra dolor sed dolor placerat ornare ut et diam. Aliquam quis nunc quam. Maecenas feugiat dui venenatis dui convallis, a consectetur quam ornare. Proin eleifend, tellus in interdum malesuada, eros purus mattis augue, in auctor nunc ligula vel metus. Duis congue, lacus quis viverra egestas, felis elit imperdiet lorem, quis consectetur odio libero vitae sapien. Morbi ut velit tincidunt, pellentesque elit vitae, ultrices massa. Maecenas varius tellus nisi, ac consectetur est pulvinar in. Integer consequat maximus dui, vitae dignissim tortor iaculis eu. Nullam scelerisque consequat fringilla. Duis leo libero, accumsan gravida tincidunt vitae, congue in mauris. Morbi nec lorem nec urna tincidunt molestie ut id nibh.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-2",
+                                                "name": "divi/tab",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "Gather more friends"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p>Praesent eu massa vel diam laoreet elementum ac sed felis. Donec suscipit ultricies risus sed mollis. Donec volutpat porta risus posuere imperdiet. Sed viverra dolor sed dolor placerat ornare ut et diam. Aliquam quis nunc quam. Maecenas feugiat dui venenatis dui convallis, a consectetur quam ornare. Proin eleifend, tellus in interdum malesuada, eros purus mattis augue, in auctor nunc ligula vel metus. Duis congue, lacus quis viverra egestas, felis elit imperdiet lorem, quis consectetur odio libero vitae sapien. Morbi ut velit tincidunt, pellentesque elit vitae, ultrices massa. Maecenas varius tellus nisi, ac consectetur est pulvinar in. Integer consequat maximus dui, vitae dignissim tortor iaculis eu. Nullam scelerisque consequat fringilla. Duis leo libero, accumsan gravida tincidunt vitae, congue in mauris. Morbi nec lorem nec urna tincidunt molestie ut id nibh.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            },
+                                            {
+                                                "id": "vc_tta_section-3",
+                                                "name": "divi/tab",
+                                                "settings": {
+                                                    "title": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "Take photos"
+                                                            }
+                                                        }
+                                                    },
+                                                    "content": {
+                                                        "innerContent": {
+                                                            "desktop": {
+                                                                "value": "<p>Praesent eu massa vel diam laoreet elementum ac sed felis. Donec suscipit ultricies risus sed mollis. Donec volutpat porta risus posuere imperdiet. Sed viverra dolor sed dolor placerat ornare ut et diam. Aliquam quis nunc quam. Maecenas feugiat dui venenatis dui convallis, a consectetur quam ornare. Proin eleifend, tellus in interdum malesuada, eros purus mattis augue, in auctor nunc ligula vel metus. Duis congue, lacus quis viverra egestas, felis elit imperdiet lorem, quis consectetur odio libero vitae sapien. Morbi ut velit tincidunt, pellentesque elit vitae, ultrices massa. Maecenas varius tellus nisi, ac consectetur est pulvinar in. Integer consequat maximus dui, vitae dignissim tortor iaculis eu. Nullam scelerisque consequat fringilla. Duis leo libero, accumsan gravida tincidunt vitae, congue in mauris. Morbi nec lorem nec urna tincidunt molestie ut id nibh.</p>"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "elements": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    },
+    "unsupported": []
+}

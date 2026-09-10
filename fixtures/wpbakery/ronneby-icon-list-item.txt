@@ -1,0 +1,1 @@
+[vc_row][vc_column][dfd_icon_list_item icon_type="custom" icon_img="509" link_box="link_b" link="url:%23|||"]— twitter[/dfd_icon_list_item][/vc_column][/vc_row]

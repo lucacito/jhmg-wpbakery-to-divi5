@@ -5,6 +5,7 @@ namespace WPBakeryDivi5Converter\Converter\Registry;
 use WPBakeryDivi5Converter\Converter\ConverterEngine;
 use WPBakeryDivi5Converter\Converter\ConverterInterface;
 use WPBakeryDivi5Converter\Converter\Handlers;
+use WPBakeryDivi5Converter\Converter\Ronneby;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -290,7 +291,62 @@ class ConverterRegistry {
             }
         }
 
+        $this->registerRonneby();
         $this->registerFamilies();
+    }
+
+    /**
+     * DFD Ronneby's own elements (Task 9b).
+     *
+     * Every one of them is approximate by design: the source read for them is
+     * Ronneby Core 1.5.74, and the demo corpus itself carries attribute names
+     * from more than one build of the theme on the same tag — `upload_image`
+     * beside `image`, `main_style` beside `style` — so a live site may write
+     * fields this converter reads under another name and reports.
+     *
+     * A Ronneby tag with no handler here keeps the theme-family path
+     * (`ThemeShortcodeConverter`, spec §7): `price_list`, `dfd_carousel`,
+     * `dfd_portfolio_module`, `dfd_new_subscribe`, `dfd_modal_box`, `rotate_box`
+     * and the rest of the list in task-9b-brief.md.
+     */
+    private function registerRonneby(): void {
+        $elements = [
+            'dfd_spacer'              => Ronneby\DfdSpacerConverter::class,
+            'dfd_heading'             => Ronneby\DfdHeadingConverter::class,
+            'dfd_single_image'        => Ronneby\DfdSingleImageConverter::class,
+            'dfd_button'              => Ronneby\DfdButtonConverter::class,
+            'dfd_delimiter'           => Ronneby\DfdDelimiterConverter::class,
+            'dfd_info_box'            => Ronneby\DfdInfoBoxConverter::class,
+            'dfd_icon_list'           => Ronneby\DfdIconListConverter::class,
+            'dfd_google_map'          => Ronneby\DfdGoogleMapConverter::class,
+            'dfd_accordion'           => Ronneby\DfdAccordionConverter::class,
+            'dfd_tta_tabs'            => Ronneby\DfdTabsConverter::class,
+            'dfd_tta_tour'            => Ronneby\DfdTabsConverter::class,
+            'dfd_blog_posts'          => Ronneby\DfdBlogPostsConverter::class,
+            'dfd_new_social_accounts' => Ronneby\DfdSocialAccountsConverter::class,
+            'announcement'            => Ronneby\AnnouncementConverter::class,
+            'info_banner'             => Ronneby\InfoBannerConverter::class,
+            'new_team_member'         => Ronneby\NewTeamMemberConverter::class,
+            'new_testimonials'        => Ronneby\NewTestimonialsConverter::class,
+            'facts'                   => Ronneby\FactsConverter::class,
+            'progressbar'             => Ronneby\ProgressbarConverter::class,
+            'piecharts'               => Ronneby\PiechartsConverter::class,
+            'countdown'               => Ronneby\CountdownConverter::class,
+            'videoplayer'             => Ronneby\VideoplayerConverter::class,
+        ];
+
+        foreach ( $elements as $tag => $class ) {
+            if ( class_exists( $class ) ) {
+                $this->registerElement( $tag, $class, true );
+            }
+        }
+
+        // `dfd_icon_list_item` is read by its parent, which flattens the whole
+        // list into one `divi/icon-list`; on its own it is one list item and
+        // has nothing to be.
+        if ( class_exists( Ronneby\DfdIconListItemConverter::class ) ) {
+            $this->registerElement( 'dfd_icon_list_item', Ronneby\DfdIconListItemConverter::class, true );
+        }
     }
 
     /**

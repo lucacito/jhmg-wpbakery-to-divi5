@@ -1,0 +1,1 @@
+[vc_row][vc_column][dfd_single_image image="336" image_size="custom" image_width="600" image_height="400"][/vc_column][/vc_row]
