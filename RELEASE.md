@@ -88,7 +88,7 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
 
    The only hunks it may print are line 16 (`namespace ElementorDivi5Converter\Pro\Licensing;` →
    `namespace WPBakeryDivi5Converter\Pro\Licensing;`) and three pairs of `__()` calls at lines
-   216-217, 228-229 and 238-239 whose text domain changes from
+   218-219, 230-231 and 240-241 whose text domain changes from
    `jhmg-converter-for-elementor-to-divi-pro` to `jhmg-converter-for-wpbakery-to-divi-pro` — six
    literals, same strings. Anything else in the diff is drift and has to be reconciled before
    shipping. (The canonical copy currently carries the Elementor project's namespace and domain

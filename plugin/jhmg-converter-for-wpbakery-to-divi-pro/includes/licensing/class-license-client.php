@@ -129,7 +129,9 @@ class LicenseClient {
         // A 200 is not a promise that the payload is well-formed: a proxy, a
         // captive portal or a broken deploy can all answer 200 with something
         // that json_decode()s to anything at all. Nothing below reads a field
-        // it has not first checked the type of.
+        // it has not first checked the type of. A reply we cannot read also
+        // leaves `no_update` alone rather than asserting "up to date" into
+        // core's auto-update UI on the strength of a body we did not parse.
         if ( ! is_array( $body ) ) { return $transient; }
 
         if ( ! is_object( $transient ) ) { $transient = (object) [ 'response' => [] ]; }
