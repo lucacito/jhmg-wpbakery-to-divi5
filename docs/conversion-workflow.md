@@ -73,6 +73,28 @@ Other helpers under `scripts/docker/`: `set-wpbakery-content.php` (write a fixtu
 `ImportRollback` only touches posts still carrying `_wbdc_import_source`, so it can never delete a
 page the converter did not create.
 
+## What the new post keeps of the old one
+
+The conversion writes a new post, so everything the old post *was* would start empty unless it is
+carried over. `Conversion\PostIdentityCopier` carries it (a user converted a post and found his ACF
+fields blank):
+
+| Carried | Left behind |
+|---|---|
+| Every custom field, ACF included, each value of a repeated key, slashed on the way in | `_wpb_*` — WPBakery's own bookkeeping, describing a builder this post no longer uses |
+| `_thumbnail_id` (the featured image) and `_wp_page_template`, which are meta like any other | `_et_pb_*` / `_et_builder*` — Divi's, which the conversion writes itself |
+| Categories, tags and any other taxonomy **both** post types share, assigned **by term id** so a hierarchical term is reused rather than recreated from its slug | `_edit_lock`, `_edit_last` — whoever had the old post open |
+| `post_date`, `post_date_gmt`, `post_author`, `post_excerpt`, `menu_order`, `post_parent`, `comment_status`, `ping_status` | `_wbdc_*` — ours, recording where this post came from |
+
+Two filters adjust it: `wbdc_copy_source_identity` (false converts into a bare post) and
+`wbdc_copied_meta_keys( array $keys, int $source_id, int $new_post_id )`.
+
+The **permalink** is the one thing that cannot come along. The new post is created as a draft and
+`wp_unique_post_slug()` leaves a draft's `post_name` alone, so it holds the original's slug right up
+until it is published — at which point WordPress appends `-2`, because the original still holds it.
+Whoever converts has to decide which of the two keeps the permalink, and redirect the other. An
+upload has no source post at all, so nothing is copied for it.
+
 ## Pro and free: what couples them
 
 Pro is an add-on, not a fork. It depends on the free plugin at four named points, and a change to

@@ -283,15 +283,26 @@ if ( ! function_exists( 'wp_insert_post' ) ) {
     }
     function wp_set_post_terms( $post_id, $terms, $taxonomy ) { return wp_set_object_terms( $post_id, $terms, $taxonomy ); }
     function wp_get_object_terms( $post_ids, $taxonomies, $args = [] ) {
+        $ids_only = ( $args['fields'] ?? '' ) === 'ids';
         $out = [];
         foreach ( (array) $post_ids as $post_id ) {
             foreach ( (array) $taxonomies as $taxonomy ) {
                 foreach ( $GLOBALS['__test_object_terms'][ (int) $post_id ][ $taxonomy ] ?? [] as $slug ) {
-                    $out[] = (object) [ 'slug' => $slug, 'name' => $slug, 'taxonomy' => $taxonomy ];
+                    // Terms are stored as whatever the caller set; a copier asks
+                    // for ids because assigning a hierarchical term by slug would
+                    // create a new term instead of reusing the source's.
+                    $out[] = $ids_only ? (int) $slug : (object) [ 'slug' => $slug, 'name' => $slug, 'taxonomy' => $taxonomy ];
                 }
             }
         }
         return $out;
+    }
+
+    // Which taxonomies a post type has. $GLOBALS['__test_taxonomies'][ post_type ] => [ taxonomy, … ].
+    $GLOBALS['__test_taxonomies'] = [ 'post' => [ 'category', 'post_tag' ], 'page' => [] ];
+    function get_object_taxonomies( $object, $output = 'names' ) {
+        $type = is_object( $object ) ? ( $object->post_type ?? '' ) : (string) $object;
+        return $GLOBALS['__test_taxonomies'][ $type ] ?? [];
     }
 }
 if ( ! function_exists( 'wp_trash_post' ) ) {
@@ -458,6 +469,10 @@ if ( ! function_exists( 'get_user_meta' ) ) {
 
 // --- environment ------------------------------------------------------------
 
+if ( ! function_exists( '__return_true' ) ) { function __return_true() { return true; } }
+if ( ! function_exists( '__return_false' ) ) { function __return_false() { return false; } }
+if ( ! function_exists( '__return_null' ) ) { function __return_null() { return null; } }
+if ( ! function_exists( '__return_empty_array' ) ) { function __return_empty_array() { return []; } }
 if ( ! function_exists( 'is_admin' ) ) { function is_admin() { return false; } }
 // Tests set $GLOBALS['__test_is_rtl'] to switch the site's text direction.
 if ( ! function_exists( 'is_rtl' ) ) { function is_rtl() { return ! empty( $GLOBALS['__test_is_rtl'] ); } }

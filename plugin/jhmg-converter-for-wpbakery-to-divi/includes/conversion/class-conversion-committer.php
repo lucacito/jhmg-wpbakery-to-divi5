@@ -39,15 +39,18 @@ class ConversionCommitter {
 
     private DiviExporter $exporter;
 
+    private PostIdentityCopier $identity;
+
     /**
      * A Divi Library exporter handed in directly, which wins over the filter.
      * Null in production, where the filter is asked once per item.
      */
     private ?object $injectedLibraryExporter;
 
-    public function __construct( ?DiviExporter $exporter = null, ?object $library_exporter = null ) {
+    public function __construct( ?DiviExporter $exporter = null, ?object $library_exporter = null, ?PostIdentityCopier $identity = null ) {
         $this->exporter                = $exporter ?? new DiviExporter();
         $this->injectedLibraryExporter = $library_exporter;
+        $this->identity                = $identity ?? new PostIdentityCopier();
     }
 
     /**
@@ -136,6 +139,9 @@ class ConversionCommitter {
     private function commitPage( array $item, ?string $post_type_option, string $post_status ): array {
         $title     = (string) ( $item['title'] ?? 'Imported Page' );
         $post_name = (string) ( $item['post_name'] ?? '' );
+        // The post this one is converted from, when there is one: an upload is
+        // a file, not a post, and has no identity to carry.
+        $source    = $this->identity->enabled() ? $this->sourcePost( $item ) : null;
 
         try {
             $post_args = [
@@ -150,6 +156,9 @@ class ConversionCommitter {
             if ( $post_name !== '' ) {
                 $post_args['post_name'] = $post_name;
             }
+            if ( $source !== null ) {
+                $post_args += $this->identity->fields( $source );
+            }
 
             $post_id = wp_insert_post( $post_args );
             if ( is_wp_error( $post_id ) || (int) $post_id === 0 ) {
@@ -159,6 +168,12 @@ class ConversionCommitter {
             $post_id = (int) $post_id;
             $this->exporter->save( $post_id, $this->diviDataFor( $item ) );
             $this->stampSource( $post_id, $item );
+
+            if ( $source !== null ) {
+                // After the exporter and the stamps: both write meta this copy
+                // deliberately never carries, and neither should be overwritten.
+                $this->identity->copy( $source, $post_id, (string) $post_args['post_type'] );
+            }
 
             return [
                 'title'       => $title,
@@ -222,6 +237,27 @@ class ConversionCommitter {
             'report'      => $item['report'] ?? [],
             'unsupported' => $item['unsupported'] ?? [],
         ];
+    }
+
+    /**
+     * The installed post an item was read from, or null for an upload and for
+     * a source post that has since gone.
+     *
+     * @param array<string,mixed> $item
+     */
+    private function sourcePost( array $item ): ?object {
+        if ( ( $item['source_ref']['kind'] ?? '' ) !== 'installed' ) {
+            return null;
+        }
+
+        $source_id = (int) ( $item['source_ref']['post_id'] ?? 0 );
+        if ( $source_id <= 0 ) {
+            return null;
+        }
+
+        $post = get_post( $source_id );
+
+        return is_object( $post ) ? $post : null;
     }
 
     /** @param array<string,mixed> $item */
