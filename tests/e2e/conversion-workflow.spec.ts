@@ -252,3 +252,68 @@ test.describe.serial('A theme element with no handler: static copy here, placeho
     expect(errors, 'front-end JavaScript errors').toEqual([]);
   });
 });
+
+/**
+ * What the converted post keeps of the post it came from, on real WordPress.
+ *
+ * The unit tests prove this against stubs; this proves it against the database,
+ * which is where a user found it broken: he converted a post and his custom
+ * fields came out empty. No ACF here, because the Docker site does not install
+ * it — ACF stores a plain custom field and an underscored twin holding the
+ * field key, and both are plain post meta, which is what this seeds.
+ */
+test.describe('a converted post keeps its identity', () => {
+  const created: string[] = [];
+
+  test.beforeAll(() => copyHelperScript('convert-to-new-page.php'));
+  test.afterAll(() => trashPages(created));
+
+  test('custom fields, terms, featured image, date and author all come along', async () => {
+    const sourceId = wp(
+      `wp post create --post_type=post --post_status=publish --post_title='Identity check' ` +
+        `--post_date='2024-03-09 08:30:00' --post_excerpt='The short version.' --comment_status=closed ` +
+        `--post_content='[vc_row][vc_column][vc_column_text]Hello.[/vc_column_text][/vc_column][/vc_row]' ` +
+        `--porcelain --allow-root`
+    ).trim();
+    created.push(sourceId);
+
+    wp(`wp post meta add ${sourceId} hero_heading 'Ships in 48h' --allow-root`);
+    wp(`wp post meta add ${sourceId} _hero_heading 'field_60a1b2c3' --allow-root`);
+    wp(`wp post meta add ${sourceId} gallery_id 11 --allow-root`);
+    wp(`wp post meta add ${sourceId} gallery_id 12 --allow-root`);
+    // The featured image is a meta value like any other, and an underscored key
+    // that must come along: the skip list is about prefixes, not about the underscore.
+    wp(`wp post meta add ${sourceId} _thumbnail_id 4321 --allow-root`);
+    wp(`wp post meta add ${sourceId} _wpb_vc_js_status true --allow-root`);
+    wp(`wp post term set ${sourceId} post_tag coffee beans --allow-root`);
+
+    const newId = convertToNewPage(sourceId);
+    created.push(newId);
+
+    const meta = (id: string, key: string) => wp(`wp post meta get ${id} ${key} --allow-root`).trim();
+    expect(meta(newId, 'hero_heading'), 'a plain custom field').toBe('Ships in 48h');
+    expect(meta(newId, '_hero_heading'), "ACF's field-key twin").toBe('field_60a1b2c3');
+    expect(meta(newId, '_thumbnail_id'), 'the featured image').toBe('4321');
+    expect(
+      wp(`wp post meta list ${newId} --keys=gallery_id --fields=meta_value --format=csv --allow-root`).trim(),
+      'every value of a repeated key'
+    ).toBe('meta_value\n11\n12');
+
+    expect(
+      wp(`wp post term list ${newId} post_tag --field=slug --allow-root`).split('\n').map((s) => s.trim()).filter(Boolean).sort(),
+      'tags follow the post'
+    ).toEqual(['beans', 'coffee']);
+
+    const field = (id: string, name: string) => wp(`wp post get ${id} --field=${name} --allow-root`).trim();
+    expect(field(newId, 'post_date'), 'a new post dated today loses its place in the archive').toBe('2024-03-09 08:30:00');
+    expect(field(newId, 'post_excerpt')).toBe('The short version.');
+    expect(field(newId, 'comment_status')).toBe('closed');
+    expect(field(newId, 'post_author')).toBe(field(sourceId, 'post_author'));
+
+    // WPBakery's own bookkeeping describes the page it came from, and Divi's is
+    // written by the conversion, so neither is copied.
+    expect(wp(`wp post meta list ${newId} --keys=_wpb_vc_js_status --format=count --allow-root`).trim()).toBe('0');
+    expect(meta(newId, '_et_pb_use_builder'), 'the conversion writes its own').toBe('on');
+    expect(meta(sourceId, '_wpb_vc_js_status'), 'the source is untouched').toBe('true');
+  });
+});
