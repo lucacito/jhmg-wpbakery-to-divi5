@@ -85,16 +85,26 @@ class CoveragePanel {
         $trash_available = ImportRollback::trash_available();
 
         foreach ( $this->history->all() as $run ) {
+            $in_place = ! empty( $run['in_place'] );
+            $count    = count( (array) ( $run['post_ids'] ?? [] ) );
+
             if ( ! empty( $run['rolled_back'] ) ) {
                 $undo = esc_html__( 'Undone', 'jhmg-converter-for-wpbakery-to-divi' );
-            } elseif ( ! $trash_available ) {
+            } elseif ( ! $trash_available && ! $in_place ) {
+                // Only a run that made pages needs somewhere to put them.
                 $undo = esc_html__( 'Undo is unavailable because this site empties the trash immediately.', 'jhmg-converter-for-wpbakery-to-divi' );
             } else {
-                $confirm = sprintf(
-                    /* translators: %d: number of pages this run created. */
-                    __( 'Move the %d page(s) this run created to the Trash?', 'jhmg-converter-for-wpbakery-to-divi' ),
-                    count( (array) ( $run['post_ids'] ?? [] ) )
-                );
+                $confirm = $in_place
+                    ? sprintf(
+                        /* translators: %d: number of pages this run converted. */
+                        __( 'Put the %d page(s) this run converted back the way they were? The WPBakery content returns and the Divi version is discarded.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                        $count
+                    )
+                    : sprintf(
+                        /* translators: %d: number of pages this run created. */
+                        __( 'Move the %d page(s) this run created to the Trash?', 'jhmg-converter-for-wpbakery-to-divi' ),
+                        $count
+                    );
                 $undo = sprintf(
                     '<a href="%1$s" class="button button-small" onclick="%2$s">%3$s</a>',
                     esc_url( add_query_arg( ImportRollback::QUERY_ACTION, (string) ( $run['id'] ?? '' ) ) . '&_wpnonce=' . wp_create_nonce( ImportRollback::NONCE_ACTION ) ),

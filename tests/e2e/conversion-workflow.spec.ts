@@ -78,6 +78,9 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
     );
     await page.click('button:has-text("Check this page")');
     await page.waitForURL(/action=direct_report/);
+    // This spec follows the copy path end to end: a separate draft, published
+    // by hand, undone by trashing. Converting in place is its own spec below.
+    await page.check('input[name="wbdc_create_new"]');
 
     // The report is the promise the conversion then has to keep: how much of
     // the page reached a Divi module, and the structure it will produce.
@@ -315,5 +318,77 @@ test.describe('a converted post keeps its identity', () => {
     expect(wp(`wp post meta list ${newId} --keys=_wpb_vc_js_status --format=count --allow-root`).trim()).toBe('0');
     expect(meta(newId, '_et_pb_use_builder'), 'the conversion writes its own').toBe('on');
     expect(meta(sourceId, '_wpb_vc_js_status'), 'the source is untouched').toBe('true');
+  });
+});
+
+/**
+ * Converting the post you picked, on real WordPress.
+ *
+ * This is the path that rewrites a live post, so the things that matter are
+ * that the address survives, the post stays published, and Undo really does
+ * put the WPBakery shortcodes back.
+ */
+test.describe('converting in place', () => {
+  const created: string[] = [];
+
+  test.beforeAll(() => copyHelperScript('convert-to-new-page.php'));
+  test.afterAll(() => trashPages(created));
+
+  test('the post keeps its address and Undo puts the shortcodes back', async ({ page }) => {
+    test.slow();
+    const shortcodes = '[vc_row][vc_column][vc_custom_heading text="Roasted daily"][vc_column_text]Hello.[/vc_column_text][/vc_column][/vc_row]';
+    const sourceId = wp(
+      `wp post create --post_type=post --post_status=publish --post_title='In place check' ` +
+        `--post_name=in-place-check --post_content=${shellEscape(shortcodes)} --porcelain --allow-root`
+    ).trim();
+    created.push(sourceId);
+    wp(`wp post meta add ${sourceId} hero_heading 'Ships in 48h' --allow-root`);
+
+    const before = wp(`wp post get ${sourceId} --field=url --allow-root`).trim();
+
+    await login(page);
+    await page.goto(`${BASE}/wp-admin/tools.php?page=wbdc-converter&wbdc_s=In+place+check`);
+    await page.check(`input[name="wbdc_post_ids"][value="${sourceId}"], input[name="wbdc_post_ids[]"][value="${sourceId}"]`);
+    await page.click('button:has-text("Check this page")');
+    await expect(page.locator('.wbdc-direct-report')).toBeVisible();
+
+    // The default is in place: the opt-in box is offered and left unticked.
+    await expect(page.locator(`input[name="wbdc_create_new"]`)).not.toBeChecked();
+    await page.click('button:has-text("Convert to Divi 5")');
+    await expect(page.locator('.wbdc-summary-stat--ok')).toContainText('1 converted');
+    await expect(page.locator('.wbdc-status-detail').first()).toContainText('in place');
+
+    // Read the run id here, while the results screen is still the current page.
+    const importId = new URL(page.url()).searchParams.get('import_id');
+    expect(importId, 'the results screen names the run').toBeTruthy();
+
+    // The post itself is now Divi, at the address it always had.
+    expect(wp(`wp post get ${sourceId} --field=url --allow-root`).trim(), 'the permalink never moved').toBe(before);
+    expect(wp(`wp post get ${sourceId} --field=post_status --allow-root`).trim()).toBe('publish');
+    expect(wp(`wp post get ${sourceId} --field=post_name --allow-root`).trim()).toBe('in-place-check');
+    expect(wp(`wp post get ${sourceId} --field=post_content --allow-root`)).toContain('wp:divi/heading');
+    expect(wp(`wp post meta get ${sourceId} _et_pb_use_divi_5 --allow-root`).trim()).toBe('on');
+    expect(wp(`wp post meta get ${sourceId} hero_heading --allow-root`).trim(), 'nothing moved, so nothing was lost').toBe('Ships in 48h');
+    expect(wp(`wp post list --post_type=post --meta_key=_wbdc_source_post_id --meta_value=${sourceId} --format=count --allow-root`).trim(), 'no second post was made').toBe('0');
+
+    // It renders as Divi on the front end, at the same URL.
+    await page.goto(before);
+    await page.waitForSelector('.et_pb_section', { timeout: 20000 });
+
+    // And Undo puts the WPBakery page back, without trashing anything.
+    // Undo this run, not whichever run happens to be listed first. The link
+    // asks for confirmation, so accept it the way a reader would.
+    await page.goto(`${BASE}/wp-admin/tools.php?page=wbdc-converter`);
+    const undo = page.locator(`a.button[href*="wbdc_rollback=${importId}"]`);
+    await expect(undo, 'this run is offered for undo').toHaveCount(1);
+    await expect(undo, 'and it says what undo will do').toHaveAttribute('onclick', /back the way they were/);
+    page.once('dialog', (d) => d.accept());
+    await undo.click();
+    await expect(page.locator('.wbdc-rollback-notice')).toContainText('put back');
+
+    expect(wp(`wp post get ${sourceId} --field=post_content --allow-root`).trim(), 'the shortcodes are back').toBe(shortcodes);
+    expect(wp(`wp post get ${sourceId} --field=post_status --allow-root`).trim(), 'still published, never trashed').toBe('publish');
+    expect(wp(`wp post meta list ${sourceId} --keys=_et_pb_use_divi_5 --format=count --allow-root`).trim(), 'no longer a Divi post').toBe('0');
+    expect(wp(`wp post meta get ${sourceId} hero_heading --allow-root`).trim(), 'its own fields were never touched').toBe('Ships in 48h');
   });
 });

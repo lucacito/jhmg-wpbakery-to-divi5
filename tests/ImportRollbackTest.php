@@ -30,7 +30,7 @@ final class ImportRollbackTest extends TestCase {
 
         $result = ( new ImportRollback( $history ) )->rollback( 'run-a' );
 
-        $this->assertSame( [ 'trashed' => 1, 'skipped' => 1, 'trash_unavailable' => false ], $result );
+        $this->assertSame( [ 'trashed' => 1, 'restored' => 0, 'skipped' => 1, 'trash_unavailable' => false ], $result );
         $this->assertSame( [ 300 ], $GLOBALS['__test_trashed'] );
         $this->assertTrue( $history->find( 'run-a' )['rolled_back'] );
     }
@@ -44,14 +44,14 @@ final class ImportRollbackTest extends TestCase {
         $history->record( 'run-c', [ [ 'success' => true, 'post_id' => 310 ] ] );
 
         $this->assertSame(
-            [ 'trashed' => 0, 'skipped' => 1, 'trash_unavailable' => false ],
+            [ 'trashed' => 0, 'restored' => 0, 'skipped' => 1, 'trash_unavailable' => false ],
             ( new ImportRollback( $history ) )->rollback( 'run-c' )
         );
     }
 
     public function test_rollback_of_an_unknown_run_does_nothing(): void {
         $this->assertSame(
-            [ 'trashed' => 0, 'skipped' => 0, 'trash_unavailable' => false ],
+            [ 'trashed' => 0, 'restored' => 0, 'skipped' => 0, 'trash_unavailable' => false ],
             ( new ImportRollback() )->rollback( 'nope' )
         );
     }
@@ -87,5 +87,18 @@ final class ImportRollbackTest extends TestCase {
         $this->assertSame( [ 320 ], $GLOBALS['__test_trashed'] );
 
         $_GET = [];
+    }
+
+    public function test_the_notice_says_pages_were_put_back_not_trashed(): void {
+        $rollback = new ImportRollback();
+
+        $markup = $rollback->notice_markup( [ 'trashed' => 0, 'restored' => 1, 'skipped' => 0, 'trash_unavailable' => false ] );
+        $this->assertStringContainsString( 'put back', $markup );
+        $this->assertStringNotContainsString( 'Trash', $markup, 'nothing was trashed, so the Trash is not where to look' );
+
+        // A page put back is a page changed, whatever the Trash setting is.
+        $mixed = $rollback->notice_markup( [ 'trashed' => 0, 'restored' => 1, 'skipped' => 1, 'trash_unavailable' => true ] );
+        $this->assertStringContainsString( 'put back', $mixed );
+        $this->assertStringNotContainsString( 'No pages were changed', $mixed );
     }
 }

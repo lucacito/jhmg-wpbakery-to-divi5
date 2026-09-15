@@ -3,7 +3,7 @@ Contributors: lucaslopvet
 Tags: divi migration, page builder converter, wpbakery to divi, divi 5, shortcode converter
 Requires at least: 5.9
 Tested up to: 7.1
-Stable tag: 1.0.1
+Stable tag: 1.1.0
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -18,7 +18,7 @@ This plugin is not affiliated with, endorsed by or connected to WPBakery Page Bu
 
 If your WPBakery pages are on this site, pick one from a list — no export needed. Converting from another site? Export it there from Tools → Export (WPBakery keeps its layout inside the page content, so the export holds it) and upload the file here.
 
-Before you convert, click **Check this page** to see a conversion report: the structure the conversion will produce, laid out as an outline, and everything that could not be carried over, by name. Nothing is written until you click Convert. Converting always creates a new Divi draft — your WPBakery page is never modified — and every run can be undone with one click. The new draft keeps the original's custom fields, featured image, categories and tags, publish date and author, so a converted post is still the post it was.
+Before you convert, click **Check this page** to see a conversion report: the structure the conversion will produce, laid out as an outline, and everything that could not be carried over, by name. Nothing is written until you click Convert. Converting rewrites the page you picked, so it keeps its address, its publish date, its custom fields and everything linking to it — it is the same page, now built in Divi 5. Undo puts the WPBakery version back with one click. Prefer a copy? Tick one box and you get a separate Divi draft instead, with the original left exactly as it is.
 
 ### What converts
 
@@ -83,7 +83,11 @@ Only to pick pages from the list on this site, and to have theme elements copied
 
 = Will this change my WPBakery pages? =
 
-No. Converting always creates a new Divi draft; the original page is never modified, and every run can be undone from the Recent conversions list. The draft is a copy in every sense that matters: custom fields (ACF included), featured image, page template, categories and tags, publish date, author and excerpt all come along. The one thing that cannot follow is the permalink: the draft holds the original's slug while it stays a draft, but publishing it while the original is still published makes WordPress append `-2`. Decide which of the two keeps the permalink before you publish, and redirect the other.
+Yes, and that is the point: the page you pick is converted where it stands, so it keeps its address, its publish date, its author, its comments, its custom fields and every link pointing at it. Nothing moves, so nothing can be lost on the way. Before anything is written you get the full report, and afterwards Undo puts the WPBakery content back exactly as it was — the original shortcodes are kept on the page for precisely that.
+
+If you would rather not touch the original, tick **Convert into a new draft instead** on the report screen. You then get a separate Divi draft and the original stays as it is. That draft carries the original's custom fields (ACF included), featured image, page template, categories and tags, publish date, author and excerpt. The one thing it cannot carry is the permalink, because two published posts cannot share one: publishing the draft beside the original makes WordPress append `-2`, so decide which of the two keeps the address and redirect the other.
+
+WPBakery templates are never converted in place. A template is what you build pages from, so it is always copied.
 
 = A page of mine is missing from the list. Why? =
 
@@ -121,6 +125,12 @@ commonly missing WPBakery elements get built first.
 
 == Changelog ==
 
+= 1.1.0 =
+* Conversions now rewrite the page you picked, so it keeps its permalink, publish date, author, comments and custom fields. Suggested by a user who pointed out that a converted post at a new address means a 301 nobody asked for.
+* The original WPBakery shortcodes are kept on the page, and Undo puts them back. Undo no longer needs the Trash for these runs.
+* "Convert into a new draft instead" on the report screen keeps the old behaviour, original untouched.
+* WPBakery templates are always copied, never converted in place.
+
 = 1.0.1 =
 * The converted post now keeps the original's custom fields (ACF included), featured image, page template, categories and tags, publish date, author, excerpt and menu order. Reported by a user whose ACF fields came out blank.
 * WPBakery's own metadata, Divi's and the editor's are deliberately left behind; `wbdc_copy_source_identity` and `wbdc_copied_meta_keys` adjust what is carried.
@@ -134,6 +144,9 @@ commonly missing WPBakery elements get built first.
 * Font Awesome icons map to the identical Divi icons
 
 == Upgrade Notice ==
+
+= 1.1.0 =
+Conversions now change the page you pick rather than making a second one, so it keeps its address and everything linking to it. Undo restores the WPBakery version. Tick the box on the report screen for the old behaviour.
 
 = 1.0.1 =
 Converted posts now keep their custom fields, featured image, taxonomy terms, date and author. Pages converted with 1.0.0 were created without them.

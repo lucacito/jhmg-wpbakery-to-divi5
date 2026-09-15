@@ -66,15 +66,15 @@ final class DirectConversionPageTest extends TestCase {
         $this->assertSame( [ 204 ], ( new DirectConversionPage() )->verified_post_ids( [ 'wbdc_post_ids' => [ '204' ] ] ) );
     }
 
-    public function test_convert_creates_a_draft_and_leaves_the_source_alone(): void {
+    public function test_convert_converts_the_post_you_picked_and_keeps_it_published(): void {
         $id      = $this->seed( 220 );
-        $before  = (array) get_post( $id );
         $results = ( new DirectConversionPage() )->convert( [ $id ] );
 
         $this->assertTrue( $results[0]['success'] );
-        $this->assertSame( 'draft', get_post( $results[0]['post_id'] )->post_status );
-        $this->assertSame( $before, (array) get_post( $id ), 'the WPBakery original is never modified' );
-        $this->assertSame( 220, get_post_meta( $results[0]['post_id'], '_wbdc_source_post_id', true ) );
+        $this->assertSame( $id, (int) $results[0]['post_id'], 'the post you picked is the post you get' );
+        $this->assertTrue( $results[0]['in_place'] );
+        $this->assertSame( 'publish', get_post( $id )->post_status, 'a published post stays published' );
+        $this->assertStringContainsString( 'wp:divi/', get_post( $id )->post_content );
         $this->assertSame( 'direct', get_post_meta( $results[0]['post_id'], '_wbdc_import_source', true ) );
         $this->assertSame( 'direct', $results[0]['mode'], 'the result screen words theme elements by this' );
     }
@@ -144,5 +144,18 @@ final class DirectConversionPageTest extends TestCase {
         $this->assertSame( 1, $plan->count() );
         $this->assertCount( $before, $GLOBALS['__test_posts'] );
         $this->assertSame( 'direct', $plan->items()[0]['mode'] );
+    }
+
+    public function test_convert_can_be_asked_for_a_new_draft_instead(): void {
+        $id      = $this->seed( 221 );
+        $before  = (array) get_post( $id );
+        $results = ( new DirectConversionPage() )->convert( [ $id ], [ 'create_new' => true ] );
+
+        $this->assertTrue( $results[0]['success'] );
+        $this->assertNotSame( $id, (int) $results[0]['post_id'] );
+        $this->assertFalse( $results[0]['in_place'] );
+        $this->assertSame( 'draft', get_post( $results[0]['post_id'] )->post_status );
+        $this->assertSame( $before, (array) get_post( $id ), 'the WPBakery original is untouched by a copy run' );
+        $this->assertSame( 221, get_post_meta( $results[0]['post_id'], '_wbdc_source_post_id', true ) );
     }
 }

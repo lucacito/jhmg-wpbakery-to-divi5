@@ -196,7 +196,19 @@ final class ReleaseMetadataTest extends TestCase {
 
         $this->assertStringContainsString( 'static', $readme );
         $this->assertStringContainsString( 'placeholder', $readme );
-        $this->assertStringContainsString( 'never modified', $readme );
+    }
+
+    /**
+     * Since 1.1.0 a conversion rewrites the page it was given, so the readme
+     * has to say so plainly, say how to get the old behaviour, and promise undo
+     * — and it must not still claim the page is never modified.
+     */
+    public function test_readme_is_honest_about_rewriting_the_page(): void {
+        $readme = strtolower( $this->readme() );
+
+        $this->assertStringContainsString( 'undo', $readme );
+        $this->assertStringContainsString( 'new draft instead', $readme );
+        $this->assertStringNotContainsString( 'never modified', $readme );
     }
 
     public function test_readme_names_wpbakery_as_a_third_party_trademark_without_claiming_affiliation(): void {

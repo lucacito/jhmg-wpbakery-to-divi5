@@ -37,6 +37,15 @@ class ConversionCommitter {
      */
     const LIBRARY_NOT_SELECTED = 'WPBakery template not selected for conversion';
 
+    /**
+     * The shortcodes a post held before its conversion, kept on the post so the
+     * run can be undone. Only in-place conversions write it.
+     */
+    const META_ORIGINAL_CONTENT = '_wbdc_original_content';
+
+    /** Marks a post that was converted where it stood, rather than copied. */
+    const META_IN_PLACE = '_wbdc_converted_in_place';
+
     private DiviExporter $exporter;
 
     private PostIdentityCopier $identity;
@@ -91,6 +100,10 @@ class ConversionCommitter {
     public function commit( ConversionPlan $plan, array $options = [] ): array {
         $default_post_type   = $options['post_type'] ?? null;
         $default_post_status = $options['post_status'] ?? 'draft';
+        // A post on this site is converted where it stands, so it keeps its
+        // permalink, its date and everything pointing at it. `create_new`
+        // asks for the old behaviour: a second post, the original untouched.
+        $create_new          = ! empty( $options['create_new'] );
         $convert_templates   = $options['convert_templates'] ?? true;
 
         $results = [];
@@ -111,7 +124,10 @@ class ConversionCommitter {
             $exporter = $is_library ? $this->libraryExporter( $item, $options ) : null;
 
             if ( $is_library && $exporter === null ) {
-                $result                         = $this->commitPage( $item, $default_post_type, $default_post_status );
+                // Always a new post, whatever the caller asked for: a WPBakery
+                // template is the thing the reader builds pages from, and
+                // rewriting it as a Divi page would take it away from them.
+                $result                         = $this->commitPage( $item, $default_post_type, $default_post_status, true );
                 $result['template_type']        = 'library';
                 $result['report']['warnings'][] = self::LIBRARY_WARNING;
                 $results[]                      = $result;
@@ -123,7 +139,7 @@ class ConversionCommitter {
                 continue;
             }
 
-            $results[] = $this->commitPage( $item, $default_post_type, $default_post_status );
+            $results[] = $this->commitPage( $item, $default_post_type, $default_post_status, $create_new );
         }
 
         return $results;
@@ -136,12 +152,22 @@ class ConversionCommitter {
      * @param array<string,mixed> $item
      * @return array<string,mixed>
      */
-    private function commitPage( array $item, ?string $post_type_option, string $post_status ): array {
+    private function commitPage( array $item, ?string $post_type_option, string $post_status, bool $create_new = false ): array {
         $title     = (string) ( $item['title'] ?? 'Imported Page' );
         $post_name = (string) ( $item['post_name'] ?? '' );
-        // The post this one is converted from, when there is one: an upload is
-        // a file, not a post, and has no identity to carry.
-        $source    = $this->identity->enabled() ? $this->sourcePost( $item ) : null;
+        // The post this one came from, when there is one: an upload is a file,
+        // not a post, so it has nothing to convert in place and no identity to
+        // carry. Looked up regardless of the identity filter, because the
+        // in-place path needs the post itself.
+        $source    = $this->sourcePost( $item );
+
+        if ( $source !== null && ! $create_new ) {
+            return $this->convertInPlace( $item, $source );
+        }
+
+        if ( $source !== null && ! $this->identity->enabled() ) {
+            $source = null;
+        }
 
         try {
             $post_args = [
@@ -179,11 +205,58 @@ class ConversionCommitter {
                 'title'       => $title,
                 'post_id'     => $post_id,
                 'success'     => true,
+                'in_place'    => false,
                 'error'       => '',
                 // The report screen words a theme element as "copied as static
                 // HTML" or "left as a placeholder" by this, so it has to
                 // survive the commit rather than stop at the plan.
                 'mode'        => (string) ( $item['mode'] ?? 'import' ),
+                'report'      => $item['report'] ?? [],
+                'unsupported' => $item['unsupported'] ?? [],
+            ];
+        } catch ( \Throwable $e ) {
+            return $this->failResult( $title, $e->getMessage() );
+        }
+    }
+
+    /**
+     * Converts the post where it stands: the shortcodes come off, the Divi
+     * blocks go on, and nothing else about the post moves. Its slug, date,
+     * author, comments, custom fields and every link pointing at it are
+     * untouched, because it is still the same post — which a copy can never
+     * be, since two published posts cannot share a permalink.
+     *
+     * The shortcodes are kept on the post first, so Undo can put them back.
+     *
+     * @param array<string,mixed> $item
+     * @return array<string,mixed>
+     */
+    private function convertInPlace( array $item, object $source ): array {
+        $title   = (string) ( $item['title'] ?? 'Imported Page' );
+        $post_id = (int) ( $source->ID ?? 0 );
+
+        try {
+            // Slashed on the way in: update_post_meta() unslashes, and these
+            // are the very shortcodes Undo restores.
+            update_post_meta( $post_id, self::META_ORIGINAL_CONTENT, wp_slash( (string) ( $source->post_content ?? '' ) ) );
+
+            if ( ! $this->exporter->save( $post_id, $this->diviDataFor( $item ) ) ) {
+                // Nothing was written, so nothing claims to have been.
+                delete_post_meta( $post_id, self::META_ORIGINAL_CONTENT );
+
+                return $this->failResult( $title, 'The post could not be updated.' );
+            }
+
+            update_post_meta( $post_id, self::META_IN_PLACE, '1' );
+            $this->stampSource( $post_id, $item, true );
+
+            return [
+                'title'       => $title,
+                'post_id'     => $post_id,
+                'success'     => true,
+                'in_place'    => true,
+                'error'       => '',
+                'mode'        => (string) ( $item['mode'] ?? 'direct' ),
                 'report'      => $item['report'] ?? [],
                 'unsupported' => $item['unsupported'] ?? [],
             ];
@@ -261,12 +334,14 @@ class ConversionCommitter {
     }
 
     /** @param array<string,mixed> $item */
-    private function stampSource( int $post_id, array $item ): void {
+    private function stampSource( int $post_id, array $item, bool $in_place = false ): void {
         $kind = $item['source_ref']['kind'] ?? 'upload';
         update_post_meta( $post_id, '_wbdc_import_source', $kind === 'installed' ? 'direct' : 'file_upload' );
 
+        // A post converted in place came from itself, and recording that would
+        // make it its own "already converted" match.
         $source_post_id = $item['source_ref']['post_id'] ?? null;
-        if ( $kind === 'installed' && $source_post_id ) {
+        if ( ! $in_place && $kind === 'installed' && $source_post_id ) {
             update_post_meta( $post_id, '_wbdc_source_post_id', (int) $source_post_id );
         }
     }
@@ -297,6 +372,7 @@ class ConversionCommitter {
             'title'       => $title !== '' ? $title : 'Imported Page',
             'post_id'     => 0,
             'success'     => false,
+            'in_place'    => false,
             'error'       => $error,
             'report'      => [],
             'unsupported' => [],

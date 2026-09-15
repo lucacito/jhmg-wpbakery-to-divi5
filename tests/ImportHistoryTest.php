@@ -92,4 +92,15 @@ final class ImportHistoryTest extends TestCase {
 
         $this->assertSame( [], ( new ImportHistory() )->all() );
     }
+
+    public function test_it_records_how_the_run_converted(): void {
+        $history = new ImportHistory();
+        $history->record( 'in-place-run', [ [ 'success' => true, 'post_id' => 9, 'in_place' => true ] ] );
+        $history->record( 'copy-run', [ [ 'success' => true, 'post_id' => 10, 'in_place' => false ] ] );
+
+        // Undo has to know which it was: one puts a page back, the other trashes
+        // a page it made, and only the second one needs the Trash at all.
+        $this->assertTrue( $history->find( 'in-place-run' )['in_place'] );
+        $this->assertFalse( $history->find( 'copy-run' )['in_place'] );
+    }
 }

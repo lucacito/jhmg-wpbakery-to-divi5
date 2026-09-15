@@ -1,17 +1,23 @@
 <?php
 /**
- * Undo a conversion run by moving the posts it created to the trash.
+ * Undo a conversion run, which means one of two things.
  *
- *  - It trashes, never deletes — and only when trash is actually available.
- *    With `EMPTY_TRASH_DAYS` at 0, core's wp_trash_post() deletes permanently,
- *    so this class detects that first and skips the whole run.
- *  - It only touches posts still carrying the `_wbdc_import_source` meta this
- *    plugin wrote. A post the user has replaced or adopted by hand is skipped.
- *  - It never touches the WPBakery original: a conversion only ever creates a
- *    new post, so there is nothing of the source in a run's post ids.
+ *  - A post converted **in place** is put back: its WPBakery shortcodes are
+ *    restored from `_wbdc_original_content` and every meta the conversion
+ *    wrote is removed. The post itself is never trashed — it is the reader's
+ *    post, and it was theirs before the conversion touched it.
+ *  - A post the conversion **created** is trashed, never deleted, and only
+ *    when trash is actually available. With `EMPTY_TRASH_DAYS` at 0, core's
+ *    wp_trash_post() deletes permanently, so those are skipped instead.
+ *
+ * Either way it only touches posts still carrying the `_wbdc_import_source`
+ * meta this plugin wrote: a post the reader has since replaced or adopted by
+ * hand is left alone.
  */
 
 namespace WPBakeryDivi5Converter\History;
+
+use WPBakeryDivi5Converter\Conversion\ConversionCommitter;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -22,6 +28,19 @@ class ImportRollback {
     const QUERY_ACTION            = 'wbdc_rollback';
     const NONCE_ACTION            = 'wbdc_rollback_import';
     const NOTICE_TRANSIENT_PREFIX = 'wbdc_rollback_notice_';
+
+    /** Everything a conversion writes onto a post, removed when the run is undone. */
+    const CONVERSION_META = [
+        '_et_pb_use_builder',
+        '_et_pb_use_divi_5',
+        '_et_builder_version',
+        '_wbdc_divi_data',
+        '_wbdc_conversion_report',
+        '_wbdc_import_source',
+        '_wbdc_source_post_id',
+        ConversionCommitter::META_IN_PLACE,
+        ConversionCommitter::META_ORIGINAL_CONTENT,
+    ];
 
     private ImportHistory $history;
 
@@ -34,28 +53,45 @@ class ImportRollback {
         add_action( 'admin_notices', [ $this, 'render_notice' ] );
     }
 
-    /** @return array{trashed:int, skipped:int, trash_unavailable:bool} */
+    /** @return array{trashed:int, restored:int, skipped:int, trash_unavailable:bool} */
     public function rollback( string $import_id ): array {
         $run = $this->history->find( $import_id );
 
         if ( $run === null ) {
-            return [ 'trashed' => 0, 'skipped' => 0, 'trash_unavailable' => false ];
+            return [ 'trashed' => 0, 'restored' => 0, 'skipped' => 0, 'trash_unavailable' => false ];
         }
 
-        if ( ! self::trash_available() ) {
-            return [ 'trashed' => 0, 'skipped' => count( (array) ( $run['post_ids'] ?? [] ) ), 'trash_unavailable' => true ];
-        }
-
-        $trashed = 0;
-        $skipped = 0;
+        $trashed           = 0;
+        $restored          = 0;
+        $skipped           = 0;
+        $trash_unavailable = false;
 
         foreach ( (array) ( $run['post_ids'] ?? [] ) as $post_id ) {
-            if ( (string) get_post_meta( (int) $post_id, '_wbdc_import_source', true ) === '' ) {
+            $post_id = (int) $post_id;
+
+            if ( (string) get_post_meta( $post_id, '_wbdc_import_source', true ) === '' ) {
                 $skipped++;
                 continue;
             }
 
-            if ( wp_trash_post( (int) $post_id ) ) {
+            // Restoring a post needs no trash, so an in-place run is undoable
+            // on a site that empties the trash immediately.
+            if ( (string) get_post_meta( $post_id, ConversionCommitter::META_IN_PLACE, true ) === '1' ) {
+                if ( $this->restore( $post_id ) ) {
+                    $restored++;
+                } else {
+                    $skipped++;
+                }
+                continue;
+            }
+
+            if ( ! self::trash_available() ) {
+                $trash_unavailable = true;
+                $skipped++;
+                continue;
+            }
+
+            if ( wp_trash_post( $post_id ) ) {
                 $trashed++;
             } else {
                 $skipped++;
@@ -64,7 +100,35 @@ class ImportRollback {
 
         $this->history->mark_rolled_back( $import_id );
 
-        return [ 'trashed' => $trashed, 'skipped' => $skipped, 'trash_unavailable' => false ];
+        return [ 'trashed' => $trashed, 'restored' => $restored, 'skipped' => $skipped, 'trash_unavailable' => $trash_unavailable ];
+    }
+
+    /**
+     * Puts a post converted in place back the way it was: the shortcodes it
+     * held, and none of the metadata the conversion added. Anything else on the
+     * post — its own custom fields, its terms — was never touched, so there is
+     * nothing to put back.
+     */
+    private function restore( int $post_id ): bool {
+        $original = (string) get_post_meta( $post_id, ConversionCommitter::META_ORIGINAL_CONTENT, true );
+
+        if ( $original === '' ) {
+            return false;
+        }
+
+        // wp_update_post() unslashes, the same rule the conversion followed on
+        // the way in.
+        $updated = wp_update_post( [ 'ID' => $post_id, 'post_content' => wp_slash( $original ) ], true );
+
+        if ( is_wp_error( $updated ) || ! $updated ) {
+            return false;
+        }
+
+        foreach ( self::CONVERSION_META as $key ) {
+            delete_post_meta( $post_id, $key );
+        }
+
+        return true;
     }
 
     public static function trash_available(): bool {
@@ -101,15 +165,31 @@ class ImportRollback {
 
     /** @param array<string,mixed> $result */
     public function notice_markup( array $result ): string {
-        if ( ! empty( $result['trash_unavailable'] ) ) {
+        // A run that also put pages back has changed something, so the
+        // trash-unavailable warning must not claim otherwise.
+        if ( ! empty( $result['trash_unavailable'] ) && (int) ( $result['restored'] ?? 0 ) === 0 ) {
             return '<div class="notice notice-warning is-dismissible wbdc-rollback-notice"><p>'
                 . esc_html__( 'Undo did not run: this site is configured to empty the Trash immediately, so nothing could be trashed. No pages were changed.', 'jhmg-converter-for-wpbakery-to-divi' )
                 . '</p></div>';
         }
 
-        $trashed = (int) ( $result['trashed'] ?? 0 );
-        $skipped = (int) ( $result['skipped'] ?? 0 );
-        $parts   = [];
+        $trashed  = (int) ( $result['trashed'] ?? 0 );
+        $restored = (int) ( $result['restored'] ?? 0 );
+        $skipped  = (int) ( $result['skipped'] ?? 0 );
+        $parts    = [];
+
+        if ( $restored > 0 ) {
+            $parts[] = esc_html( sprintf(
+                /* translators: %d: number of pages put back the way they were. */
+                _n(
+                    '%d page was put back: its WPBakery content is exactly as it was before the conversion.',
+                    '%d pages were put back: their WPBakery content is exactly as it was before the conversion.',
+                    $restored,
+                    'jhmg-converter-for-wpbakery-to-divi'
+                ),
+                $restored
+            ) );
+        }
 
         if ( $trashed > 0 ) {
             $parts[] = esc_html( sprintf(

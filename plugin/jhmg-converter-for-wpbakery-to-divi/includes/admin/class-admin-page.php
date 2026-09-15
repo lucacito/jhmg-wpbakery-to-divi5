@@ -692,6 +692,11 @@ class AdminPage {
                     . '<br><small class="wbdc-error-msg">' . esc_html( (string) ( $result['error'] ?? '' ) ) . '</small>';
             } elseif ( ! empty( $result['success'] ) ) {
                 $html .= '<span class="wbdc-status wbdc-status--converted">&#10003; ' . esc_html__( 'Converted', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                // Which of the two happened matters to the reader: one kept the
+                // address they already had, the other made a second page.
+                $html .= empty( $result['in_place'] )
+                    ? '<br><small class="wbdc-status-detail">' . esc_html__( 'as a new draft', 'jhmg-converter-for-wpbakery-to-divi' ) . '</small>'
+                    : '<br><small class="wbdc-status-detail">' . esc_html__( 'in place, same address', 'jhmg-converter-for-wpbakery-to-divi' ) . '</small>';
             } else {
                 $html .= '<span class="wbdc-status wbdc-status--error">&#10007; ' . esc_html__( 'Failed', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
                 if ( ! empty( $result['error'] ) ) {

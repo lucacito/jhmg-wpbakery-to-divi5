@@ -17,9 +17,31 @@ WPBakery post (post_content + 3 metas)           upload (.xml WXR / .txt / .html
                        ImportHistory      ── recorded per run, undoable via ImportRollback
 ```
 
-The source post is never modified: a conversion always creates a new post. Nothing is rendered or
-scraped — the engine reads the shortcode string and the three WPBakery metas
+Nothing is rendered or scraped — the engine reads the shortcode string and the three WPBakery metas
 (`_wpb_shortcodes_custom_css`, `_wpb_post_custom_css`, `_wpb_vc_js_status`).
+
+## Which post the conversion writes
+
+Since 1.1.0 there are two answers, and the default changed.
+
+| | in place (default) | `create_new` (opt in) |
+|---|---|---|
+| What is written | the post you picked | a second post beside it |
+| Permalink, date, author, comments, custom fields | kept, because nothing moved | the copy carries everything except the permalink, which WordPress dedupes to `-2` |
+| Post status | unchanged: a published post stays published | `post_status`, `draft` by default |
+| Undo | restores `_wbdc_original_content` onto the post and removes what the conversion wrote; no Trash needed | trashes the post it created |
+| Marked by | `_wbdc_converted_in_place` = `1` | `_wbdc_source_post_id` on the new post |
+
+The reason for the default is the permalink: two published posts cannot share a slug, so a copy is
+always at a new address, and the author is left redirecting the old one. Reported by a user who
+converted a post and found it at `-2`.
+
+**A WPBakery template is always copied**, whatever the caller asks for. A template is what the reader
+builds pages from; rewriting it as a Divi page would take it away from them. Uploads are copies too,
+for the obvious reason that a file is not a post.
+
+`ConversionPreflight` still writes nothing in either mode, which is what makes "Check this page"
+worth clicking.
 
 `WPBakeryImportParser` accepts two upload formats, because there are two ways a WPBakery page leaves
 the site it was built on: a **WordPress export (WXR)** — Tools → Export, or a theme's demo content —

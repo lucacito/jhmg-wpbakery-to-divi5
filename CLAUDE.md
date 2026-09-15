@@ -1,8 +1,16 @@
 # WPBakery Page Builder → Divi 5 Converter — working notes
 
 - Never scrape HTML. Read the post's `post_content` (the shortcode string) and the metas
-  `_wpb_vc_js_status`, `_wpb_shortcodes_custom_css`, `_wpb_post_custom_css` only. Never modify the
-  source post — a conversion always creates a new post.
+  `_wpb_vc_js_status`, `_wpb_shortcodes_custom_css`, `_wpb_post_custom_css` only.
+- **A conversion rewrites the post it was given** (since 1.1.0), so the post keeps its permalink,
+  date, author, comments and custom fields — a copy can never keep the permalink, because two
+  published posts cannot share a slug. The original shortcodes are kept at
+  `_wbdc_original_content` and `ImportRollback` restores them; that restore, not a trash, is what
+  Undo means for these runs, so it works on a site that empties the trash immediately. The old
+  behaviour is the `create_new` commit option (the report screen's "Convert into a new draft
+  instead"), which leaves the source untouched and carries its identity onto the copy. A WPBakery
+  **template** is always copied, never rewritten: it is what the user builds pages from. Preflight
+  still writes nothing at all.
 - Because the conversion creates a new post, the old post's identity has to be carried deliberately:
   `PostIdentityCopier` copies every custom field (ACF included; values slashed, repeated keys kept),
   `_thumbnail_id`, `_wp_page_template`, the taxonomies both post types share (by term **id**, never

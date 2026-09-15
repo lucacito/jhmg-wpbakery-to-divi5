@@ -22,7 +22,9 @@ foreach ( [
 }
 
 $plan    = ( new \WPBakeryDivi5Converter\Conversion\ConversionPreflight() )->run( new \WPBakeryDivi5Converter\Conversion\InstalledPostSource( [ $source_id ] ) );
-$results = ( new \WPBakeryDivi5Converter\Conversion\ConversionCommitter() )->commit( $plan, [ 'post_status' => 'publish' ] );
+// create_new: conversions are in place by default now, and this helper's whole
+// job is to hand back a second post to look at.
+$results = ( new \WPBakeryDivi5Converter\Conversion\ConversionCommitter() )->commit( $plan, [ 'post_status' => 'publish', 'create_new' => true ] );
 
 if ( empty( $results[0]['success'] ) ) {
     fwrite( STDERR, 'Conversion failed: ' . ( $results[0]['error'] ?? 'unknown' ) . "\n" );
