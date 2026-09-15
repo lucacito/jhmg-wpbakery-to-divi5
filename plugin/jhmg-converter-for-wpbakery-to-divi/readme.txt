@@ -103,9 +103,9 @@ Yes. The converter writes Divi 5 block content. On Divi 4 or without Divi it exp
 
 == Screenshots ==
 
-1. The converter — pick an installed WPBakery page or upload an export; recent runs can be undone with one click
-2. The conversion report shown before anything is written: the structure it will produce and what will not carry over
-3. Conversion results — per-page status and notes, with links to edit, view or publish the new Divi page
+1. The converter — pick an installed WPBakery page or upload an export; every run is listed and can be undone with one click
+2. The conversion report shown before anything is written: the structure it will produce, everything that will not carry over, and the choice between converting the page itself or a new draft
+3. Conversion results — what each page converted to and the notes worth reading, with links to edit and view it
 
 == External services ==
 

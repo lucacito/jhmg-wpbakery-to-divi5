@@ -483,7 +483,7 @@ class AdminPage {
 
             <div class="wbdc-card wbdc-card--direct">
                 <h2><?php esc_html_e( 'Convert a page already on this site', 'jhmg-converter-for-wpbakery-to-divi' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Pick a WPBakery page, check what the conversion will produce, then convert it. Your original page is never modified.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Pick a WPBakery page and check what the conversion will produce. Converting rewrites that page, so it keeps its address and everything linking to it, and Undo puts the WPBakery version back.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
                 <?php
                 // One query, not two: the picker renders its own empty state,
                 // and the content LIKE behind it is not cheap enough to run

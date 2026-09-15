@@ -124,7 +124,7 @@ class CoveragePanel {
         return sprintf(
             '<div class="wbdc-card"><h2>%1$s</h2><p class="description">%2$s</p><table class="widefat striped"><thead><tr><th>%3$s</th><th>%4$s</th><th></th></tr></thead><tbody>%5$s</tbody></table></div>',
             esc_html__( 'Recent conversions', 'jhmg-converter-for-wpbakery-to-divi' ),
-            esc_html__( 'Undo moves the pages a run created to the trash. Your WPBakery originals are never touched. It skips only pages that are no longer linked to this plugin (already gone, or replaced) — editing a page does not exempt it from Undo.', 'jhmg-converter-for-wpbakery-to-divi' ),
+            esc_html__( 'Undo puts a converted page back the way it was, with its WPBakery content returned. A run that made new drafts instead has those drafts moved to the trash. Either way it skips pages that are no longer linked to this plugin (already gone, or replaced) — editing a page does not exempt it from Undo.', 'jhmg-converter-for-wpbakery-to-divi' ),
             esc_html__( 'When', 'jhmg-converter-for-wpbakery-to-divi' ),
             esc_html__( 'Pages', 'jhmg-converter-for-wpbakery-to-divi' ),
             $rows

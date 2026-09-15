@@ -2,9 +2,11 @@
 /**
  * Conversion input read directly from posts on this site.
  *
- * Strictly read-only. The source post is never modified — a conversion always
- * creates a new post, so a failed or unwanted conversion can never cost the
- * user their WPBakery original.
+ * Strictly read-only: this class only reads. What is then done with the post —
+ * rewriting it in place, or writing a copy beside it — is the committer's
+ * decision. Either way the original shortcodes survive the run, on the post
+ * itself when it is converted in place, so an unwanted conversion never costs
+ * the user their WPBakery content.
  *
  * What is read is the post's `post_content` (the shortcode string) and the
  * three metas WPBakery writes beside it. Nothing is rendered and no HTML is
