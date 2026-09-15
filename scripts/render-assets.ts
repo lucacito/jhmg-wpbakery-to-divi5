@@ -136,6 +136,17 @@ async function screenshots(page: Page): Promise<void> {
   await page.goto(converter);
   await page.waitForSelector('.wbdc-direct-table');
   await shoot(page, 'screenshot-1.png');
+
+  // Converting is in place by default, so this run changed a real page on the
+  // site. Undo it: the listing screenshot is already taken, and the site is
+  // left as it was found. The link asks for confirmation.
+  const undo = page.locator('a.button:has-text("Undo")').first();
+  if ((await undo.count()) > 0) {
+    page.once('dialog', (d) => d.accept());
+    await undo.click();
+    await page.waitForLoadState('domcontentloaded');
+    console.log('the run shown in the screenshots has been undone');
+  }
 }
 
 async function main(): Promise<void> {

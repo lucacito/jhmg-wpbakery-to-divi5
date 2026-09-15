@@ -49,21 +49,28 @@ admin, viewport 1280px wide, with the Pro add-on installed but **deactivated**:
 | WPBakery Page Builder (`js_composer`) | 9.0.1 |
 | Ultimate Addons for WPBakery (`Ultimate_VC_Addons`) | 3.19.3 |
 | Plugin Check | 2.1.0 |
-| This plugin | 1.0.0 |
+| This plugin | 1.1.0 |
 
 Procedure, so the shots can be reproduced:
 
-1. Seed a handful of pages from `fixtures/wpbakery-layouts/` (the Layouts for WPBakery corpus) with
-   `wp post create` + `scripts/docker/set-wpbakery-content.php`, one of them titled "Coffee shop"
-   (`17-coffee-shop.txt`).
-2. `wp option delete wbdc_import_history` first, so "Recent conversions" shows the run these
-   screenshots make rather than a pile of test runs.
-3. `npm run assets -- screenshots`. It logs in, dismisses the other plugins' admin notices, then
-   shoots 2 (the check report), 3 (the results screen) and 1 (the landing screen) in that order —
-   the landing screen only has a run to undo once a run has happened, which is what caption 1
-   promises. It prints the id of every page the run created.
-4. Trash the seeded pages and that created page (`wp post delete <id> --force`) and put
-   `wbdc_import_history` back, so the site is as it was.
+1. Seed pages from `fixtures/wpbakery-layouts/` (the Layouts for WPBakery corpus) with
+   `wp post create` + `scripts/docker/set-wpbakery-content.php`.
+2. Choose the page the report and results shots are taken of, and make sure it is on the picker's
+   first screen — the picker orders by modified date, so
+   `wp post update <id> --post_modified=<now> --post_modified_gmt=<now>` brings it to the top. A
+   mid-sized layout reads best: `13-nectar-cafe` (53 modules) fits its whole report on one screen,
+   where a 108-module page produces 4,000px of outline that says nothing at listing scale.
+3. `wp option delete wbdc_import_history` and `wp option update wbdc_conversions_total 0`, so
+   "Recent conversions" shows this run rather than a pile of test runs, and the review prompt does
+   not appear in frame.
+4. `WBDC_SHOT_PAGE='<page title>' npm run assets -- screenshots`. It logs in, dismisses the other
+   plugins' admin notices, then shoots 2 (the check report), 3 (the results screen) and 1 (the
+   landing screen) in that order — the landing screen only has a run to undo once a run has
+   happened, which is what caption 1 promises.
+5. Since 1.1.0 converting rewrites the page it was given, so the run changes a real page. The
+   script undoes its own run at the end (accepting the confirmation the Undo link asks for) and
+   says so, leaving the site as it found it. Check that it did: the page's content should be
+   shortcodes again and `_et_pb_use_divi_5` gone.
 
 ## Submission notes
 
@@ -89,6 +96,15 @@ the plugin name and slug so a user can find it. readme.txt says in its `== Descr
 plugin is not affiliated with or endorsed by WPBakery Page Builder, and the name is descriptive of
 what it does, which is what the directory asks for. If the review team asks for a different name,
 only the name and slug change; nothing in the code depends on them.
+
+### The slug the directory assigns
+
+The sibling Beaver Builder plugin was submitted as `jhmg-converter-for-beaver-builder-to-divi` and
+the directory assigned it the permalink `jhmg-converter-for-beaver-builder-to-divi-5`, after which
+the plugin folder, main file and text domain were renamed to match. Expect the same here: if the
+permalink comes back as `jhmg-converter-for-wpbakery-to-divi-5`, rename the folder, the main file
+and the text domain, and update the download link on divi5lab.com
+(`lib/site/free-downloads.ts`).
 
 `Tested up to` in readme.txt is `7.1`, read off this container with
 `docker compose exec -T wordpress wp core version --allow-root` at the time of the release, never
