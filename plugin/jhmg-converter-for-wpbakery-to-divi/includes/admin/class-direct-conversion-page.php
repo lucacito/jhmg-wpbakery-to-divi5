@@ -29,6 +29,9 @@ class DirectConversionPage {
     const CONVERT_ACTION = 'wbdc_direct_convert';
     const CHECK_NONCE    = 'wbdc_direct_check_nonce';
     const CONVERT_NONCE  = 'wbdc_direct_convert_nonce';
+
+    /** Ticked, the conversion writes a separate draft and leaves the page alone. */
+    const CREATE_NEW_FIELD = 'wbdc_create_new';
     const CAPABILITY     = 'manage_options';
 
     /** The form field the picker submits. */
@@ -92,7 +95,11 @@ class DirectConversionPage {
     }
 
     /**
-     * Convert the selection. Creates new posts; never modifies the source.
+     * Convert the selection.
+     *
+     * By default each page is converted where it stands, so it keeps its
+     * address and everything pointing at it; `create_new` writes a separate
+     * draft and leaves the original untouched. Either way the run is undoable.
      *
      * @param int[]               $post_ids
      * @param array<string,mixed> $options
@@ -257,8 +264,11 @@ class DirectConversionPage {
             foreach ( $ids as $id ) {
                 $html .= '<input type="hidden" name="' . esc_attr( self::IDS_FIELD ) . '[]" value="' . esc_attr( (string) $id ) . '">';
             }
+            $html .= '<p class="wbdc-convert-choice"><label><input type="checkbox" name="' . esc_attr( self::CREATE_NEW_FIELD ) . '" value="1"> '
+                . esc_html__( 'Convert into a new draft instead, and leave this page as it is', 'jhmg-converter-for-wpbakery-to-divi' )
+                . '</label></p>';
             $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Convert to Divi 5', 'jhmg-converter-for-wpbakery-to-divi' ) . '</button></p>';
-            $html .= '<p class="description">' . esc_html__( 'Creates a new Divi draft. Your WPBakery page is left exactly as it is.', 'jhmg-converter-for-wpbakery-to-divi' ) . '</p></form>';
+            $html .= '<p class="description">' . esc_html__( 'The page keeps its address, its date and everything linking to it, because it is the same page. Undo puts the WPBakery version back. Tick the box above and you get a separate draft instead, at a new address.', 'jhmg-converter-for-wpbakery-to-divi' ) . '</p></form>';
         }
 
         return $html . '</div>';
@@ -319,7 +329,7 @@ class DirectConversionPage {
             wp_die( esc_html__( 'No pages were selected to convert.', 'jhmg-converter-for-wpbakery-to-divi' ) );
         }
 
-        $results = $this->convert( $ids );
+        $results = $this->convert( $ids, [ 'create_new' => ! empty( $request[ self::CREATE_NEW_FIELD ] ) ] );
         ( new ReviewPrompt() )->record_run( $results );
 
         $import_id = wp_generate_uuid4();

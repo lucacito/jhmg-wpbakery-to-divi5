@@ -9,7 +9,7 @@ final class PluginBootstrapTest extends TestCase {
 
     public function test_constants_are_defined(): void {
         $this->assertTrue( defined( 'WBDC_PLUGIN_DIR' ) );
-        $this->assertSame( '1.0.1', WBDC_PLUGIN_VERSION );
+        $this->assertSame( '1.1.0', WBDC_PLUGIN_VERSION );
         $this->assertStringEndsWith( 'jhmg-converter-for-wpbakery-to-divi/', WBDC_PLUGIN_DIR );
     }
 

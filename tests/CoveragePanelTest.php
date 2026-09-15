@@ -63,4 +63,26 @@ final class CoveragePanelTest extends TestCase {
         $this->assertStringContainsString( 'Stop sharing', $html );
         $this->assertStringContainsString( 'No site address, no content, no personal data', $html );
     }
+
+    public function test_an_in_place_run_is_undoable_even_when_the_trash_is_off(): void {
+        $history = new ImportHistory();
+        $history->record( 'run-inplace', [ [ 'success' => true, 'post_id' => 9, 'in_place' => true ] ] );
+
+        $html = ( new CoveragePanel( $history ) )->markup();
+
+        // Putting a page back needs no Trash, so the offer stands either way,
+        // and it must not promise to trash anything.
+        $this->assertStringContainsString( 'wbdc_rollback=run-inplace', $html );
+        $this->assertStringContainsString( 'back the way', $html );
+        $this->assertStringNotContainsString( 'to the Trash?', $html );
+    }
+
+    public function test_a_copy_run_still_says_it_will_trash_what_it_made(): void {
+        $history = new ImportHistory();
+        $history->record( 'run-copy', [ [ 'success' => true, 'post_id' => 9, 'in_place' => false ] ] );
+
+        $html = ( new CoveragePanel( $history ) )->markup();
+
+        $this->assertStringContainsString( 'to the Trash?', $html );
+    }
 }

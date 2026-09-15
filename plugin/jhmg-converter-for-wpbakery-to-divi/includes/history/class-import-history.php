@@ -49,6 +49,10 @@ class ImportHistory {
             'theme_families' => self::theme_family_keys( $results ),
             'succeeded'      => $succeeded,
             'failed'         => count( $real ) - $succeeded,
+            // Undo behaves differently for the two kinds of run: one puts pages
+            // back, the other trashes pages it created — and only the second
+            // needs the Trash to be available at all.
+            'in_place'       => (bool) array_filter( $results, static fn( $r ): bool => ! empty( $r['in_place'] ) ),
             'rolled_back'    => false,
         ] );
 

@@ -10,10 +10,12 @@ use WPBakeryDivi5Converter\Conversion\InstalledPostSource;
 /**
  * What a converted post keeps of the post it came from.
  *
- * A conversion creates a new post, so everything the old post *was* — its
- * custom fields, its featured image, its categories, the day it was published,
- * who wrote it — has to be carried over deliberately or it is silently lost.
- * Reported by a user who converted a post and found his ACF fields empty.
+ * Converting in place keeps everything by definition: the post never moves.
+ * These are about the other path, `create_new`, where a second post is written
+ * and everything the old post *was* — its custom fields, its featured image,
+ * its categories, the day it was published, who wrote it — has to be carried
+ * over deliberately or it is silently lost. Reported by a user who converted a
+ * post and found his ACF fields empty.
  */
 final class PostIdentityCopyTest extends TestCase {
 
@@ -61,9 +63,11 @@ final class PostIdentityCopyTest extends TestCase {
 
     private function convert( int $id = 42 ): int {
         $plan    = ( new ConversionPreflight() )->run( new InstalledPostSource( [ $id ] ) );
-        $results = ( new ConversionCommitter() )->commit( $plan, [ 'post_status' => 'draft' ] );
+        $results = ( new ConversionCommitter() )->commit( $plan, [ 'post_status' => 'draft', 'create_new' => true ] );
         $this->assertTrue( $results[0]['success'], (string) ( $results[0]['error'] ?? '' ) );
-        return (int) $results[0]['post_id'];
+        $new = (int) $results[0]['post_id'];
+        $this->assertNotSame( $id, $new, 'a copy run writes a second post, or these assertions prove nothing' );
+        return $new;
     }
 
     public function test_the_new_post_keeps_the_custom_fields_the_old_one_had(): void {

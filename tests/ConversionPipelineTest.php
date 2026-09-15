@@ -215,12 +215,17 @@ final class ConversionPipelineTest extends TestCase {
         $this->assertSame( 'Before \\ After', $results[0]['title'] );
     }
 
-    public function test_commit_never_touches_the_source_post(): void {
+    /**
+     * The copy run is the one that promises this. Converting in place is the
+     * default and deliberately rewrites the post it was given — see
+     * InPlaceConversionTest, which asserts what it keeps and what Undo puts back.
+     */
+    public function test_a_copy_run_never_touches_the_source_post(): void {
         $this->seed( 20 );
         $before = (array) get_post( 20 );
 
         $plan = ( new ConversionPreflight() )->run( new InstalledPostSource( [ 20 ] ) );
-        ( new ConversionCommitter() )->commit( $plan );
+        ( new ConversionCommitter() )->commit( $plan, [ 'create_new' => true ] );
 
         $this->assertSame( $before, (array) get_post( 20 ) );
     }
