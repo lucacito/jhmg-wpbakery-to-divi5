@@ -3,6 +3,12 @@
 - Never scrape HTML. Read the post's `post_content` (the shortcode string) and the metas
   `_wpb_vc_js_status`, `_wpb_shortcodes_custom_css`, `_wpb_post_custom_css` only. Never modify the
   source post — a conversion always creates a new post.
+- Because the conversion creates a new post, the old post's identity has to be carried deliberately:
+  `PostIdentityCopier` copies every custom field (ACF included; values slashed, repeated keys kept),
+  `_thumbnail_id`, `_wp_page_template`, the taxonomies both post types share (by term **id**, never
+  slug) and the date/author/excerpt/menu_order/parent/comment fields, and deliberately leaves
+  `_wpb_*`, `_et_pb_*`, `_edit_*` and `_wbdc_*` behind. The slug survives only while the new post is a draft
+  (`wp_unique_post_slug()` skips drafts); publishing beside the original appends `-2`. Documented in `docs/conversion-workflow.md`.
 - WPBakery field names come from the source, not from memory: `references/js_composer.9.0.1.zip`
   (`config/**`, `include/templates/shortcodes/*.php`, `include/classes/shortcodes/*.php`,
   `include/params/**`, `include/classes/migrations/class-wpb-template-attributes-migration.php`),
