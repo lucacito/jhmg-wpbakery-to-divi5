@@ -114,31 +114,15 @@ final class ConversionPipelineTest extends TestCase {
         $this->assertSame( [ 'Ronneby' => 1 ], $import->items()[0]['report']['theme_elements'] );
     }
 
-    public function test_preflight_caps_at_the_free_limit_and_reports_truncation(): void {
-        $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'One' ), $this->item( 'Two' ) ] ) );
-
-        $this->assertSame( 1, $plan->count() );
-        $this->assertTrue( $plan->truncated() );
-
-        add_filter( ConversionPreflight::LIMIT_FILTER, fn() => 10 );
-        $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'One' ), $this->item( 'Two' ) ] ) );
-
-        $this->assertSame( 2, $plan->count() );
-        $this->assertFalse( $plan->truncated() );
-    }
-
-    public function test_run_unlimited_ignores_the_cap(): void {
-        $plan = ( new ConversionPreflight() )->runUnlimited(
+    public function test_preflight_plans_every_item_the_source_holds(): void {
+        $plan = ( new ConversionPreflight() )->run(
             new FakeWPBakerySource( [ $this->item( 'One' ), $this->item( 'Two' ), $this->item( 'Three' ) ] )
         );
 
         $this->assertSame( 3, $plan->count() );
-        $this->assertFalse( $plan->truncated() );
     }
 
     public function test_each_item_gets_a_fresh_report(): void {
-        add_filter( ConversionPreflight::LIMIT_FILTER, fn() => 2 );
-
         $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'One' ), $this->item( 'Two' ) ] ) );
 
         $this->assertSame( 1, $plan->items()[1]['report']['converted']['heading'], 'counts must not accumulate across items' );
@@ -255,9 +239,9 @@ final class ConversionPipelineTest extends TestCase {
     // --- the library path ---------------------------------------------------------
 
     /** The wording the free plugin owes a reader whose template became a page. */
-    private const LIBRARY_WARNING = 'WPBakery template imported as a page (Pro turns templates into Divi Library layouts)';
+    private const LIBRARY_WARNING = 'WPBakery template imported as a page draft';
 
-    public function test_a_template_without_pro_becomes_a_page_draft_with_a_warning(): void {
+    public function test_a_template_without_a_library_exporter_becomes_a_page_draft_with_a_warning(): void {
         $plan    = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [ $this->item( 'Saved Row', [ 'template_type' => 'library' ] ) ] ) );
         $results = ( new ConversionCommitter() )->commit( $plan );
 
@@ -311,8 +295,6 @@ final class ConversionPipelineTest extends TestCase {
 
     /** An unselected template does not stop the pages beside it. */
     public function test_unselecting_templates_leaves_ordinary_pages_alone(): void {
-        add_filter( ConversionPreflight::LIMIT_FILTER, fn(): int => 5 );
-
         $plan = ( new ConversionPreflight() )->run( new FakeWPBakerySource( [
             $this->item( 'Saved Row', [ 'template_type' => 'library' ] ),
             $this->item( 'Home' ),

@@ -30,10 +30,6 @@ class Plugin {
 
         add_filter( 'wbdc_pro_active', '__return_true' );
 
-        // Free converts one item per run; Pro converts as many as selected. A
-        // quantity boundary, not a feature flag: the whole loop lives in free.
-        add_filter( 'wbdc_direct_conversion_limit', static fn( $v ) => PHP_INT_MAX );
-
         // The free committer asks this for every WPBakery template it is about
         // to write. An exporter another add-on already answered with is left
         // alone, which is why the filtered value is returned when it is set.

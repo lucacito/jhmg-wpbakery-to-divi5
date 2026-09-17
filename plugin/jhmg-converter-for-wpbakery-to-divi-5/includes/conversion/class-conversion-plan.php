@@ -14,14 +14,10 @@ final class ConversionPlan {
 
     /** @var array[] */
     private array $items;
-    private int $limit;
-    private bool $truncated;
 
     /** @param array[] $items */
-    public function __construct( array $items, int $limit = 1, bool $truncated = false ) {
-        $this->items     = array_values( $items );
-        $this->limit     = $limit;
-        $this->truncated = $truncated;
+    public function __construct( array $items ) {
+        $this->items = array_values( $items );
     }
 
     /**
@@ -66,14 +62,6 @@ final class ConversionPlan {
         return $this->items;
     }
 
-    public function limit(): int {
-        return $this->limit;
-    }
-
-    public function truncated(): bool {
-        return $this->truncated;
-    }
-
     public function count(): int {
         return count( $this->items );
     }
@@ -88,8 +76,8 @@ final class ConversionPlan {
         return false;
     }
 
-    /** @return array{items: array[], limit: int, truncated: bool} */
+    /** @return array{items: array[]} */
     public function toArray(): array {
-        return [ 'items' => $this->items, 'limit' => $this->limit, 'truncated' => $this->truncated ];
+        return [ 'items' => $this->items ];
     }
 }

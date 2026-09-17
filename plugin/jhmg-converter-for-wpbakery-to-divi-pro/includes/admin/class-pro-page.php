@@ -122,8 +122,7 @@ class ProPage {
     /**
      * Convert the selected templates through the free plugin's own pipeline.
      *
-     * `runUnlimited()` rather than `run()`: the per-run cap is what Pro lifts,
-     * and every item here is a WPBakery template, so `convert_templates` is on
+     * Every item here is a WPBakery template, so `convert_templates` is on
      * and the committer routes each one through the `wbdc_library_exporter`
      * filter this add-on answers — into the Divi Library rather than into
      * another page draft. The source posts are never modified.
@@ -132,7 +131,7 @@ class ProPage {
      * @return array[] One result row per template.
      */
     public function convert_templates( array $ids ): array {
-        $plan = ( new ConversionPreflight() )->runUnlimited( new InstalledPostSource( $ids ) );
+        $plan = ( new ConversionPreflight() )->run( new InstalledPostSource( $ids ) );
 
         return ( new ConversionCommitter() )->commit( $plan, [
             'mode'              => 'direct',

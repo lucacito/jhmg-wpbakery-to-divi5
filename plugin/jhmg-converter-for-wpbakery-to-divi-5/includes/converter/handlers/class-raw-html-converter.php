@@ -10,24 +10,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * `vc_raw_html` and `vc_raw_js` → `divi/code`.
+ * `vc_raw_html` → `divi/code`; `vc_raw_js` → nothing, reported.
  *
  * Both share one template: the content is
  * `rawurldecode( base64_decode( wp_strip_all_tags( $content ) ) )`
  * (`include/templates/shortcodes/vc_raw_html.php`, which the "Raw JS" element
- * reuses), printed verbatim. `divi/code` is the module that prints raw markup
- * verbatim too (`content.innerContent`, `code/module.json`), so the conversion
- * is the decode and nothing else — script tags included, which is the whole
- * point of the element.
+ * reuses). `divi/code` prints markup (`content.innerContent`,
+ * `code/module.json`), so `vc_raw_html` is the decode and nothing else; what
+ * the person converting may publish of it is decided afterwards, over the
+ * whole tree, by `MarkupSanitiser`.
  *
- * `vc_raw_js` has no Design Options in either release (the template says so),
- * so its `css` is simply absent; the StyleMapper handles that on its own.
+ * `vc_raw_js` is only ever a script. The converter never writes one: the
+ * element is reported under `not_carried_over` kind `custom_code` with its
+ * length, and no block is emitted.
  *
- * The two tags also differ on the default bottom margin: `shortcode-vc-raw-html.php`
- * sets `element_default_class` to `wpb_content_element` and seeds Design Options
- * with `margin-bottom: 35px`, so `vc_raw_html` keeps the usual 35 px content
- * default. `shortcode-vc-raw-js.php` has neither — no `element_default_class`,
- * no Design Options tab at all — so `vc_raw_js` carries no margin.
+ * `shortcode-vc-raw-html.php` sets `element_default_class` to
+ * `wpb_content_element` and seeds Design Options with `margin-bottom: 35px`,
+ * so `vc_raw_html` keeps the usual 35 px content default.
  */
 class RawHtmlConverter extends BaseWPBakeryConverter {
 
@@ -36,11 +35,20 @@ class RawHtmlConverter extends BaseWPBakeryConverter {
         $atts    = is_array( $node['atts'] ?? null ) ? $node['atts'] : [];
         $content = (string) ( $node['content'] ?? '' );
 
-        $margin_kind = ( (string) ( $node['tag'] ?? '' ) === 'vc_raw_js' ) ? 'none' : 'content';
-        $style       = $this->mapStyle( 'generic', $node, $margin_kind );
+        if ( (string) ( $node['tag'] ?? '' ) === 'vc_raw_js' ) {
+            $this->engine->logNotCarriedOver(
+                'custom_code',
+                $id,
+                'Raw JS element (' . strlen( PackedParams::rawHtml( $content ) ) . ' characters of script) not converted; if the page still needs it, add it through Divi > Theme Options > Integration'
+            );
+
+            return [];
+        }
+
+        $style = $this->mapStyle( 'generic', $node );
 
         $this->engine->logConverted( 'code' );
-        $this->logUnmappedSettings( $id, $atts, $style['handled_keys'], (string) ( $node['tag'] ?? '' ) );
+        $this->logUnmappedSettings( $id, $atts, $style['handled_keys'], 'vc_raw_html' );
 
         return $this->codeBlock( $id, PackedParams::rawHtml( $content ), $style['divi_attrs'] );
     }

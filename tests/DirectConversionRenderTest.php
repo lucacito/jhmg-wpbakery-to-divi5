@@ -289,12 +289,6 @@ final class DirectConversionRenderTest extends TestCase {
         $this->assertStringContainsString( 'vc_pie', $html );
     }
 
-    public function test_the_report_says_when_the_free_limit_truncated_the_selection(): void {
-        $plan = new ConversionPlan( [ ConversionPlan::item( [ 'title' => 'One' ] ) ], 1, true );
-
-        $this->assertStringContainsString( 'Converting several pages in one run is a Pro feature', ( new DirectConversionPage() )->render_report( $plan ) );
-    }
-
     // --- the picker ---------------------------------------------------------------------
 
     public function test_the_picker_lists_rows_with_their_badges(): void {
@@ -311,23 +305,12 @@ final class DirectConversionRenderTest extends TestCase {
         $page = new DirectConversionPage( new WPBakeryPageRepository( fn(): array => $rows ) );
         $html = $page->render_picker( [ 'search' => 'ho', 'paged' => 1 ] );
 
-        $this->assertStringContainsString( 'name="wbdc_post_ids" value="11"', $html, 'the free limit renders radios' );
-        $this->assertStringContainsString( 'type="radio"', $html );
+        $this->assertStringContainsString( 'type="checkbox" name="wbdc_post_ids[]" value="11"', $html, 'any number of pages can be picked' );
+        $this->assertStringNotContainsString( 'type="radio"', $html );
         $this->assertStringContainsString( 'already converted', $html );
         $this->assertStringContainsString( 'WPBakery flag missing', $html );
         $this->assertStringContainsString( 'name="wbdc_s"', $html );
-        $this->assertStringContainsString( 'Check this page', $html );
-    }
-
-    public function test_the_picker_offers_checkboxes_once_the_limit_is_raised(): void {
-        add_filter( 'wbdc_direct_conversion_limit', fn(): int => PHP_INT_MAX );
-        $rows = [ (object) [ 'ID' => 21, 'post_title' => 'Home', 'post_type' => 'page', 'post_status' => 'publish', 'post_modified' => '2026-09-01 00:00:00', 'post_content' => '[vc_row][/vc_row]' ] ];
-        $GLOBALS['__test_posts'][21] = $rows[0];
-
-        $html = ( new DirectConversionPage( new WPBakeryPageRepository( fn(): array => $rows ) ) )->render_picker();
-
-        $this->assertStringContainsString( 'name="wbdc_post_ids[]" value="21"', $html );
-        $this->assertStringContainsString( 'type="checkbox"', $html );
+        $this->assertStringContainsString( 'Check selected pages', $html );
     }
 
     public function test_the_picker_says_so_when_the_site_holds_no_wpbakery_pages(): void {

@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Tools → WPBakery → Divi 5. Routes between the landing page (picker, upload
- * form, coverage), the "Check this page" report, the upload's own options step
+ * form, coverage), the "Check selected pages" report, the upload's own options step
  * and the batch result.
  *
  * The upload is two steps because it has to be: which post types a file holds
@@ -476,14 +476,14 @@ class AdminPage {
             <?php if ( $pro ) : ?>
                 <div class="notice notice-success inline"><p><?php echo wp_kses_post( sprintf(
                     /* translators: %s: Pro tools URL */
-                    __( '<strong>Pro is active.</strong> Convert many pages per run, and turn WPBakery templates into Divi Library layouts from <a href="%s">Tools → WPBakery → Divi 5 Pro</a>.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+                    __( '<strong>Pro is active.</strong> Turn WPBakery templates into Divi Library layouts from <a href="%s">Tools → WPBakery → Divi 5 Pro</a>.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                     esc_url( admin_url( 'tools.php?page=wbdcp-pro' ) )
                 ) ); ?></p></div>
             <?php endif; ?>
 
             <div class="wbdc-card wbdc-card--direct">
                 <h2><?php esc_html_e( 'Convert a page already on this site', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Pick a WPBakery page and check what the conversion will produce. Converting rewrites that page, so it keeps its address and everything linking to it, and Undo puts the WPBakery version back.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
+                <p class="description"><?php esc_html_e( 'Pick one or more WPBakery pages and check what the conversion will produce. Converting rewrites each page, so it keeps its address and everything linking to it, and Undo puts the WPBakery version back.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
                 <?php
                 // One query, not two: the picker renders its own empty state,
                 // and the content LIKE behind it is not cheap enough to run
@@ -513,9 +513,8 @@ class AdminPage {
             <?php if ( ! $pro ) : ?>
             <div class="wbdc-card wbdc-card--pro">
                 <span class="wbdc-badge-pro"><?php esc_html_e( 'PRO', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></span>
-                <h2><?php esc_html_e( 'Migrate the whole site', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h2>
+                <h2><?php esc_html_e( 'Pro add-on', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h2>
                 <ul class="wbdc-features">
-                    <li><?php esc_html_e( 'Convert as many pages as you like in one run — from this site or from one export file', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></li>
                     <li><?php esc_html_e( 'Turn WPBakery templates into Divi Library layouts instead of pages', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></li>
                     <li><?php esc_html_e( 'Priority support and regular updates', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></li>
                 </ul>
@@ -592,7 +591,7 @@ class AdminPage {
 
             if ( in_array( $type, InstalledPostSource::LIBRARY_POST_TYPES, true ) ) {
                 $html .= ' <span class="description">'
-                    . esc_html__( 'WPBakery template (Pro turns these into Divi Library layouts; the free plugin imports them as pages)', 'jhmg-converter-for-wpbakery-to-divi-5' )
+                    . esc_html__( 'WPBakery template, imported as a page draft', 'jhmg-converter-for-wpbakery-to-divi-5' )
                     . '</span>';
             }
 
@@ -606,12 +605,6 @@ class AdminPage {
             . '<option value="publish">' . esc_html__( 'Published', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</option>'
             . '</select></p>';
         $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Convert Now', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></p>';
-
-        if ( ! apply_filters( 'wbdc_pro_active', false ) ) {
-            $html .= '<p class="description wbdc-free-notice">'
-                . esc_html__( 'Free converts the first page in the file. Pro converts every page in it.', 'jhmg-converter-for-wpbakery-to-divi-5' )
-                . '</p>';
-        }
 
         return $html . '</form></div>';
     }
@@ -798,7 +791,7 @@ class AdminPage {
     }
 
     // ------------------------------------------------------------------
-    // Direct report ("Check this page")
+    // Direct report ("Check selected pages")
     // ------------------------------------------------------------------
 
     private function render_direct_report(): void {

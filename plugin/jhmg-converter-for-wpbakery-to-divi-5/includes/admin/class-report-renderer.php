@@ -2,7 +2,7 @@
 /**
  * One conversion's report, rendered.
  *
- * Both screens read the same engine report — "Check this page" before anything
+ * Both screens read the same engine report — "Check selected pages" before anything
  * is written, and the results table afterwards — so the rendering lives here
  * rather than on either page. Every key of `ConverterEngine::getReport()`
  * reaches a reader through this class or through `NotCarriedOverRenderer`,

@@ -21,12 +21,11 @@ class ConversionCommitter {
     const LIBRARY_EXPORTER_FILTER = 'wbdc_library_exporter';
 
     /**
-     * What the free plugin says when a WPBakery template arrives and no Pro
+     * What the report says when a WPBakery template arrives and no library
      * exporter answered. It is never dropped: it becomes a page draft, which
-     * holds every element of it, and the warning says where it would have gone
-     * (task-11-amendments §2).
+     * holds every element of it (task-11-amendments §2).
      */
-    const LIBRARY_WARNING = 'WPBakery template imported as a page (Pro turns templates into Divi Library layouts)';
+    const LIBRARY_WARNING = 'WPBakery template imported as a page draft';
 
     /**
      * What a template gets when the caller unticked "convert templates".

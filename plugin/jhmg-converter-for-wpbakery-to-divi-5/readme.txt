@@ -3,12 +3,12 @@ Contributors: lucaslopvet
 Tags: divi migration, page builder converter, wpbakery to divi, divi 5, shortcode converter
 Requires at least: 5.9
 Tested up to: 7.1
-Stable tag: 1.1.0
+Stable tag: 1.2.0
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Convert WPBakery pages into native Divi 5 layouts. Check the result before anything is written, convert with one click, undo any run.
+Convert WPBakery pages into native Divi 5 layouts. Check the result before anything is written, convert any number of pages, undo any run.
 
 == Description ==
 
@@ -16,9 +16,9 @@ Convert pages built with WPBakery Page Builder into native Divi 5 block layouts 
 
 This plugin is not affiliated with, endorsed by or connected to WPBakery Page Builder or its makers. "WPBakery" and "WPBakery Page Builder" are trademarks of their respective owners, used here only to say what this plugin converts.
 
-If your WPBakery pages are on this site, pick one from a list — no export needed. Converting from another site? Export it there from Tools → Export (WPBakery keeps its layout inside the page content, so the export holds it) and upload the file here.
+If your WPBakery pages are on this site, pick them from a list — one page or all of them, no export needed. Converting from another site? Export it there from Tools → Export (WPBakery keeps its layout inside the page content, so the export holds it) and upload the file here.
 
-Before you convert, click **Check this page** to see a conversion report: the structure the conversion will produce, laid out as an outline, and everything that could not be carried over, by name. Nothing is written until you click Convert. Converting rewrites the page you picked, so it keeps its address, its publish date, its custom fields and everything linking to it — it is the same page, now built in Divi 5. Undo puts the WPBakery version back with one click. Prefer a copy? Tick one box and you get a separate Divi draft instead, with the original left exactly as it is.
+Before you convert, click **Check selected pages** to see a conversion report: the structure the conversion will produce, laid out as an outline, and everything that could not be carried over, by name. Nothing is written until you click Convert. Converting rewrites the page you picked, so it keeps its address, its publish date, its custom fields and everything linking to it — it is the same page, now built in Divi 5. Undo puts the WPBakery version back with one click. Prefer a copy? Tick one box and you get a separate Divi draft instead, with the original left exactly as it is.
 
 ### What converts
 
@@ -42,32 +42,28 @@ Counted by `scripts/element-coverage.php` straight off the converter's own handl
 
 **Design settings** — WPBakery's Design Options CSS is read rule by rule: margins and padding (with units and tablet/phone values), background colours, images, gradients and overlays, borders, radius and shadows, typography (family, weight, size, line height, letter spacing, alignment, transform, decoration), text colours, minimum heights, widths, alignment, custom IDs and classes, and responsive visibility. Anything with no Divi setting is carried as custom CSS on the module rather than lost. Font Awesome icons become the identical Divi icon.
 
+**Raw HTML and Raw JS** — a Raw HTML element becomes a Divi Code module. Its markup is held to what your account may publish: an administrator with the `unfiltered_html` capability gets it as written, anyone else gets it through WordPress's own HTML filter, and the report names every tag or attribute that was removed. The same filter covers every other converted module. A Raw JS element is never converted; the report lists it so you can decide whether the page still needs it.
+
 **Reported, not silently lost** — animations, visibility rules, click actions, third-party connections, hover colours, backgrounds that could only be approximated, global colours that could not be resolved, images whose attachment is not on this site, and any WPBakery setting this converter did not map. A field a theme bolted onto a WPBakery element is reported separately, as a theme feature rather than as a converter gap, because that is what it is.
 
-### Free vs Pro
+### Features
 
-**Free:**
-
-* Convert a page straight from your WPBakery site — pick it from a list
-* Check any page before converting: see the structure and exactly what will not carry over
-* Upload a WordPress export, or a .txt / .html file of shortcodes, to convert a page from another site
+* Convert pages straight from your WPBakery site — pick one, several or all of them from a list
+* Check before converting: see the structure and exactly what will not carry over
+* Upload a WordPress export, or a .txt / .html file of shortcodes, and convert every page in it
 * Every element WPBakery registers, both the 9.0 names and the older ones
+* WPBakery templates are converted too, as page drafts
 * A detailed per-page report, one-click undo for every run
-* Unlimited conversions — one page at a time
 
-**[Pro add-on](https://divi5lab.com/plugins/wpbakery-to-divi-5):**
-
-* Convert as many pages as you like in one run — from this site or from one export file
-* Templates → Divi Library: WPBakery templates (`vc4_templates`, Templatera) become Divi Library layouts instead of pages
-* Priority support and regular updates
+A separate [Pro add-on](https://divi5lab.com/plugins/wpbakery-to-divi-5), sold and hosted outside WordPress.org, adds its own Divi Library exporter (WPBakery templates become Divi Library layouts rather than page drafts) and priority support. Nothing in this plugin is limited or locked without it.
 
 ### Step by step
 
 1. Install and activate this plugin on your Divi 5 site.
 2. Go to **Tools → WPBakery → Divi 5**.
-3. Pick the page you want to convert and click **Check this page**.
-4. Read the report, then click **Convert to Divi 5** — a new Divi draft is created.
-5. Review it in the Divi Builder, then publish when ready.
+3. Tick the pages you want to convert and click **Check selected pages**.
+4. Read the report, then click **Convert to Divi 5** — each page is rewritten in Divi 5 where it stands (or tick the box for a separate draft).
+5. Review it in the Divi Builder. Undo puts the WPBakery version back.
 
 == Installation ==
 
@@ -125,6 +121,11 @@ commonly missing WPBakery elements get built first.
 
 == Changelog ==
 
+= 1.2.0 =
+* Convert any number of pages in one run, from this site or from an upload. There is no per-run limit.
+* Converted markup is held to what your account may publish: users without the `unfiltered_html` capability get it through WordPress's HTML filter, and the report names what was removed. Raw JS elements are reported, never converted.
+* The plugin folder and text domain are now `jhmg-converter-for-wpbakery-to-divi-5`.
+
 = 1.1.0 =
 * Conversions now rewrite the page you picked, so it keeps its permalink, publish date, author, comments and custom fields. Suggested by a user who pointed out that a converted post at a new address means a 301 nobody asked for.
 * The original WPBakery shortcodes are kept on the page, and Undo puts them back. Undo no longer needs the Trash for these runs.
@@ -144,6 +145,9 @@ commonly missing WPBakery elements get built first.
 * Font Awesome icons map to the identical Divi icons
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Convert as many pages as you like in one run. Raw JS elements are no longer copied into Divi; the report lists them.
 
 = 1.1.0 =
 Conversions now change the page you pick rather than making a second one, so it keeps its address and everything linking to it. Undo restores the WPBakery version. Tick the box on the report screen for the old behaviour.

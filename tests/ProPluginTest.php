@@ -6,7 +6,6 @@
  */
 
 use PHPUnit\Framework\TestCase;
-use WPBakeryDivi5Converter\Conversion\ConversionPreflight;
 use WPBakeryDivi5Converter\Admin\AdminPage;
 use WPBakeryDivi5Converter\Conversion\InstalledPostSource;
 use WPBakeryDivi5Converter\History\ImportHistory;
@@ -66,11 +65,10 @@ final class ProPluginTest extends TestCase {
 
     // --- wiring -----------------------------------------------------------------
 
-    public function test_pro_raises_the_limit_declares_itself_and_registers_the_library_exporter(): void {
+    public function test_pro_declares_itself_and_registers_the_library_exporter(): void {
         ProPlugin::instance()->register_hooks();
 
         $this->assertTrue( apply_filters( 'wbdc_pro_active', false ) );
-        $this->assertSame( PHP_INT_MAX, ConversionPreflight::limit() );
         $this->assertInstanceOf( DiviLibraryExporter::class, apply_filters( 'wbdc_library_exporter', null, [], [] ) );
         $this->assertSame( 'wpbakery-to-divi5-pro', WBDCP_PRODUCT_SLUG );
     }

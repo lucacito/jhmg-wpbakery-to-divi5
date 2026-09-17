@@ -2,7 +2,7 @@
 /**
  * Runs a conversion without committing it.
  *
- * The one engine behind both the "Check this page" report and the commit: the
+ * The one engine behind both the "Check selected pages" report and the commit: the
  * preview shows a plan, a commit writes one. `run()` performs no database
  * writes — `ConversionPipelineTest` asserts it against the in-memory stores —
  * which is what makes the preview worth reading.
@@ -19,13 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 class ConversionPreflight {
 
-    /**
-     * Free converts one item per run; Pro raises this. A quantity boundary,
-     * not a feature flag: the whole loop ships in the free plugin.
-     */
-    const LIMIT_FILTER  = 'wbdc_direct_conversion_limit';
-    const DEFAULT_LIMIT = 1;
-
     private ?ConverterEngine $engine;
     private DiviBlockSerializer $serializer;
 
@@ -39,39 +32,15 @@ class ConversionPreflight {
         $this->serializer = $serializer ?? new DiviBlockSerializer();
     }
 
-    public static function limit(): int {
-        if ( ! function_exists( 'apply_filters' ) ) {
-            return self::DEFAULT_LIMIT;
-        }
-
-        // Literal so Plugin Check can read the hook name; keep in step with self::LIMIT_FILTER.
-        return max( 1, (int) apply_filters( 'wbdc_direct_conversion_limit', self::DEFAULT_LIMIT ) );
-    }
-
-    /** Plan up to the limit; report whether the source held more. */
+    /** Plan every item the source holds. */
     public function run( ConversionSource $source ): ConversionPlan {
-        $limit     = self::limit();
-        $all       = $source->items();
-        $truncated = count( $all ) > $limit;
-        $items     = array_slice( $all, 0, $limit );
-
-        $planned = [];
-        foreach ( $items as $item ) {
-            $planned[] = $this->planItem( $item );
-        }
-
-        return new ConversionPlan( $planned, $limit, $truncated );
-    }
-
-    /** Plan every item regardless of the cap (the Pro paths). */
-    public function runUnlimited( ConversionSource $source ): ConversionPlan {
         $planned = [];
 
         foreach ( $source->items() as $item ) {
             $planned[] = $this->planItem( $item );
         }
 
-        return new ConversionPlan( $planned, PHP_INT_MAX, false );
+        return new ConversionPlan( $planned );
     }
 
     /**

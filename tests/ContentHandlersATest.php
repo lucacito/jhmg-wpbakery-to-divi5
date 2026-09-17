@@ -474,14 +474,73 @@ Another line[/vc_column_text]' ) );
         $this->assertSame( $html, $this->read( $module['settings'], 'content.innerContent.desktop.value' ) );
     }
 
-    public function test_raw_js_shares_the_same_handler(): void {
+    /** A Raw JS element is only ever a script, and the converter never writes one. */
+    public function test_raw_js_is_reported_and_never_written(): void {
         $js        = '<script>console.log(1);</script>';
         $shortcode = '[vc_raw_js]' . base64_encode( rawurlencode( $js ) ) . '[/vc_raw_js]';
 
-        $module = $this->firstModule( $this->convert( $this->row( $shortcode ) ) );
+        $result = $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => true ] );
 
-        $this->assertSame( 'divi/code', $module['name'] );
-        $this->assertSame( $js, $this->read( $module['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertSame( [], $this->modules( $result ) );
+        $this->assertStringNotContainsString( 'console.log', (string) json_encode( $result['divi'] ) );
+        $this->assertSame(
+            [ [ 'kind' => 'custom_code', 'node_id' => 'vc_raw_js-1', 'detail' => 'Raw JS element (32 characters of script) not converted; if the page still needs it, add it through Divi > Theme Options > Integration' ] ],
+            $result['report']['not_carried_over']
+        );
+        $this->assertSame( [], $result['unsupported'] );
+    }
+
+    /**
+     * Without `unfiltered_html` (a multisite administrator, an editor) the
+     * markup is held to what that user may publish, and the report names what
+     * went. With it, the element converts as written.
+     */
+    public function test_raw_html_is_held_to_what_the_converting_user_may_publish(): void {
+        $html      = '<div class="promo" onclick="steal()"><script>window.x = 1;</script><iframe src="https://www.youtube.com/embed/abc" width="560"></iframe></div>';
+        $shortcode = '[vc_raw_html]' . base64_encode( rawurlencode( $html ) ) . '[/vc_raw_html]';
+
+        $filtered = $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => false ] );
+        $value    = (string) $this->read( $this->firstModule( $filtered )['settings'], 'content.innerContent.desktop.value' );
+
+        $this->assertStringNotContainsString( '<script', $value );
+        $this->assertStringNotContainsString( 'window.x', $value, 'the script text does not stay behind as page text' );
+        $this->assertStringNotContainsString( 'onclick', $value );
+        $this->assertStringContainsString( '<div class="promo">', $value );
+        $this->assertStringContainsString( '<iframe src="https://www.youtube.com/embed/abc" width="560">', $value, 'an embed is page content' );
+        $this->assertSame(
+            [ [ 'kind' => 'custom_code', 'node_id' => 'vc_raw_html-1', 'detail' => 'markup your account may not publish was removed (onclick, <script>); a user with the unfiltered_html capability converts it as written' ] ],
+            $filtered['report']['not_carried_over']
+        );
+
+        $verbatim = $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => true ] );
+        $this->assertSame( $html, $this->read( $this->firstModule( $verbatim )['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertSame( [], $verbatim['report']['not_carried_over'] );
+    }
+
+    /** Every module's markup is filtered, not only the Code module's. */
+    public function test_the_filter_reaches_text_modules_and_leaves_clean_markup_unreported(): void {
+        $result = $this->convert(
+            $this->row( '[vc_column_text]<p onmouseover="x()">Hi</p>[/vc_column_text][vc_column_text]<p><strong>Fine</strong></p>[/vc_column_text]' ),
+            [ 'unfiltered_html' => false ]
+        );
+
+        $this->assertStringNotContainsString( 'onmouseover', (string) json_encode( $result['divi'] ) );
+        $this->assertCount( 1, $result['report']['not_carried_over'] );
+        $this->assertSame( 'vc_column_text-1', $result['report']['not_carried_over'][0]['node_id'] );
+    }
+
+    /** The capability decides when the caller does not. */
+    public function test_the_default_comes_from_the_current_users_capability(): void {
+        $shortcode = '[vc_raw_html]' . base64_encode( rawurlencode( '<script>1</script>' ) ) . '[/vc_raw_html]';
+
+        $GLOBALS['__test_caps'] = false;
+        try {
+            $value = $this->read( $this->firstModule( $this->convert( $this->row( $shortcode ) ) )['settings'], 'content.innerContent.desktop.value' );
+        } finally {
+            unset( $GLOBALS['__test_caps'] );
+        }
+
+        $this->assertSame( '', $value );
     }
 
     // -------------------------------------------------------------------------

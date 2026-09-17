@@ -37,7 +37,6 @@
 .wbdc-import-field .description { margin: 4px 0 0; font-size: 11px; color: #757575; }
 .wbdc-import-types { margin: 0 0 12px; }
 .wbdc-import-types p { margin: 4px 0; }
-.wbdc-free-notice { color: #946f00; margin-top: 10px; }
 .wbdc-batch-summary { display: flex; gap: 12px; margin: 16px 0 20px; flex-wrap: wrap; }
 .wbdc-summary-stat { display: inline-flex; align-items: center; padding: 6px 14px; border-radius: 3px; font-weight: 600; font-size: 13px; }
 .wbdc-summary-stat--total { background: #f0f0f1; color: #3c434a; }

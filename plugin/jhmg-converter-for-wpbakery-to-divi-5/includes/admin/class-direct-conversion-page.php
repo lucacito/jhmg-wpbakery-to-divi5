@@ -3,11 +3,10 @@
  * "Convert a page already on this site": pick an installed WPBakery page,
  * check what the conversion will produce, then convert it.
  *
- * Two safety properties are enforced here rather than in markup:
+ * One safety property is enforced here rather than in markup:
  *  - The rendered picker is never trusted on the way back in. Every submitted
  *    post ID is re-verified as an existing post that really holds WPBakery
  *    content — the same test the conversion itself makes.
- *  - The selection is capped server-side at `wbdc_direct_conversion_limit`.
  */
 
 namespace WPBakeryDivi5Converter\Admin;
@@ -51,8 +50,7 @@ class DirectConversionPage {
     }
 
     /**
-     * Sanitise and verify a submitted selection without capping it, so the
-     * check handler can tell whether a selection will be truncated.
+     * Sanitise and verify a submitted selection.
      *
      * @param array<string,mixed> $request
      * @return int[] Post IDs that exist, hold WPBakery content, and are deduplicated.
@@ -78,11 +76,6 @@ class DirectConversionPage {
         }
 
         return $ids;
-    }
-
-    /** @return int[] Verified and capped. */
-    public function selected_post_ids( array $request ): array {
-        return array_slice( $this->verified_post_ids( $request ), 0, ConversionPreflight::limit() );
     }
 
     /**
@@ -129,7 +122,6 @@ class DirectConversionPage {
      * @param array<string,mixed> $args
      */
     public function render_picker( array $args = [] ): string {
-        $limit    = ConversionPreflight::limit();
         $search   = trim( (string) ( $args['search'] ?? '' ) );
         $paged    = max( 1, (int) ( $args['paged'] ?? 1 ) );
         $per_page = WPBakeryPageRepository::PER_PAGE;
@@ -154,16 +146,13 @@ class DirectConversionPage {
                 . '</p>';
         }
 
-        $input_type = $limit > 1 ? 'checkbox' : 'radio';
-        $name       = $limit > 1 ? self::IDS_FIELD . '[]' : self::IDS_FIELD;
-
         $html .= '<form method="post" class="wbdc-direct-picker">';
         $html .= wp_nonce_field( self::CHECK_ACTION, self::CHECK_NONCE, true, false );
         $html .= '<input type="hidden" name="action" value="' . esc_attr( self::CHECK_ACTION ) . '">';
         $html .= '<table class="widefat wbdc-direct-table"><tbody>';
 
         foreach ( $rows as $row ) {
-            $html .= '<tr><td><label><input type="' . esc_attr( $input_type ) . '" name="' . esc_attr( $name ) . '" value="' . esc_attr( (string) $row['id'] ) . '"> '
+            $html .= '<tr><td><label><input type="checkbox" name="' . esc_attr( self::IDS_FIELD . '[]' ) . '" value="' . esc_attr( (string) $row['id'] ) . '"> '
                 . '<strong>' . esc_html( $row['title'] ) . '</strong></label>';
             $html .= ' <span class="wbdc-direct-meta">' . esc_html( $row['post_type'] . ' · ' . $row['status'] . ' · ' . $row['modified'] ) . '</span>';
 
@@ -180,13 +169,7 @@ class DirectConversionPage {
         }
 
         $html .= '</tbody></table>';
-        $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Check this page', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></p>';
-
-        if ( $limit === 1 ) {
-            $html .= '<p class="description">'
-                . esc_html__( 'Free converts one page at a time, as many times as you like. Pro converts your whole site in one run.', 'jhmg-converter-for-wpbakery-to-divi-5' )
-                . '</p>';
-        }
+        $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Check selected pages', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></p>';
 
         $html .= '</form>';
 
@@ -229,12 +212,6 @@ class DirectConversionPage {
     public function render_report( ConversionPlan $plan ): string {
         $html  = '<div class="wbdc-direct-report"><h2>' . esc_html__( 'Conversion report', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h2>';
         $html .= '<p class="description">' . esc_html__( 'Nothing has been written yet. This is what the conversion will produce.', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</p>';
-
-        if ( $plan->truncated() ) {
-            $html .= '<div class="notice notice-info inline"><p>'
-                . esc_html__( 'Only the first page was checked. Converting several pages in one run is a Pro feature.', 'jhmg-converter-for-wpbakery-to-divi-5' )
-                . '</p></div>';
-        }
 
         $ids = [];
         foreach ( $plan->items() as $item ) {
@@ -298,7 +275,7 @@ class DirectConversionPage {
     }
 
     /**
-     * Verified but uncapped, stashed per user; the report screen re-plans from the stash.
+     * Verified, stashed per user; the report screen re-plans from the stash.
      *
      * @param array<string,mixed> $request The nonce-verified, unslashed POST body.
      */
@@ -323,7 +300,7 @@ class DirectConversionPage {
      * @param array<string,mixed> $request The nonce-verified, unslashed POST body.
      */
     protected function handle_convert( array $request ): void {
-        $ids = $this->selected_post_ids( $request );
+        $ids = $this->verified_post_ids( $request );
 
         if ( empty( $ids ) ) {
             wp_die( esc_html__( 'No pages were selected to convert.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );

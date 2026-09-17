@@ -16,10 +16,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Converts a list of import items and writes the results — a thin orchestrator
  * over ConversionPreflight (convert, writing nothing) and ConversionCommitter.
- *
- * Uploads are subject to the same per-run limit as direct conversion: the free
- * plugin converts the first page in a file and says how many it left, Pro
- * converts them all.
  */
 class BatchImporter {
 
@@ -34,31 +30,10 @@ class BatchImporter {
     /**
      * @param array[] $items   Import items from WPBakeryImportParser::parse().
      * @param array<string,mixed> $options post_status ('draft'|'publish'), post_type override, convert_templates.
-     * @return array[] Per-item results; a trailing 'skipped' entry explains anything the limit left out.
+     * @return array[] Per-item results.
      */
     public function import( array $items, array $options = [] ): array {
-        $plan    = $this->preflight->run( $this->sourceFor( $items ) );
-        $results = $this->committer->commit( $plan, $options );
-
-        if ( $plan->truncated() ) {
-            $left = count( $items ) - $plan->count();
-
-            $results[] = [
-                'title'       => sprintf(
-                    /* translators: %d: number of pages in the file that were not converted */
-                    _n( '%d more page in this file was not converted', '%d more pages in this file were not converted', $left, 'jhmg-converter-for-wpbakery-to-divi-5' ),
-                    $left
-                ),
-                'post_id'     => 0,
-                'success'     => false,
-                'skipped'     => true,
-                'error'       => __( 'Free converts one page per upload. The Pro add-on converts every page in the file in one run.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
-                'report'      => [],
-                'unsupported' => [],
-            ];
-        }
-
-        return $results;
+        return $this->committer->commit( $this->preflight->run( $this->sourceFor( $items ) ), $options );
     }
 
     /** Commit a plan a caller already built — the report screen's Convert step. */

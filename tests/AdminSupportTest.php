@@ -5,7 +5,6 @@ namespace WPBakeryDivi5Converter\Tests;
 use PHPUnit\Framework\TestCase;
 use WPBakeryDivi5Converter\Admin\AdminPage;
 use WPBakeryDivi5Converter\Conversion\ConversionCommitter;
-use WPBakeryDivi5Converter\Conversion\ConversionPreflight;
 use WPBakeryDivi5Converter\Parsers\WPBakeryImportParser;
 
 /**
@@ -97,7 +96,7 @@ final class AdminSupportTest extends TestCase {
         $this->assertStringContainsString( 'value="page" checked="checked"', $html );
         $this->assertStringContainsString( 'value="post" checked="checked"', $html );
         $this->assertStringContainsString( 'value="vc4_templates">', $html, 'a template is offered, not ticked' );
-        $this->assertStringContainsString( 'Pro turns these into Divi Library layouts', $html );
+        $this->assertStringContainsString( 'WPBakery template, imported as a page draft', $html );
         $this->assertStringContainsString( 'the first 500 were read', $html, "the parser's truncation warning is shown" );
         $this->assertStringContainsString( 'name="wbdc_post_status"', $html );
         $this->assertStringContainsString( AdminPage::IMPORT_CONVERT_ACTION, $html );
@@ -117,37 +116,6 @@ final class AdminSupportTest extends TestCase {
         $this->assertSame( [ 'Home' ], array_column( $pages_only['items'], 'title' ) );
         $this->assertSame( [ 'Saved Section' ], array_column( $pages_only['templates'], 'title' ), 'an unticked template leaves the plan rather than queueing behind it' );
         $this->assertSame( [ 'post' => 1 ], $pages_only['dropped'] );
-    }
-
-    /**
-     * On free the limit is one item, taken from the front of the plan. While an
-     * unticked template merely queued at the back it was almost never reached,
-     * so it fell into the generic "N more pages" row instead of saying what it
-     * was. Out of the plan, it is named every time.
-     */
-    public function test_on_free_an_unticked_template_is_named_rather_than_swallowed_by_the_limit(): void {
-        $page = $this->convertingPage();
-
-        set_transient(
-            AdminPage::IMPORT_ITEMS_TRANSIENT_PREFIX . get_current_user_id(),
-            AdminPage::stash_for( $this->items(), [] )
-        );
-
-        $this->assertSame( 1, ConversionPreflight::limit(), 'this is the free plugin' );
-
-        $page->go( [ 'wbdc_post_types' => [ 'page' ], 'wbdc_post_status' => 'draft' ] );
-
-        $results  = get_transient( AdminPage::BATCH_TRANSIENT_PREFIX . get_option( 'wbdc_import_history' )[0]['id'] );
-        $errors   = array_column( $results, 'error' );
-        $template = array_values( array_filter( $results, static fn( array $r ): bool => ( $r['template_type'] ?? '' ) === 'library' ) );
-
-        $this->assertTrue( $results[0]['success'], 'the one conversion the limit allows went to a page, not to a template' );
-        $this->assertSame( 'Home', $results[0]['title'] );
-
-        $this->assertCount( 1, $template );
-        $this->assertSame( ConversionCommitter::LIBRARY_NOT_SELECTED, $template[0]['error'] );
-        $this->assertSame( 'Saved Section', $template[0]['title'] );
-        $this->assertNotContains( 'Free converts one page per upload. The Pro add-on converts every page in the file in one run.', $errors, 'nothing was left over: the plan held one selected item' );
     }
 
     /**
@@ -191,7 +159,6 @@ final class AdminSupportTest extends TestCase {
     public function test_the_import_convert_step_records_a_run_and_skips_the_unselected_template(): void {
         $page = $this->convertingPage();
 
-        add_filter( 'wbdc_direct_conversion_limit', fn(): int => PHP_INT_MAX );
         set_transient(
             AdminPage::IMPORT_ITEMS_TRANSIENT_PREFIX . get_current_user_id(),
             AdminPage::stash_for( $this->items(), [] )

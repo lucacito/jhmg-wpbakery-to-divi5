@@ -100,6 +100,21 @@ The engine catches `\Throwable` per node (`ConverterEngine::handlerFailed()`): i
 naming the node id, the tag and the exception, records `not_carried_over` kind `error`, and falls
 back to the labelled placeholder every unconvertible element gets. **The page always converts.**
 
+## Markup the converting user may not publish
+
+`ConverterEngine` passes the finished block tree through `Converter\MarkupSanitiser` unless the
+`unfiltered_html` option is true, which defaults to `current_user_can( 'unfiltered_html' )`.
+WordPress's own kses cannot see markup once it is JSON-escaped in a block attribute, so every string
+holding `<` in every block's settings goes through `wp_kses()` with the `post` list plus `iframe`.
+A block that lost a tag or attribute gets one `not_carried_over` kind `custom_code` entry naming
+them: *"markup your account may not publish was removed (onclick, <script>); a user with the
+unfiltered_html capability converts it as written"*. Normalisation kses does on its own (quoting,
+entities) is not reported — tags and attributes are compared by count.
+
+`vc_raw_js` is never written, whatever the capability: one `custom_code` entry, *"Raw JS element
+(N characters of script) not converted; if the page still needs it, add it through Divi > Theme
+Options > Integration"*.
+
 ## Page-level custom CSS
 
 The post's `_wpb_post_custom_css` has no per-module home, so it is reported once as

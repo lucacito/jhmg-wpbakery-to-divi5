@@ -124,22 +124,7 @@
                                         }
                                     }
                                 },
-                                "elements": [
-                                    {
-                                        "id": "vc_raw_js-1",
-                                        "name": "divi/code",
-                                        "settings": {
-                                            "content": {
-                                                "innerContent": {
-                                                    "desktop": {
-                                                        "value": "<script>document.addEventListener(\"DOMContentLoaded\",function(){console.log(\"hi\");});</script>"
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "elements": []
-                                    }
-                                ]
+                                "elements": []
                             }
                         ]
                     }

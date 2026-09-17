@@ -637,6 +637,40 @@ if ( ! function_exists( '__' ) ) { function __( string $text, string $domain = '
 if ( ! function_exists( '_x' ) ) { function _x( string $text, string $context, string $domain = 'default' ): string { return $text; } }
 if ( ! function_exists( '_n' ) ) { function _n( string $single, string $plural, int $number, string $domain = 'default' ): string { return $number === 1 ? $single : $plural; } }
 if ( ! function_exists( 'wp_kses_post' ) ) { function wp_kses_post( $t ): string { return (string) $t; } }
+if ( ! function_exists( 'wp_kses_allowed_html' ) ) {
+    // A subset of core's `post` list, enough for MarkupSanitiser's tests.
+    function wp_kses_allowed_html( $context = '' ): array {
+        $common = [ 'class' => true, 'id' => true, 'style' => true, 'title' => true ];
+        return [
+            'a' => $common + [ 'href' => true, 'target' => true, 'rel' => true ], 'p' => $common, 'div' => $common, 'span' => $common,
+            'strong' => $common, 'em' => $common, 'br' => [], 'img' => $common + [ 'src' => true, 'alt' => true, 'width' => true, 'height' => true ],
+            'h1' => $common, 'h2' => $common, 'h3' => $common, 'ul' => $common, 'ol' => $common, 'li' => $common,
+        ];
+    }
+}
+if ( ! function_exists( 'wp_kses' ) ) {
+    // Core's behaviour where MarkupSanitiser depends on it: a disallowed tag is
+    // removed and its text kept; a disallowed attribute is removed.
+    function wp_kses( $html, $allowed ): string {
+        return (string) preg_replace_callback( '#</?([a-zA-Z][\w:-]*)([^>]*)>#', static function ( array $m ) use ( $allowed ): string {
+            $name = strtolower( $m[1] );
+            if ( ! isset( $allowed[ $name ] ) ) {
+                return '';
+            }
+            if ( $m[0][1] === '/' ) {
+                return '</' . $name . '>';
+            }
+            $attrs = '';
+            preg_match_all( '/([a-zA-Z_:][\w:.-]*)\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/', $m[2], $pairs, PREG_SET_ORDER );
+            foreach ( $pairs as $pair ) {
+                if ( isset( $allowed[ $name ][ strtolower( $pair[1] ) ] ) ) {
+                    $attrs .= ' ' . strtolower( $pair[1] ) . '="' . trim( $pair[2], '"\'' ) . '"';
+                }
+            }
+            return '<' . $name . $attrs . ( str_ends_with( rtrim( $m[2] ), '/' ) ? ' />' : '>' );
+        }, (string) $html );
+    }
+}
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
     // Core trims unconditionally (wp-includes/formatting.php:5636), not only
     // when $remove_breaks is set — task-8-fix-round-1.md, #9.
