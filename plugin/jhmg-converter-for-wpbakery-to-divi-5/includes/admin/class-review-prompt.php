@@ -22,7 +22,7 @@ class ReviewPrompt {
     const THRESHOLD_FILTER  = 'wbdc_review_prompt_threshold';
     const DEFAULT_THRESHOLD = 3;
     const SNOOZE_DAYS       = 14;
-    const REVIEW_URL        = 'https://wordpress.org/support/plugin/jhmg-converter-for-wpbakery-to-divi/reviews/#new-post';
+    const REVIEW_URL        = 'https://wordpress.org/support/plugin/jhmg-converter-for-wpbakery-to-divi-5/reviews/#new-post';
 
     private string $today;
 
@@ -137,20 +137,20 @@ class ReviewPrompt {
 
         $headline = sprintf(
             /* translators: %d: number of pages converted so far */
-            _n( 'Converted %d page so far.', 'Converted %d pages so far.', $count, 'jhmg-converter-for-wpbakery-to-divi' ),
+            _n( 'Converted %d page so far.', 'Converted %d pages so far.', $count, 'jhmg-converter-for-wpbakery-to-divi-5' ),
             $count
         );
 
         return sprintf(
             '<div class="wbdc-card wbdc-review-prompt"><p><strong>%1$s</strong> %2$s</p><p><a class="button button-primary" href="%3$s">%4$s</a> <a class="button" href="%5$s">%6$s</a> <a class="button-link" href="%7$s">%8$s</a></p></div>',
             esc_html( $headline ),
-            esc_html__( 'If this saved you some time, a quick review on WordPress.org helps other people find it.', 'jhmg-converter-for-wpbakery-to-divi' ),
+            esc_html__( 'If this saved you some time, a quick review on WordPress.org helps other people find it.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
             esc_url( $this->response_url( 'review' ) ),
-            esc_html__( 'Leave a review', 'jhmg-converter-for-wpbakery-to-divi' ),
+            esc_html__( 'Leave a review', 'jhmg-converter-for-wpbakery-to-divi-5' ),
             esc_url( $this->response_url( 'later' ) ),
-            esc_html__( 'Maybe later', 'jhmg-converter-for-wpbakery-to-divi' ),
+            esc_html__( 'Maybe later', 'jhmg-converter-for-wpbakery-to-divi-5' ),
             esc_url( $this->response_url( 'done' ) ),
-            esc_html__( "Don't ask again", 'jhmg-converter-for-wpbakery-to-divi' )
+            esc_html__( "Don't ask again", 'jhmg-converter-for-wpbakery-to-divi-5' )
         );
     }
 

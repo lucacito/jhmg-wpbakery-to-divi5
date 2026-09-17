@@ -68,7 +68,7 @@ final class ReviewPromptTest extends TestCase {
 
     public function test_the_review_url_points_at_this_plugins_own_slug(): void {
         $this->assertSame(
-            'https://wordpress.org/support/plugin/jhmg-converter-for-wpbakery-to-divi/reviews/#new-post',
+            'https://wordpress.org/support/plugin/jhmg-converter-for-wpbakery-to-divi-5/reviews/#new-post',
             ReviewPrompt::REVIEW_URL
         );
     }

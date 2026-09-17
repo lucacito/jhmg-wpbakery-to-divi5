@@ -69,7 +69,7 @@ final class AdminSupportTest extends TestCase {
 
     /** The stylesheet the enqueue names is really there, and holds the classes the screens use. */
     public function test_the_admin_stylesheet_exists_and_covers_the_screens_classes(): void {
-        $css = (string) file_get_contents( __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi/assets/css/admin.css' );
+        $css = (string) file_get_contents( __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi-5/assets/css/admin.css' );
 
         foreach ( [ '.wbdc-card', '.wbdc-outline', '.wbdc-not-carried', '.wbdc-addon-block', '.wbdc-report-summary', '.wbdc-badge-flag' ] as $class ) {
             $this->assertStringContainsString( $class, $css, $class );

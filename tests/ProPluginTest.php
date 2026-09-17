@@ -349,7 +349,7 @@ final class ProPluginTest extends TestCase {
 
         $this->assertSame( '1.0.0', WBDCP_PLUGIN_VERSION );
         $this->assertMatchesRegularExpression( '/^\s*\*\s*Version:\s*' . preg_quote( WBDCP_PLUGIN_VERSION, '/' ) . '\s*$/m', $main );
-        $this->assertStringContainsString( 'Requires Plugins:  jhmg-converter-for-wpbakery-to-divi', $main );
+        $this->assertStringContainsString( 'Requires Plugins:  jhmg-converter-for-wpbakery-to-divi-5', $main );
         $this->assertStringEndsWith( 'jhmg-converter-for-wpbakery-to-divi-pro/', WBDCP_PLUGIN_DIR );
     }
 

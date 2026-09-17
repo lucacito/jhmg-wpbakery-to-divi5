@@ -2,7 +2,7 @@
 
 | Plugin | Channel | Version source |
 |---|---|---|
-| `jhmg-converter-for-wpbakery-to-divi` (free) | WordPress.org SVN | plugin header + `WBDC_PLUGIN_VERSION` + readme `Stable tag` |
+| `jhmg-converter-for-wpbakery-to-divi-5` (free) | WordPress.org SVN | plugin header + `WBDC_PLUGIN_VERSION` + readme `Stable tag` |
 | `jhmg-converter-for-wpbakery-to-divi-pro` (Pro) | divi5lab.com | plugin header + `WBDCP_PLUGIN_VERSION` |
 
 `tests/ReleaseMetadataTest.php` and `tests/ProPluginTest.php` fail when the three free places or the
@@ -36,15 +36,15 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
    else. The review team runs the same tool.
 
    ```
-   ### jhmg-converter-for-wpbakery-to-divi
+   ### jhmg-converter-for-wpbakery-to-divi-5
    FILE: readme.txt
    line	column	type	code	message	docs
    0	0	WARNING	trademarked_term	The plugin name includes a restricted term. Your chosen plugin name - "JHMG Converter For WPBakery to Divi 5" - contains the restricted term "wp" which cannot be used at all in your plugin name.
 
-   FILE: jhmg-converter-for-wpbakery-to-divi.php
+   FILE: jhmg-converter-for-wpbakery-to-divi-5.php
    line	column	type	code	message	docs
    0	0	WARNING	trademarked_term	The plugin name includes a restricted term. Your chosen plugin name - "JHMG Converter For WPBakery to Divi 5" - contains the restricted term "wp" which cannot be used at all in your plugin name.
-   0	0	WARNING	trademarked_term	The plugin slug includes a restricted term. Your plugin slug - "jhmg-converter-for-wpbakery-to-divi" - contains the restricted term "wp" which cannot be used at all in your plugin slug.
+   0	0	WARNING	trademarked_term	The plugin slug includes a restricted term. Your plugin slug - "jhmg-converter-for-wpbakery-to-divi-5" - contains the restricted term "wp" which cannot be used at all in your plugin slug.
    ```
 
    All three are the **same term**, "wp", reported once for the plugin name in `readme.txt`, once
@@ -99,13 +99,13 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
 
 8. **Free — build and submit.** Build the wordpress.org submission zip with
    `scripts/build-submission-zip.sh` — it reads the version off the plugin header, writes
-   `dist/jhmg-converter-for-wpbakery-to-divi-<version>.zip` and prints the path and its SHA-256. The
+   `dist/jhmg-converter-for-wpbakery-to-divi-5-<version>.zip` and prints the path and its SHA-256. The
    listing assets it goes with (icon, banners, screenshots) live in `wporg-assets/`, with the
    submission notes and the render commands in `wporg-assets/README.md`. Then:
 
    ```bash
    rsync -a --delete --exclude='.DS_Store' --exclude='.svn' \
-     plugin/jhmg-converter-for-wpbakery-to-divi/ wporg-svn/trunk/
+     plugin/jhmg-converter-for-wpbakery-to-divi-5/ wporg-svn/trunk/
    svn status                     # review
    svn add --force trunk
    svn cp trunk tags/<version>
@@ -113,7 +113,7 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
    ```
 
    `wporg-svn/` is gitignored; recreate it with
-   `svn co https://plugins.svn.wordpress.org/jhmg-converter-for-wpbakery-to-divi/ wporg-svn`.
+   `svn co https://plugins.svn.wordpress.org/jhmg-converter-for-wpbakery-to-divi-5/ wporg-svn`.
    Assets go in `wporg-svn/assets/`, not in `trunk/`.
 
 9. **Pro — build and publish.** Zip `plugin/jhmg-converter-for-wpbakery-to-divi-pro/` (no
@@ -133,7 +133,7 @@ before it, so there is nothing in the wild to migrate and no upgrade routine to 
 | Requires at least | WordPress 5.9 |
 | Requires PHP | 8.0 |
 | Converted output requires | Divi ≥ 5.0.0 (`Helpers\DiviRequirement`) |
-| Pro requires | the free plugin (`Requires Plugins: jhmg-converter-for-wpbakery-to-divi`) |
+| Pro requires | the free plugin (`Requires Plugins: jhmg-converter-for-wpbakery-to-divi-5`) |
 | Pro product slug | `wpbakery-to-divi5-pro` (`WBDCP_PRODUCT_SLUG`) |
 | Licence API base | `https://divi5lab.com` (`WBDCP_API_BASE`) |
 

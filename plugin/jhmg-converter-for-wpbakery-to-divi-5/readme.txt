@@ -71,7 +71,7 @@ Counted by `scripts/element-coverage.php` straight off the converter's own handl
 
 == Installation ==
 
-1. Upload the plugin files to `/wp-content/plugins/jhmg-converter-for-wpbakery-to-divi`, or install through the Plugins screen.
+1. Upload the plugin files to `/wp-content/plugins/jhmg-converter-for-wpbakery-to-divi-5`, or install through the Plugins screen.
 2. Activate the plugin. Divi 5.0 or newer must be active for the converter to run.
 3. Go to Tools → WPBakery → Divi 5 to begin.
 

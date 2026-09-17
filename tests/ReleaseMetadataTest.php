@@ -26,7 +26,7 @@ use WPBakeryDivi5Converter\Telemetry\CoverageTelemetry;
  */
 final class ReleaseMetadataTest extends TestCase {
 
-    private const FREE = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi';
+    private const FREE = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi-5';
 
     public static function setUpBeforeClass(): void {
         require_once __DIR__ . '/../scripts/lib/element-coverage.php';
@@ -47,7 +47,7 @@ final class ReleaseMetadataTest extends TestCase {
     }
 
     public function test_version_is_consistent_across_header_constant_and_readme(): void {
-        $main   = (string) file_get_contents( self::FREE . '/jhmg-converter-for-wpbakery-to-divi.php' );
+        $main   = (string) file_get_contents( self::FREE . '/jhmg-converter-for-wpbakery-to-divi-5.php' );
         $readme = $this->readme();
 
         $this->assertMatchesRegularExpression( '/^\s*\*\s*Version:\s*' . preg_quote( WBDC_PLUGIN_VERSION, '/' ) . '\s*$/m', $main );
@@ -57,7 +57,7 @@ final class ReleaseMetadataTest extends TestCase {
     }
 
     public function test_the_requirement_headers_agree_with_the_plugin_header(): void {
-        $main   = (string) file_get_contents( self::FREE . '/jhmg-converter-for-wpbakery-to-divi.php' );
+        $main   = (string) file_get_contents( self::FREE . '/jhmg-converter-for-wpbakery-to-divi-5.php' );
         $readme = $this->readme();
 
         preg_match( '/^\s*\*\s*Requires at least:\s*(\S+)\s*$/m', $main, $wp );

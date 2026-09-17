@@ -16,7 +16,7 @@ class OutlineRenderer {
     public static function render( array $outline ): string {
         if ( empty( $outline ) ) {
             return '<p class="wbdc-outline-empty">'
-                . esc_html__( 'Nothing to show — this page converted to no Divi modules.', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Nothing to show — this page converted to no Divi modules.', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</p>';
         }
 
@@ -42,7 +42,7 @@ class OutlineRenderer {
             $html .= '<li class="' . esc_attr( $classes ) . '"><span class="wbdc-outline-label">' . esc_html( (string) ( $node['label'] ?? '' ) );
 
             if ( ! empty( $node['placeholder'] ) ) {
-                $html .= ' <em>' . esc_html__( '(placeholder — rebuild by hand)', 'jhmg-converter-for-wpbakery-to-divi' ) . '</em>';
+                $html .= ' <em>' . esc_html__( '(placeholder — rebuild by hand)', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</em>';
             }
 
             $html .= '</span>';

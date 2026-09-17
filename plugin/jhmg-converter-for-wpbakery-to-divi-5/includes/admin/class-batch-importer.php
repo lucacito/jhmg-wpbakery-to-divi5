@@ -46,13 +46,13 @@ class BatchImporter {
             $results[] = [
                 'title'       => sprintf(
                     /* translators: %d: number of pages in the file that were not converted */
-                    _n( '%d more page in this file was not converted', '%d more pages in this file were not converted', $left, 'jhmg-converter-for-wpbakery-to-divi' ),
+                    _n( '%d more page in this file was not converted', '%d more pages in this file were not converted', $left, 'jhmg-converter-for-wpbakery-to-divi-5' ),
                     $left
                 ),
                 'post_id'     => 0,
                 'success'     => false,
                 'skipped'     => true,
-                'error'       => __( 'Free converts one page per upload. The Pro add-on converts every page in the file in one run.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                'error'       => __( 'Free converts one page per upload. The Pro add-on converts every page in the file in one run.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 'report'      => [],
                 'unsupported' => [],
             ];

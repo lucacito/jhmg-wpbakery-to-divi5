@@ -69,7 +69,7 @@ final class CoverageTelemetryTest extends TestCase {
         $args       = $GLOBALS['wbdc_test_http']['log'][0]['args'];
         $user_agent = (string) ( $args['user-agent'] ?? '' );
 
-        $this->assertSame( 'jhmg-converter-for-wpbakery-to-divi/' . WBDC_PLUGIN_VERSION, $user_agent );
+        $this->assertSame( 'jhmg-converter-for-wpbakery-to-divi-5/' . WBDC_PLUGIN_VERSION, $user_agent );
         $this->assertStringNotContainsString( 'WordPress/', $user_agent );
 
         $site = (string) wp_parse_url( home_url(), PHP_URL_HOST );

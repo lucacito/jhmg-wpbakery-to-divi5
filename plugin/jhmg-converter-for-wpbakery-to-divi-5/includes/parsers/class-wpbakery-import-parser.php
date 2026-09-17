@@ -162,7 +162,7 @@ class WPBakeryImportParser {
         if ( $held > self::MAX_ITEMS ) {
             $this->warnings[] = sprintf(
                 /* translators: 1: number of WPBakery pages in the file, 2: how many of them were read */
-                __( 'This file holds %1$d WPBakery pages; the first %2$d were read and the rest were left.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                __( 'This file holds %1$d WPBakery pages; the first %2$d were read and the rest were left.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 $held,
                 self::MAX_ITEMS
             );

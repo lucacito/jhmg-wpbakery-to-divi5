@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * Builds plugin/jhmg-converter-for-wpbakery-to-divi/data/fa-icons.json from
+ * Builds plugin/jhmg-converter-for-wpbakery-to-divi-5/data/fa-icons.json from
  * Divi 5's own icon list, so WPBakery's Font Awesome classes (`fas fa-check`,
  * `fa-solid fa-check`) can become the Divi icon with the same glyph instead
  * of a generic placeholder.
@@ -87,7 +87,7 @@ foreach ( $map as &$entry ) {
 }
 unset( $entry );
 
-$out = dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi/data/fa-icons.json';
+$out = dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi-5/data/fa-icons.json';
 if ( ! is_dir( dirname( $out ) ) ) {
     mkdir( dirname( $out ), 0755, true );
 }

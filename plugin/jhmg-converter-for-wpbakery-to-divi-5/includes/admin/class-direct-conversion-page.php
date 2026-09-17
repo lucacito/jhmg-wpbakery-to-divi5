@@ -150,7 +150,7 @@ class DirectConversionPage {
 
         if ( empty( $rows ) ) {
             return $html . '<p class="wbdc-direct-empty">'
-                . esc_html__( 'No WPBakery pages found on this site. If your pages live elsewhere, use the file upload below.', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'No WPBakery pages found on this site. If your pages live elsewhere, use the file upload below.', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</p>';
         }
 
@@ -168,23 +168,23 @@ class DirectConversionPage {
             $html .= ' <span class="wbdc-direct-meta">' . esc_html( $row['post_type'] . ' · ' . $row['status'] . ' · ' . $row['modified'] ) . '</span>';
 
             if ( ! empty( $row['converted'] ) ) {
-                $html .= ' <span class="wbdc-badge-converted">' . esc_html__( 'already converted', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                $html .= ' <span class="wbdc-badge-converted">' . esc_html__( 'already converted', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
             }
             if ( ! empty( $row['flag_missing'] ) ) {
                 $html .= ' <span class="wbdc-badge-flag" title="'
-                    . esc_attr__( 'This page holds WPBakery shortcodes but WPBakery is not the active editor on it. It converts just the same.', 'jhmg-converter-for-wpbakery-to-divi' )
-                    . '">' . esc_html__( 'WPBakery flag missing', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                    . esc_attr__( 'This page holds WPBakery shortcodes but WPBakery is not the active editor on it. It converts just the same.', 'jhmg-converter-for-wpbakery-to-divi-5' )
+                    . '">' . esc_html__( 'WPBakery flag missing', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
             }
 
             $html .= '</td></tr>';
         }
 
         $html .= '</tbody></table>';
-        $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Check this page', 'jhmg-converter-for-wpbakery-to-divi' ) . '</button></p>';
+        $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Check this page', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></p>';
 
         if ( $limit === 1 ) {
             $html .= '<p class="description">'
-                . esc_html__( 'Free converts one page at a time, as many times as you like. Pro converts your whole site in one run.', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Free converts one page at a time, as many times as you like. Pro converts your whole site in one run.', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</p>';
         }
 
@@ -196,10 +196,10 @@ class DirectConversionPage {
     private function render_search_box( string $search ): string {
         return '<form method="get" class="wbdc-direct-search">'
             . '<input type="hidden" name="page" value="' . esc_attr( AdminPage::MENU_SLUG ) . '">'
-            . '<label class="screen-reader-text" for="wbdc-direct-search-input">' . esc_html__( 'Search WPBakery pages', 'jhmg-converter-for-wpbakery-to-divi' ) . '</label>'
+            . '<label class="screen-reader-text" for="wbdc-direct-search-input">' . esc_html__( 'Search WPBakery pages', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</label>'
             . '<input type="search" id="wbdc-direct-search-input" name="wbdc_s" value="' . esc_attr( $search ) . '" placeholder="'
-            . esc_attr__( 'Search by title…', 'jhmg-converter-for-wpbakery-to-divi' ) . '">'
-            . '<button type="submit" class="button">' . esc_html__( 'Search', 'jhmg-converter-for-wpbakery-to-divi' ) . '</button></form>';
+            . esc_attr__( 'Search by title…', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '">'
+            . '<button type="submit" class="button">' . esc_html__( 'Search', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></form>';
     }
 
     private function render_pager( string $search, int $paged, bool $has_next ): string {
@@ -215,11 +215,11 @@ class DirectConversionPage {
         $html = '<p class="wbdc-direct-pager">';
         if ( $paged > 1 ) {
             $html .= '<a class="button" href="' . esc_url( add_query_arg( $base + [ 'paged' => $paged - 1 ], admin_url( 'tools.php' ) ) ) . '">&laquo; '
-                . esc_html__( 'Previous', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a> ';
+                . esc_html__( 'Previous', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a> ';
         }
         if ( $has_next ) {
             $html .= '<a class="button" href="' . esc_url( add_query_arg( $base + [ 'paged' => $paged + 1 ], admin_url( 'tools.php' ) ) ) . '">'
-                . esc_html__( 'Next', 'jhmg-converter-for-wpbakery-to-divi' ) . ' &raquo;</a>';
+                . esc_html__( 'Next', 'jhmg-converter-for-wpbakery-to-divi-5' ) . ' &raquo;</a>';
         }
 
         return $html . '</p>';
@@ -227,12 +227,12 @@ class DirectConversionPage {
 
     /** The conversion report: structure, losses and a Convert button. Never renders pixels. */
     public function render_report( ConversionPlan $plan ): string {
-        $html  = '<div class="wbdc-direct-report"><h2>' . esc_html__( 'Conversion report', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h2>';
-        $html .= '<p class="description">' . esc_html__( 'Nothing has been written yet. This is what the conversion will produce.', 'jhmg-converter-for-wpbakery-to-divi' ) . '</p>';
+        $html  = '<div class="wbdc-direct-report"><h2>' . esc_html__( 'Conversion report', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h2>';
+        $html .= '<p class="description">' . esc_html__( 'Nothing has been written yet. This is what the conversion will produce.', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</p>';
 
         if ( $plan->truncated() ) {
             $html .= '<div class="notice notice-info inline"><p>'
-                . esc_html__( 'Only the first page was checked. Converting several pages in one run is a Pro feature.', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Only the first page was checked. Converting several pages in one run is a Pro feature.', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</p></div>';
         }
 
@@ -265,10 +265,10 @@ class DirectConversionPage {
                 $html .= '<input type="hidden" name="' . esc_attr( self::IDS_FIELD ) . '[]" value="' . esc_attr( (string) $id ) . '">';
             }
             $html .= '<p class="wbdc-convert-choice"><label><input type="checkbox" name="' . esc_attr( self::CREATE_NEW_FIELD ) . '" value="1"> '
-                . esc_html__( 'Convert into a new draft instead, and leave this page as it is', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Convert into a new draft instead, and leave this page as it is', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</label></p>';
-            $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Convert to Divi 5', 'jhmg-converter-for-wpbakery-to-divi' ) . '</button></p>';
-            $html .= '<p class="description">' . esc_html__( 'The page keeps its address, its date and everything linking to it, because it is the same page. Undo puts the WPBakery version back. Tick the box above and you get a separate draft instead, at a new address.', 'jhmg-converter-for-wpbakery-to-divi' ) . '</p></form>';
+            $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Convert to Divi 5', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></p>';
+            $html .= '<p class="description">' . esc_html__( 'The page keeps its address, its date and everything linking to it, because it is the same page. Undo puts the WPBakery version back. Tick the box above and you get a separate draft instead, at a new address.', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</p></form>';
         }
 
         return $html . '</div>';
@@ -284,7 +284,7 @@ class DirectConversionPage {
             return;
         }
         if ( ! current_user_can( self::CAPABILITY ) ) {
-            wp_die( esc_html__( 'You do not have permission to do that.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'You do not have permission to do that.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         if ( $action === self::CHECK_ACTION ) {
@@ -306,7 +306,7 @@ class DirectConversionPage {
         $ids = $this->verified_post_ids( $request );
 
         if ( empty( $ids ) ) {
-            wp_die( esc_html__( 'Pick a page to check first.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'Pick a page to check first.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         set_transient( self::PLAN_IDS_TRANSIENT_PREFIX . get_current_user_id(), $ids, HOUR_IN_SECONDS );
@@ -326,7 +326,7 @@ class DirectConversionPage {
         $ids = $this->selected_post_ids( $request );
 
         if ( empty( $ids ) ) {
-            wp_die( esc_html__( 'No pages were selected to convert.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'No pages were selected to convert.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $results = $this->convert( $ids, [ 'create_new' => ! empty( $request[ self::CREATE_NEW_FIELD ] ) ] );

@@ -169,7 +169,7 @@ class ImportRollback {
         // trash-unavailable warning must not claim otherwise.
         if ( ! empty( $result['trash_unavailable'] ) && (int) ( $result['restored'] ?? 0 ) === 0 ) {
             return '<div class="notice notice-warning is-dismissible wbdc-rollback-notice"><p>'
-                . esc_html__( 'Undo did not run: this site is configured to empty the Trash immediately, so nothing could be trashed. No pages were changed.', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Undo did not run: this site is configured to empty the Trash immediately, so nothing could be trashed. No pages were changed.', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</p></div>';
         }
 
@@ -185,7 +185,7 @@ class ImportRollback {
                     '%d page was put back: its WPBakery content is exactly as it was before the conversion.',
                     '%d pages were put back: their WPBakery content is exactly as it was before the conversion.',
                     $restored,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $restored
             ) );
@@ -198,7 +198,7 @@ class ImportRollback {
                     '%d page was moved to the Trash. You can restore it from Pages → Trash if needed.',
                     '%d pages were moved to the Trash. You can restore them from Pages → Trash if needed.',
                     $trashed,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $trashed
             ) );
@@ -210,13 +210,13 @@ class ImportRollback {
                     '%d page was skipped because it is no longer owned by this plugin (already gone, or replaced since the conversion).',
                     '%d pages were skipped because they are no longer owned by this plugin (already gone, or replaced since the conversion).',
                     $skipped,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $skipped
             ) );
         }
         if ( empty( $parts ) ) {
-            $parts[] = esc_html__( 'Nothing to undo: this run had already been undone or had no pages left to trash.', 'jhmg-converter-for-wpbakery-to-divi' );
+            $parts[] = esc_html__( 'Nothing to undo: this run had already been undone or had no pages left to trash.', 'jhmg-converter-for-wpbakery-to-divi-5' );
         }
 
         return '<div class="notice notice-success is-dismissible wbdc-rollback-notice"><p>' . implode( ' ', $parts ) . '</p></div>';

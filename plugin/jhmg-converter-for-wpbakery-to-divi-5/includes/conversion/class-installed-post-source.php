@@ -64,7 +64,7 @@ class InstalledPostSource implements ConversionSource {
         $post = get_post( $post_id );
 
         if ( ! $post ) {
-            return $this->failed( $post_id, __( 'That page no longer exists.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            return $this->failed( $post_id, __( 'That page no longer exists.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $content = (string) ( $post->post_content ?? '' );
@@ -73,7 +73,7 @@ class InstalledPostSource implements ConversionSource {
         if ( ! WPBakeryDocumentParser::isWPBakeryContent( $content ) ) {
             return $this->failed(
                 $post_id,
-                __( 'No WPBakery layout found on that page.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                __( 'No WPBakery layout found on that page.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 $title
             );
         }
@@ -88,7 +88,7 @@ class InstalledPostSource implements ConversionSource {
         }
 
         return [
-            'title'            => $title !== '' ? $title : __( 'Imported Page', 'jhmg-converter-for-wpbakery-to-divi' ),
+            'title'            => $title !== '' ? $title : __( 'Imported Page', 'jhmg-converter-for-wpbakery-to-divi-5' ),
             'post_type'        => $post_type,
             'source_post_type' => $source_post_type,
             'post_name'        => (string) ( $post->post_name ?? '' ),
@@ -119,7 +119,7 @@ class InstalledPostSource implements ConversionSource {
     /** @return array<string,mixed> */
     private function failed( int $post_id, string $error, string $title = '' ): array {
         return [
-            'title'            => $title !== '' ? $title : __( 'Unknown page', 'jhmg-converter-for-wpbakery-to-divi' ),
+            'title'            => $title !== '' ? $title : __( 'Unknown page', 'jhmg-converter-for-wpbakery-to-divi-5' ),
             'post_type'        => 'page',
             'source_post_type' => '',
             'post_name'        => '',

@@ -60,7 +60,7 @@ class NotCarriedOverRenderer {
             return '';
         }
 
-        $html = '<div class="wbdc-not-carried"><h3>' . esc_html__( 'Not carried over', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h3>';
+        $html = '<div class="wbdc-not-carried"><h3>' . esc_html__( 'Not carried over', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h3>';
 
         foreach ( self::groups() as $kind => $label ) {
             $rows = array_values( array_filter( $entries, static fn( array $e ): bool => ( $e['kind'] ?? '' ) === $kind ) );
@@ -77,7 +77,7 @@ class NotCarriedOverRenderer {
 
         if ( ! empty( $unresolved ) ) {
             $html .= '<p class="wbdc-not-carried-label"><strong>'
-                . esc_html__( 'Global colours that could not be resolved — the setting was left empty rather than guessed', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Global colours that could not be resolved — the setting was left empty rather than guessed', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</strong></p><ul class="wbdc-not-carried-list">';
             foreach ( $unresolved as $row ) {
                 $html .= '<li><code>' . esc_html( (string) ( $row['node_id'] ?? '' ) ) . '</code> — '
@@ -88,19 +88,19 @@ class NotCarriedOverRenderer {
 
         if ( ! empty( $unresolved_media ) ) {
             $html .= '<p class="wbdc-not-carried-label"><strong>'
-                . esc_html__( 'Images whose attachment is not on this site — the image was left out rather than linked to a file that is not there', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Images whose attachment is not on this site — the image was left out rather than linked to a file that is not there', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</strong></p><ul class="wbdc-not-carried-list">';
             foreach ( $unresolved_media as $row ) {
                 $html .= '<li><code>' . esc_html( (string) ( $row['node_id'] ?? '' ) ) . '</code> — '
                     /* translators: %d: WordPress attachment id */
-                    . esc_html( sprintf( __( 'attachment %d', 'jhmg-converter-for-wpbakery-to-divi' ), (int) ( $row['attachment_id'] ?? 0 ) ) ) . '</li>';
+                    . esc_html( sprintf( __( 'attachment %d', 'jhmg-converter-for-wpbakery-to-divi-5' ), (int) ( $row['attachment_id'] ?? 0 ) ) ) . '</li>';
             }
             $html .= '</ul>';
         }
 
         if ( ! empty( $approximate ) ) {
             $html .= '<p class="wbdc-not-carried-label"><strong>'
-                . esc_html__( 'Approximate conversions — the closest Divi module was used; check these', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Approximate conversions — the closest Divi module was used; check these', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</strong></p><ul class="wbdc-not-carried-list">';
             foreach ( $approximate as $row ) {
                 $html .= '<li><code>' . esc_html( (string) ( $row['node_id'] ?? '' ) ) . '</code> — '
@@ -125,9 +125,9 @@ class NotCarriedOverRenderer {
             return '';
         }
 
-        $html = '<div class="wbdc-addon-block"><h3>' . esc_html__( 'Theme and add-on features', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h3>'
+        $html = '<div class="wbdc-addon-block"><h3>' . esc_html__( 'Theme and add-on features', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h3>'
             . '<p class="description">'
-            . esc_html__( 'These belong to a theme or a plugin, not to WPBakery, so the converter has no Divi setting to map them onto. Nothing here failed to convert.', 'jhmg-converter-for-wpbakery-to-divi' )
+            . esc_html__( 'These belong to a theme or a plugin, not to WPBakery, so the converter has no Divi setting to map them onto. Nothing here failed to convert.', 'jhmg-converter-for-wpbakery-to-divi-5' )
             . '</p>';
 
         if ( ! empty( $theme_elements ) ) {
@@ -136,18 +136,18 @@ class NotCarriedOverRenderer {
                 $parts[] = sprintf( '%s × %d', (string) $label, (int) $count );
             }
 
-            $html .= '<p class="wbdc-theme-elements"><strong>' . esc_html__( 'Theme and add-on elements:', 'jhmg-converter-for-wpbakery-to-divi' ) . '</strong> '
+            $html .= '<p class="wbdc-theme-elements"><strong>' . esc_html__( 'Theme and add-on elements:', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</strong> '
                 . esc_html( implode( ', ', $parts ) ) . ' — '
                 . esc_html(
                     $mode === 'direct'
-                        ? __( 'copied as static HTML, exactly as this site renders them today', 'jhmg-converter-for-wpbakery-to-divi' )
-                        : __( 'left as placeholders, because nothing on this site can render an element from another site', 'jhmg-converter-for-wpbakery-to-divi' )
+                        ? __( 'copied as static HTML, exactly as this site renders them today', 'jhmg-converter-for-wpbakery-to-divi-5' )
+                        : __( 'left as placeholders, because nothing on this site can render an element from another site', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 )
                 . '</p>';
         }
 
         if ( ! empty( $addon ) ) {
-            $html .= '<p class="wbdc-not-carried-label"><strong>' . esc_html__( 'Theme and add-on settings', 'jhmg-converter-for-wpbakery-to-divi' ) . '</strong></p>'
+            $html .= '<p class="wbdc-not-carried-label"><strong>' . esc_html__( 'Theme and add-on settings', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</strong></p>'
                 . '<ul class="wbdc-not-carried-list">';
             foreach ( $addon as $row ) {
                 $html .= '<li><code>' . esc_html( (string) ( $row['node_id'] ?? '' ) ) . '</code> — ' . esc_html( (string) ( $row['detail'] ?? '' ) ) . '</li>';
@@ -166,15 +166,15 @@ class NotCarriedOverRenderer {
      */
     private static function groups(): array {
         return [
-            'animation'   => __( 'Animations — removed', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'visibility'  => __( 'Visibility rules — removed; the element shows to everyone', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'background'  => __( 'Backgrounds that could only be approximated', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'layout'      => __( 'Layout options with no Divi equivalent', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'hover'       => __( 'Hover colours — the resting colours are kept', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'interaction' => __( 'Click actions and interactive behaviour — needs rebuilding in Divi', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'integration' => __( 'Third-party connections — reconnect them in the Divi module', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'custom_code' => __( 'Custom CSS and JavaScript — copy it into Divi → Theme Options if it is still needed', 'jhmg-converter-for-wpbakery-to-divi' ),
-            'error'       => __( 'Each of these was replaced by a placeholder because its handler failed; the original shortcode is preserved inside it', 'jhmg-converter-for-wpbakery-to-divi' ),
+            'animation'   => __( 'Animations — removed', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'visibility'  => __( 'Visibility rules — removed; the element shows to everyone', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'background'  => __( 'Backgrounds that could only be approximated', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'layout'      => __( 'Layout options with no Divi equivalent', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'hover'       => __( 'Hover colours — the resting colours are kept', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'interaction' => __( 'Click actions and interactive behaviour — needs rebuilding in Divi', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'integration' => __( 'Third-party connections — reconnect them in the Divi module', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'custom_code' => __( 'Custom CSS and JavaScript — copy it into Divi → Theme Options if it is still needed', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            'error'       => __( 'Each of these was replaced by a placeholder because its handler failed; the original shortcode is preserved inside it', 'jhmg-converter-for-wpbakery-to-divi-5' ),
         ];
     }
 }

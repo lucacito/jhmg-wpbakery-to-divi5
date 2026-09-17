@@ -7,7 +7,7 @@ Nothing here is inferred from rendered HTML: the converter reads `post_content` 
 and never scrapes a page.
 
 The authoritative per-tag parameter list is the generated table
-`plugin/jhmg-converter-for-wpbakery-to-divi/data/wpbakery-params.json` — see
+`plugin/jhmg-converter-for-wpbakery-to-divi-5/data/wpbakery-params.json` — see
 [§ The parameter table](#the-parameter-table).
 
 ## Storage

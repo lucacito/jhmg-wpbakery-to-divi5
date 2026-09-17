@@ -32,7 +32,7 @@ class CoverageTelemetry {
     const INTERVAL_DAYS    = 7;
 
     /** Replaces WordPress's default, which names the site. See `maybe_send()`. */
-    const USER_AGENT = 'jhmg-converter-for-wpbakery-to-divi/' . WBDC_PLUGIN_VERSION;
+    const USER_AGENT = 'jhmg-converter-for-wpbakery-to-divi-5/' . WBDC_PLUGIN_VERSION;
 
     // Mirror the receiving endpoint's schema: widget_types: string(1..64)[1..100].
     const MAX_TYPE_LENGTH = 64;

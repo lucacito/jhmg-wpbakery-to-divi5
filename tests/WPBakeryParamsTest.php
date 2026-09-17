@@ -130,7 +130,7 @@ final class WPBakeryParamsTest extends TestCase {
     public function test_the_committed_table_is_what_the_generator_writes(): void {
         $this->assertSame(
             $this->generate( 'js_composer.9.0.1.zip', 'js_composer.7.8.zip' ),
-            json_decode( (string) file_get_contents( dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi/data/wpbakery-params.json' ), true )
+            json_decode( (string) file_get_contents( dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi-5/data/wpbakery-params.json' ), true )
         );
     }
 

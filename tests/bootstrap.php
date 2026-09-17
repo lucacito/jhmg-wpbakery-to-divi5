@@ -768,7 +768,7 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$free = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi/jhmg-converter-for-wpbakery-to-divi.php';
+$free = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi-5/jhmg-converter-for-wpbakery-to-divi-5.php';
 if ( file_exists( $free ) ) {
     require_once $free;
 }

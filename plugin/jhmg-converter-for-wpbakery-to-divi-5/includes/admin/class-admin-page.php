@@ -74,8 +74,8 @@ class AdminPage {
 
     public function register_menu(): void {
         add_management_page(
-            __( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi' ),
-            __( 'WPBakery → Divi 5', 'jhmg-converter-for-wpbakery-to-divi' ),
+            __( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            __( 'WPBakery → Divi 5', 'jhmg-converter-for-wpbakery-to-divi-5' ),
             'manage_options',
             self::MENU_SLUG,
             [ $this, 'render_page' ]
@@ -84,7 +84,7 @@ class AdminPage {
 
     public function render_page(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have permission to access this page.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'You do not have permission to access this page.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
         if ( ! DiviRequirement::is_satisfied() ) {
             $this->render_requirement_failure();
@@ -105,9 +105,9 @@ class AdminPage {
     }
 
     private function render_requirement_failure(): void {
-        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h1>';
+        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h1>';
         echo '<div class="notice notice-error inline"><p>' . esc_html( DiviRequirement::message() ) . '</p></div>';
-        echo '<p class="description">' . esc_html__( 'Install and activate Divi 5, then return to this screen. Nothing has been changed on your site.', 'jhmg-converter-for-wpbakery-to-divi' ) . '</p></div>';
+        echo '<p class="description">' . esc_html__( 'Install and activate Divi 5, then return to this screen. Nothing has been changed on your site.', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</p></div>';
     }
 
     // ------------------------------------------------------------------
@@ -126,7 +126,7 @@ class AdminPage {
         }
         if ( $action === self::IMPORT_CONVERT_ACTION ) {
             if ( ! current_user_can( 'manage_options' ) ) {
-                wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+                wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
             }
             check_admin_referer( self::IMPORT_CONVERT_ACTION, self::IMPORT_CONVERT_NONCE );
             $this->handle_import_convert( (array) wp_unslash( $_POST ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- every value is sanitised in handle_import_convert()
@@ -147,7 +147,7 @@ class AdminPage {
      */
     protected function handle_import(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
         check_admin_referer( self::IMPORT_NONCE_ACTION, self::IMPORT_NONCE_NAME );
 
@@ -155,14 +155,14 @@ class AdminPage {
         $upload = isset( $_FILES['wbdc_import_file'] ) && is_array( $_FILES['wbdc_import_file'] ) ? $_FILES['wbdc_import_file'] : null;
 
         if ( ! $upload ) {
-            wp_die( esc_html__( 'No file was uploaded.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'No file was uploaded.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
         if ( (int) $upload['error'] !== UPLOAD_ERR_OK ) {
             wp_die( esc_html( $this->upload_error_message( (int) $upload['error'] ) ) );
         }
         // The path has to be one PHP itself received, never one the request named.
         if ( ! is_uploaded_file( (string) $upload['tmp_name'] ) ) {
-            wp_die( esc_html__( 'That file did not arrive as an upload.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'That file did not arrive as an upload.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $parser = new WPBakeryImportParser();
@@ -171,7 +171,7 @@ class AdminPage {
             $items = $parser->parse( (string) $upload['tmp_name'], sanitize_file_name( (string) $upload['name'] ) );
         } catch ( \RuntimeException $e ) {
             wp_die(
-                esc_html__( 'Could not read the file: ', 'jhmg-converter-for-wpbakery-to-divi' ) . esc_html( $e->getMessage() ),
+                esc_html__( 'Could not read the file: ', 'jhmg-converter-for-wpbakery-to-divi-5' ) . esc_html( $e->getMessage() ),
                 '',
                 [ 'back_link' => true ]
             );
@@ -198,7 +198,7 @@ class AdminPage {
         $stash = get_transient( self::IMPORT_ITEMS_TRANSIENT_PREFIX . get_current_user_id() );
 
         if ( ! is_array( $stash ) || empty( $stash['items'] ) ) {
-            wp_die( esc_html__( 'That upload has expired. Results are kept for one hour; please upload the file again.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'That upload has expired. Results are kept for one hour; please upload the file again.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $items       = self::items_from( $stash );
@@ -406,14 +406,14 @@ class AdminPage {
             $rows[] = [
                 'title'       => sprintf(
                     /* translators: 1: number of items, 2: post type slug */
-                    _n( '%1$d item of type %2$s was not converted', '%1$d items of type %2$s were not converted', (int) $count, 'jhmg-converter-for-wpbakery-to-divi' ),
+                    _n( '%1$d item of type %2$s was not converted', '%1$d items of type %2$s were not converted', (int) $count, 'jhmg-converter-for-wpbakery-to-divi-5' ),
                     (int) $count,
                     (string) $type
                 ),
                 'post_id'     => 0,
                 'success'     => false,
                 'skipped'     => true,
-                'error'       => __( 'Its post type was not selected for conversion.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                'error'       => __( 'Its post type was not selected for conversion.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 'report'      => [],
                 'unsupported' => [],
             ];
@@ -424,7 +424,7 @@ class AdminPage {
 
     protected function handle_publish(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'Insufficient permissions.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $post_id   = isset( $_GET['post_id'] ) ? absint( wp_unslash( $_GET['post_id'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- nonce checked below
@@ -433,7 +433,7 @@ class AdminPage {
         check_admin_referer( 'wbdc_publish_' . $post_id );
 
         if ( $post_id <= 0 || (string) get_post_meta( $post_id, '_wbdc_import_source', true ) === '' ) {
-            wp_die( esc_html__( 'That page was not created by this converter.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'That page was not created by this converter.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         wp_update_post( [ 'ID' => $post_id, 'post_status' => 'publish' ] );
@@ -446,17 +446,17 @@ class AdminPage {
 
     private function upload_error_message( int $code ): string {
         $messages = [
-            UPLOAD_ERR_INI_SIZE   => __( 'File exceeds the server upload limit.', 'jhmg-converter-for-wpbakery-to-divi' ),
-            UPLOAD_ERR_FORM_SIZE  => __( 'File exceeds the form upload limit.', 'jhmg-converter-for-wpbakery-to-divi' ),
-            UPLOAD_ERR_PARTIAL    => __( 'File was only partially uploaded.', 'jhmg-converter-for-wpbakery-to-divi' ),
-            UPLOAD_ERR_NO_FILE    => __( 'No file was selected.', 'jhmg-converter-for-wpbakery-to-divi' ),
-            UPLOAD_ERR_NO_TMP_DIR => __( 'Server is missing a temporary folder.', 'jhmg-converter-for-wpbakery-to-divi' ),
-            UPLOAD_ERR_CANT_WRITE => __( 'Failed to write the file to the server.', 'jhmg-converter-for-wpbakery-to-divi' ),
-            UPLOAD_ERR_EXTENSION  => __( 'Upload stopped by a server extension.', 'jhmg-converter-for-wpbakery-to-divi' ),
+            UPLOAD_ERR_INI_SIZE   => __( 'File exceeds the server upload limit.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            UPLOAD_ERR_FORM_SIZE  => __( 'File exceeds the form upload limit.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            UPLOAD_ERR_PARTIAL    => __( 'File was only partially uploaded.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            UPLOAD_ERR_NO_FILE    => __( 'No file was selected.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            UPLOAD_ERR_NO_TMP_DIR => __( 'Server is missing a temporary folder.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            UPLOAD_ERR_CANT_WRITE => __( 'Failed to write the file to the server.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
+            UPLOAD_ERR_EXTENSION  => __( 'Upload stopped by a server extension.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
         ];
 
         /* translators: %d: PHP upload error code */
-        return $messages[ $code ] ?? sprintf( __( 'Unknown upload error (code %d).', 'jhmg-converter-for-wpbakery-to-divi' ), $code );
+        return $messages[ $code ] ?? sprintf( __( 'Unknown upload error (code %d).', 'jhmg-converter-for-wpbakery-to-divi-5' ), $code );
     }
 
     // ------------------------------------------------------------------
@@ -470,20 +470,20 @@ class AdminPage {
         $pro    = (bool) apply_filters( 'wbdc_pro_active', false );
         ?>
         <div class="wrap wbdc-wrap">
-            <h1><?php esc_html_e( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi' ); ?></h1>
-            <p class="wbdc-subtitle"><?php esc_html_e( 'Convert WPBakery pages into native Divi 5 layouts. Check any page first, convert it with one click, undo any run.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+            <h1><?php esc_html_e( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h1>
+            <p class="wbdc-subtitle"><?php esc_html_e( 'Convert WPBakery pages into native Divi 5 layouts. Check any page first, convert it with one click, undo any run.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
 
             <?php if ( $pro ) : ?>
                 <div class="notice notice-success inline"><p><?php echo wp_kses_post( sprintf(
                     /* translators: %s: Pro tools URL */
-                    __( '<strong>Pro is active.</strong> Convert many pages per run, and turn WPBakery templates into Divi Library layouts from <a href="%s">Tools → WPBakery → Divi 5 Pro</a>.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                    __( '<strong>Pro is active.</strong> Convert many pages per run, and turn WPBakery templates into Divi Library layouts from <a href="%s">Tools → WPBakery → Divi 5 Pro</a>.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                     esc_url( admin_url( 'tools.php?page=wbdcp-pro' ) )
                 ) ); ?></p></div>
             <?php endif; ?>
 
             <div class="wbdc-card wbdc-card--direct">
-                <h2><?php esc_html_e( 'Convert a page already on this site', 'jhmg-converter-for-wpbakery-to-divi' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'Pick a WPBakery page and check what the conversion will produce. Converting rewrites that page, so it keeps its address and everything linking to it, and Undo puts the WPBakery version back.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+                <h2><?php esc_html_e( 'Convert a page already on this site', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h2>
+                <p class="description"><?php esc_html_e( 'Pick a WPBakery page and check what the conversion will produce. Converting rewrites that page, so it keeps its address and everything linking to it, and Undo puts the WPBakery version back.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
                 <?php
                 // One query, not two: the picker renders its own empty state,
                 // and the content LIKE behind it is not cheap enough to run
@@ -493,35 +493,35 @@ class AdminPage {
             </div>
 
             <div class="wbdc-card">
-                <h2><?php esc_html_e( 'Convert from an exported file', 'jhmg-converter-for-wpbakery-to-divi' ); ?></h2>
-                <p class="description"><?php esc_html_e( 'On the other site, go to Tools → Export and export your pages — WPBakery keeps its layout in the page content, so the export holds it. You can also paste a page\'s shortcodes into a .txt file and upload that.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+                <h2><?php esc_html_e( 'Convert from an exported file', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h2>
+                <p class="description"><?php esc_html_e( 'On the other site, go to Tools → Export and export your pages — WPBakery keeps its layout in the page content, so the export holds it. You can also paste a page\'s shortcodes into a .txt file and upload that.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
                 <form method="post" enctype="multipart/form-data" action="" class="wbdc-import-form">
                     <?php wp_nonce_field( self::IMPORT_NONCE_ACTION, self::IMPORT_NONCE_NAME ); ?>
                     <input type="hidden" name="action" value="<?php echo esc_attr( self::IMPORT_NONCE_ACTION ); ?>">
                     <div class="wbdc-import-fields">
                         <div class="wbdc-import-field">
-                            <label for="wbdc_import_file"><strong><?php esc_html_e( 'Export file', 'jhmg-converter-for-wpbakery-to-divi' ); ?></strong></label>
+                            <label for="wbdc_import_file"><strong><?php esc_html_e( 'Export file', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></strong></label>
                             <input type="file" id="wbdc_import_file" name="wbdc_import_file" accept=".xml,.txt,.html" required>
-                            <p class="description"><?php esc_html_e( 'WordPress export (.xml), or a .txt / .html file holding the page\'s WPBakery shortcodes.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+                            <p class="description"><?php esc_html_e( 'WordPress export (.xml), or a .txt / .html file holding the page\'s WPBakery shortcodes.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
                         </div>
-                        <div class="wbdc-import-submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Read this file', 'jhmg-converter-for-wpbakery-to-divi' ); ?></button></div>
+                        <div class="wbdc-import-submit"><button type="submit" class="button button-primary"><?php esc_html_e( 'Read this file', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></button></div>
                     </div>
-                    <p class="description"><?php esc_html_e( 'Nothing is written yet: the next screen shows what the file holds and asks what to convert.', 'jhmg-converter-for-wpbakery-to-divi' ); ?></p>
+                    <p class="description"><?php esc_html_e( 'Nothing is written yet: the next screen shows what the file holds and asks what to convert.', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></p>
                 </form>
             </div>
 
             <?php if ( ! $pro ) : ?>
             <div class="wbdc-card wbdc-card--pro">
-                <span class="wbdc-badge-pro"><?php esc_html_e( 'PRO', 'jhmg-converter-for-wpbakery-to-divi' ); ?></span>
-                <h2><?php esc_html_e( 'Migrate the whole site', 'jhmg-converter-for-wpbakery-to-divi' ); ?></h2>
+                <span class="wbdc-badge-pro"><?php esc_html_e( 'PRO', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></span>
+                <h2><?php esc_html_e( 'Migrate the whole site', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></h2>
                 <ul class="wbdc-features">
-                    <li><?php esc_html_e( 'Convert as many pages as you like in one run — from this site or from one export file', 'jhmg-converter-for-wpbakery-to-divi' ); ?></li>
-                    <li><?php esc_html_e( 'Turn WPBakery templates into Divi Library layouts instead of pages', 'jhmg-converter-for-wpbakery-to-divi' ); ?></li>
-                    <li><?php esc_html_e( 'Priority support and regular updates', 'jhmg-converter-for-wpbakery-to-divi' ); ?></li>
+                    <li><?php esc_html_e( 'Convert as many pages as you like in one run — from this site or from one export file', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></li>
+                    <li><?php esc_html_e( 'Turn WPBakery templates into Divi Library layouts instead of pages', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></li>
+                    <li><?php esc_html_e( 'Priority support and regular updates', 'jhmg-converter-for-wpbakery-to-divi-5' ); ?></li>
                 </ul>
                 <p><a class="button button-primary" href="<?php echo esc_url( self::PRO_URL ); ?>" target="_blank" rel="noopener"><?php
                     /* translators: %s: Pro price, e.g. $25/yr */
-                    echo esc_html( sprintf( __( 'Get Pro — %s, unlimited sites', 'jhmg-converter-for-wpbakery-to-divi' ), self::PRO_PRICE ) );
+                    echo esc_html( sprintf( __( 'Get Pro — %s, unlimited sites', 'jhmg-converter-for-wpbakery-to-divi-5' ), self::PRO_PRICE ) );
                 ?></a></p>
             </div>
             <?php endif; ?>
@@ -539,12 +539,12 @@ class AdminPage {
         $stash = get_transient( self::IMPORT_ITEMS_TRANSIENT_PREFIX . get_current_user_id() );
 
         if ( ! is_array( $stash ) || empty( $stash['items'] ) ) {
-            wp_die( esc_html__( 'That upload has expired or held nothing to convert. Please upload the file again.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'That upload has expired or held nothing to convert. Please upload the file again.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
-        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'What would you like to convert?', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h1>';
+        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'What would you like to convert?', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h1>';
         echo '<div class="wbdc-result-actions"><a href="' . esc_url( admin_url( 'tools.php?page=' . self::MENU_SLUG ) ) . '" class="button">&larr; '
-            . esc_html__( 'Back to converter', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a></div>';
+            . esc_html__( 'Back to converter', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a></div>';
         echo self::upload_options_form( self::items_from( (array) $stash ), (array) ( $stash['warnings'] ?? [] ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in upload_options_form()
         echo '</div>';
     }
@@ -566,7 +566,7 @@ class AdminPage {
 
         $html = '<div class="wbdc-card"><h2>' . esc_html( sprintf(
             /* translators: %d: number of WPBakery pages found in the uploaded file */
-            _n( 'This file holds %d WPBakery page.', 'This file holds %d WPBakery pages.', count( $items ), 'jhmg-converter-for-wpbakery-to-divi' ),
+            _n( 'This file holds %d WPBakery page.', 'This file holds %d WPBakery pages.', count( $items ), 'jhmg-converter-for-wpbakery-to-divi-5' ),
             count( $items )
         ) ) . '</h2>';
 
@@ -577,7 +577,7 @@ class AdminPage {
         $html .= '<form method="post" action="" class="wbdc-import-options">';
         $html .= wp_nonce_field( self::IMPORT_CONVERT_ACTION, self::IMPORT_CONVERT_NONCE, true, false );
         $html .= '<input type="hidden" name="action" value="' . esc_attr( self::IMPORT_CONVERT_ACTION ) . '">';
-        $html .= '<fieldset class="wbdc-import-types"><legend><strong>' . esc_html__( 'Convert these post types', 'jhmg-converter-for-wpbakery-to-divi' ) . '</strong></legend>';
+        $html .= '<fieldset class="wbdc-import-types"><legend><strong>' . esc_html__( 'Convert these post types', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</strong></legend>';
 
         foreach ( $counts as $type => $count ) {
             $checked = in_array( $type, WPBakeryImportParser::DEFAULT_SELECTED_POST_TYPES, true );
@@ -586,13 +586,13 @@ class AdminPage {
                 . '<code>' . esc_html( $type ) . '</code> '
                 . esc_html( sprintf(
                     /* translators: %d: number of items of this post type */
-                    _n( '(%d page)', '(%d pages)', (int) $count, 'jhmg-converter-for-wpbakery-to-divi' ),
+                    _n( '(%d page)', '(%d pages)', (int) $count, 'jhmg-converter-for-wpbakery-to-divi-5' ),
                     (int) $count
                 ) );
 
             if ( in_array( $type, InstalledPostSource::LIBRARY_POST_TYPES, true ) ) {
                 $html .= ' <span class="description">'
-                    . esc_html__( 'WPBakery template (Pro turns these into Divi Library layouts; the free plugin imports them as pages)', 'jhmg-converter-for-wpbakery-to-divi' )
+                    . esc_html__( 'WPBakery template (Pro turns these into Divi Library layouts; the free plugin imports them as pages)', 'jhmg-converter-for-wpbakery-to-divi-5' )
                     . '</span>';
             }
 
@@ -600,16 +600,16 @@ class AdminPage {
         }
 
         $html .= '</fieldset>';
-        $html .= '<p><label for="wbdc_post_status"><strong>' . esc_html__( 'Create them as', 'jhmg-converter-for-wpbakery-to-divi' ) . '</strong></label> '
+        $html .= '<p><label for="wbdc_post_status"><strong>' . esc_html__( 'Create them as', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</strong></label> '
             . '<select id="wbdc_post_status" name="wbdc_post_status">'
-            . '<option value="draft">' . esc_html__( 'Draft (recommended)', 'jhmg-converter-for-wpbakery-to-divi' ) . '</option>'
-            . '<option value="publish">' . esc_html__( 'Published', 'jhmg-converter-for-wpbakery-to-divi' ) . '</option>'
+            . '<option value="draft">' . esc_html__( 'Draft (recommended)', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</option>'
+            . '<option value="publish">' . esc_html__( 'Published', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</option>'
             . '</select></p>';
-        $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Convert Now', 'jhmg-converter-for-wpbakery-to-divi' ) . '</button></p>';
+        $html .= '<p><button type="submit" class="button button-primary">' . esc_html__( 'Convert Now', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</button></p>';
 
         if ( ! apply_filters( 'wbdc_pro_active', false ) ) {
             $html .= '<p class="description wbdc-free-notice">'
-                . esc_html__( 'Free converts the first page in the file. Pro converts every page in it.', 'jhmg-converter-for-wpbakery-to-divi' )
+                . esc_html__( 'Free converts the first page in the file. Pro converts every page in it.', 'jhmg-converter-for-wpbakery-to-divi-5' )
                 . '</p>';
         }
 
@@ -624,22 +624,22 @@ class AdminPage {
         $import_id = isset( $_GET['import_id'] ) ? sanitize_key( wp_unslash( $_GET['import_id'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a read-only view of a run this user just made
 
         if ( $import_id === '' ) {
-            wp_die( esc_html__( 'No run ID provided.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'No run ID provided.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $results = get_transient( self::BATCH_TRANSIENT_PREFIX . $import_id );
         if ( ! is_array( $results ) ) {
-            wp_die( esc_html__( 'Results not found or expired. Results are kept for one hour; the run itself is still listed under Recent conversions.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'Results not found or expired. Results are kept for one hour; the run itself is still listed under Recent conversions.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $review = new ReviewPrompt();
 
-        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'Conversion results', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h1>';
+        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'Conversion results', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h1>';
         if ( $review->should_ask( $results ) ) {
             echo $review->markup(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in markup()
         }
         echo '<div class="wbdc-result-actions"><a href="' . esc_url( admin_url( 'tools.php?page=' . self::MENU_SLUG ) ) . '" class="button">&larr; '
-            . esc_html__( 'Back to converter', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a></div>';
+            . esc_html__( 'Back to converter', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a></div>';
         echo self::batch_table( $results, $import_id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in batch_table()
         echo '</div>';
     }
@@ -656,49 +656,49 @@ class AdminPage {
 
         $html = '<div class="wbdc-batch-summary">';
         /* translators: %d: number of pages processed */
-        $html .= '<span class="wbdc-summary-stat wbdc-summary-stat--total">' . esc_html( sprintf( __( '%d page(s) processed', 'jhmg-converter-for-wpbakery-to-divi' ), count( $real ) ) ) . '</span>';
+        $html .= '<span class="wbdc-summary-stat wbdc-summary-stat--total">' . esc_html( sprintf( __( '%d page(s) processed', 'jhmg-converter-for-wpbakery-to-divi-5' ), count( $real ) ) ) . '</span>';
 
         if ( $succeeded > 0 ) {
             /* translators: %d: number of successfully converted pages */
-            $html .= '<span class="wbdc-summary-stat wbdc-summary-stat--ok">' . esc_html( sprintf( __( '%d converted', 'jhmg-converter-for-wpbakery-to-divi' ), $succeeded ) ) . '</span>';
+            $html .= '<span class="wbdc-summary-stat wbdc-summary-stat--ok">' . esc_html( sprintf( __( '%d converted', 'jhmg-converter-for-wpbakery-to-divi-5' ), $succeeded ) ) . '</span>';
         }
         if ( $failed > 0 ) {
             /* translators: %d: number of pages that failed */
-            $html .= '<span class="wbdc-summary-stat wbdc-summary-stat--fail">' . esc_html( sprintf( __( '%d failed', 'jhmg-converter-for-wpbakery-to-divi' ), $failed ) ) . '</span>';
+            $html .= '<span class="wbdc-summary-stat wbdc-summary-stat--fail">' . esc_html( sprintf( __( '%d failed', 'jhmg-converter-for-wpbakery-to-divi-5' ), $failed ) ) . '</span>';
         }
         $html .= '</div>';
 
         $html .= '<table class="wp-list-table widefat fixed striped wbdc-batch-table"><thead><tr>'
-            . '<th class="column-title column-primary">' . esc_html__( 'Title', 'jhmg-converter-for-wpbakery-to-divi' ) . '</th>'
-            . '<th class="column-status">' . esc_html__( 'Status', 'jhmg-converter-for-wpbakery-to-divi' ) . '</th>'
-            . '<th class="column-issues">' . esc_html__( 'Issues', 'jhmg-converter-for-wpbakery-to-divi' ) . '</th>'
-            . '<th class="column-actions">' . esc_html__( 'Actions', 'jhmg-converter-for-wpbakery-to-divi' ) . '</th></tr></thead><tbody>';
+            . '<th class="column-title column-primary">' . esc_html__( 'Title', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</th>'
+            . '<th class="column-status">' . esc_html__( 'Status', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</th>'
+            . '<th class="column-issues">' . esc_html__( 'Issues', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</th>'
+            . '<th class="column-actions">' . esc_html__( 'Actions', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</th></tr></thead><tbody>';
 
         foreach ( $results as $result ) {
             $report = is_array( $result['report'] ?? null ) ? $result['report'] : [];
             $issues = self::issue_count( $result, $report );
 
             $html .= '<tr><td class="column-title column-primary"><strong>'
-                . esc_html( ( $result['title'] ?? '' ) !== '' ? (string) $result['title'] : __( '(no title)', 'jhmg-converter-for-wpbakery-to-divi' ) )
+                . esc_html( ( $result['title'] ?? '' ) !== '' ? (string) $result['title'] : __( '(no title)', 'jhmg-converter-for-wpbakery-to-divi-5' ) )
                 . '</strong>';
             if ( ( $result['template_type'] ?? '' ) === 'library' ) {
-                $html .= ' <span class="wbdc-badge-template">' . esc_html__( 'WPBakery template', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                $html .= ' <span class="wbdc-badge-template">' . esc_html__( 'WPBakery template', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
             }
             $html .= '</td>';
 
             $html .= '<td class="column-status">';
             if ( ! empty( $result['skipped'] ) ) {
-                $html .= '<span class="wbdc-status wbdc-status--skipped">' . esc_html__( 'Not converted', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>'
+                $html .= '<span class="wbdc-status wbdc-status--skipped">' . esc_html__( 'Not converted', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>'
                     . '<br><small class="wbdc-error-msg">' . esc_html( (string) ( $result['error'] ?? '' ) ) . '</small>';
             } elseif ( ! empty( $result['success'] ) ) {
-                $html .= '<span class="wbdc-status wbdc-status--converted">&#10003; ' . esc_html__( 'Converted', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                $html .= '<span class="wbdc-status wbdc-status--converted">&#10003; ' . esc_html__( 'Converted', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
                 // Which of the two happened matters to the reader: one kept the
                 // address they already had, the other made a second page.
                 $html .= empty( $result['in_place'] )
-                    ? '<br><small class="wbdc-status-detail">' . esc_html__( 'as a new draft', 'jhmg-converter-for-wpbakery-to-divi' ) . '</small>'
-                    : '<br><small class="wbdc-status-detail">' . esc_html__( 'in place, same address', 'jhmg-converter-for-wpbakery-to-divi' ) . '</small>';
+                    ? '<br><small class="wbdc-status-detail">' . esc_html__( 'as a new draft', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</small>'
+                    : '<br><small class="wbdc-status-detail">' . esc_html__( 'in place, same address', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</small>';
             } else {
-                $html .= '<span class="wbdc-status wbdc-status--error">&#10007; ' . esc_html__( 'Failed', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                $html .= '<span class="wbdc-status wbdc-status--error">&#10007; ' . esc_html__( 'Failed', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
                 if ( ! empty( $result['error'] ) ) {
                     $html .= '<br><small class="wbdc-error-msg">' . esc_html( (string) $result['error'] ) . '</small>';
                 }
@@ -713,11 +713,11 @@ class AdminPage {
 
                 if ( $issues > 0 ) {
                     $html .= '<details class="wbdc-issues-details"><summary class="wbdc-issues-summary"><span class="wbdc-badge wbdc-badge--warn">' . (int) $issues . '</span> '
-                        . esc_html__( 'notes', 'jhmg-converter-for-wpbakery-to-divi' ) . '</summary>'
+                        . esc_html__( 'notes', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</summary>'
                         . ReportRenderer::details( $report, (array) ( $result['unsupported'] ?? [] ), (string) ( $result['mode'] ?? 'import' ) )
                         . '</details>';
                 } else {
-                    $html .= '<span class="wbdc-status--clean">&#10003; ' . esc_html__( 'Clean', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                    $html .= '<span class="wbdc-status--clean">&#10003; ' . esc_html__( 'Clean', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
                 }
             } else {
                 $html .= '&mdash;';
@@ -727,8 +727,8 @@ class AdminPage {
             $html .= '<td class="column-actions">';
             if ( ! empty( $result['success'] ) && (int) ( $result['post_id'] ?? 0 ) > 0 ) {
                 $post_id = (int) $result['post_id'];
-                $html   .= '<a href="' . esc_url( self::edit_link( $post_id ) ) . '" class="button button-small">' . esc_html__( 'Edit', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a> ';
-                $html   .= '<a href="' . esc_url( self::view_link( $post_id ) ) . '" class="button button-small" target="_blank" rel="noopener">' . esc_html__( 'View', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a> ';
+                $html   .= '<a href="' . esc_url( self::edit_link( $post_id ) ) . '" class="button button-small">' . esc_html__( 'Edit', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a> ';
+                $html   .= '<a href="' . esc_url( self::view_link( $post_id ) ) . '" class="button button-small" target="_blank" rel="noopener">' . esc_html__( 'View', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a> ';
 
                 if ( self::post_status( $post_id ) !== 'publish' ) {
                     $publish_url = add_query_arg(
@@ -742,9 +742,9 @@ class AdminPage {
                         admin_url( 'tools.php' )
                     ) . '&_wpnonce=' . wp_create_nonce( 'wbdc_publish_' . $post_id );
 
-                    $html .= '<a href="' . esc_url( $publish_url ) . '" class="button button-small button-primary">' . esc_html__( 'Publish', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a>';
+                    $html .= '<a href="' . esc_url( $publish_url ) . '" class="button button-small button-primary">' . esc_html__( 'Publish', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a>';
                 } else {
-                    $html .= '<span class="wbdc-published-label">&#10003; ' . esc_html__( 'Published', 'jhmg-converter-for-wpbakery-to-divi' ) . '</span>';
+                    $html .= '<span class="wbdc-published-label">&#10003; ' . esc_html__( 'Published', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</span>';
                 }
             } else {
                 $html .= '&mdash;';
@@ -805,15 +805,15 @@ class AdminPage {
         $ids = get_transient( DirectConversionPage::PLAN_IDS_TRANSIENT_PREFIX . get_current_user_id() );
 
         if ( ! is_array( $ids ) || empty( $ids ) ) {
-            wp_die( esc_html__( 'No checked selection found or it has expired. Please pick a page again.', 'jhmg-converter-for-wpbakery-to-divi' ) );
+            wp_die( esc_html__( 'No checked selection found or it has expired. Please pick a page again.', 'jhmg-converter-for-wpbakery-to-divi-5' ) );
         }
 
         $direct = new DirectConversionPage();
         $plan   = $direct->plan_for( $ids );
 
-        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi' ) . '</h1>';
+        echo '<div class="wrap wbdc-wrap"><h1>' . esc_html__( 'WPBakery to Divi 5 Converter', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</h1>';
         echo '<div class="wbdc-result-actions"><a href="' . esc_url( admin_url( 'tools.php?page=' . self::MENU_SLUG ) ) . '" class="button">&larr; '
-            . esc_html__( 'Back to converter', 'jhmg-converter-for-wpbakery-to-divi' ) . '</a></div>';
+            . esc_html__( 'Back to converter', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</a></div>';
         echo $direct->render_report( $plan ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped in render_report()
         echo '</div>';
     }

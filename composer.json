@@ -11,7 +11,7 @@
   },
   "autoload": {
     "psr-4": {
-      "WPBakeryDivi5Converter\\": "plugin/jhmg-converter-for-wpbakery-to-divi/includes/",
+      "WPBakeryDivi5Converter\\": "plugin/jhmg-converter-for-wpbakery-to-divi-5/includes/",
       "WPBakeryDivi5Converter\\Pro\\": "plugin/jhmg-converter-for-wpbakery-to-divi-pro/includes/"
     }
   },

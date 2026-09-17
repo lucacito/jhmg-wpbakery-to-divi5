@@ -81,7 +81,7 @@ class DiviRequirement {
         if ( $reason === 'missing' ) {
             return sprintf(
                 /* translators: %s: minimum required Divi version, e.g. 5.0.0 */
-                __( 'WPBakery to Divi 5 Converter is inactive: Divi %s or newer is required, and no Divi installation was found. Converted pages would be saved in a format nothing on this site can render.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                __( 'WPBakery to Divi 5 Converter is inactive: Divi %s or newer is required, and no Divi installation was found. Converted pages would be saved in a format nothing on this site can render.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 self::MINIMUM_DIVI_VERSION
             );
         }
@@ -89,7 +89,7 @@ class DiviRequirement {
         if ( $reason === 'too_old' ) {
             return sprintf(
                 /* translators: 1: detected Divi version, 2: minimum required Divi version */
-                __( 'WPBakery to Divi 5 Converter is inactive: this site runs Divi %1$s, and the converter writes Divi 5 block content that requires Divi %2$s or newer. Converting now would produce pages that render blank.', 'jhmg-converter-for-wpbakery-to-divi' ),
+                __( 'WPBakery to Divi 5 Converter is inactive: this site runs Divi %1$s, and the converter writes Divi 5 block content that requires Divi %2$s or newer. Converting now would produce pages that render blank.', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 (string) self::detected_version(),
                 self::MINIMUM_DIVI_VERSION
             );

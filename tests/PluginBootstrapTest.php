@@ -10,7 +10,7 @@ final class PluginBootstrapTest extends TestCase {
     public function test_constants_are_defined(): void {
         $this->assertTrue( defined( 'WBDC_PLUGIN_DIR' ) );
         $this->assertSame( '1.1.0', WBDC_PLUGIN_VERSION );
-        $this->assertStringEndsWith( 'jhmg-converter-for-wpbakery-to-divi/', WBDC_PLUGIN_DIR );
+        $this->assertStringEndsWith( 'jhmg-converter-for-wpbakery-to-divi-5/', WBDC_PLUGIN_DIR );
     }
 
     public function test_plugin_is_a_singleton(): void {
@@ -64,7 +64,7 @@ final class PluginBootstrapTest extends TestCase {
         $GLOBALS['__test_user_meta'] = [ 1 => [ 'wbdc_review_prompt_state' => 'dismissed', 'nickname' => 'kept' ] ];
 
         if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-            define( 'WP_UNINSTALL_PLUGIN', 'jhmg-converter-for-wpbakery-to-divi/jhmg-converter-for-wpbakery-to-divi.php' );
+            define( 'WP_UNINSTALL_PLUGIN', 'jhmg-converter-for-wpbakery-to-divi-5/jhmg-converter-for-wpbakery-to-divi-5.php' );
         }
 
         require WBDC_PLUGIN_DIR . 'uninstall.php';

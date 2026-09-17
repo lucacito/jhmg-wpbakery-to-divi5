@@ -64,14 +64,14 @@ class ReportRenderer {
 
         $html = '<p class="wbdc-report-summary"><strong>' . esc_html( sprintf(
             /* translators: %d: number of Divi modules the conversion produces */
-            _n( '%d Divi module.', '%d Divi modules.', $modules, 'jhmg-converter-for-wpbakery-to-divi' ),
+            _n( '%d Divi module.', '%d Divi modules.', $modules, 'jhmg-converter-for-wpbakery-to-divi-5' ),
             $modules
         ) ) . '</strong>';
 
         if ( $elements > 0 ) {
             $html .= ' ' . esc_html( sprintf(
                 /* translators: 1: elements that reached a Divi module, 2: elements in the page, 3: percentage */
-                __( '%1$d of %2$d WPBakery elements reached a Divi module (%3$d%% coverage).', 'jhmg-converter-for-wpbakery-to-divi' ),
+                __( '%1$d of %2$d WPBakery elements reached a Divi module (%3$d%% coverage).', 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 $exact,
                 $elements,
                 (int) ( $report['quality']['module_coverage'] ?? 100 )
@@ -85,7 +85,7 @@ class ReportRenderer {
                     '%d of them approximate — the closest Divi module was used, so give it a look.',
                     '%d of them approximate — the closest Divi module was used, so give them a look.',
                     $approximate,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $approximate
             ) );
@@ -110,7 +110,7 @@ class ReportRenderer {
         ) ) ) );
 
         if ( ! empty( $names ) ) {
-            $html .= '<p class="wbdc-direct-unsupported"><strong>' . esc_html__( 'Could not be converted:', 'jhmg-converter-for-wpbakery-to-divi' ) . '</strong> '
+            $html .= '<p class="wbdc-direct-unsupported"><strong>' . esc_html__( 'Could not be converted:', 'jhmg-converter-for-wpbakery-to-divi-5' ) . '</strong> '
                 . esc_html( implode( ', ', $names ) ) . '</p>';
         }
 
@@ -137,7 +137,7 @@ class ReportRenderer {
             (array) ( $report['skipped_settings'] ?? [] ),
             static fn( int $n ): string => sprintf(
                 /* translators: %d: number of WPBakery settings the converter did not map */
-                _n( '%d WPBakery setting this converter did not map', '%d WPBakery settings this converter did not map', $n, 'jhmg-converter-for-wpbakery-to-divi' ),
+                _n( '%d WPBakery setting this converter did not map', '%d WPBakery settings this converter did not map', $n, 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 $n
             ),
             true
@@ -148,7 +148,7 @@ class ReportRenderer {
             (array) ( $report['warnings'] ?? [] ),
             static fn( int $n ): string => sprintf(
                 /* translators: %d: number of warnings the conversion recorded */
-                _n( '%d note from the conversion', '%d notes from the conversion', $n, 'jhmg-converter-for-wpbakery-to-divi' ),
+                _n( '%d note from the conversion', '%d notes from the conversion', $n, 'jhmg-converter-for-wpbakery-to-divi-5' ),
                 $n
             ),
             false
@@ -197,7 +197,7 @@ class ReportRenderer {
                     '%d element was rendered on this site and kept as static HTML. It will not change when its plugin does.',
                     '%d elements were rendered on this site and kept as static HTML. They will not change when their plugins do.',
                     $static,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $static
             );
@@ -211,7 +211,7 @@ class ReportRenderer {
                     "%d element's design options had no Divi setting and were carried as custom CSS on the module.",
                     "%d elements' design options had no Divi setting and were carried as custom CSS on the modules.",
                     $css,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $css
             );
@@ -225,7 +225,7 @@ class ReportRenderer {
                     '%d run of text sat between elements and was kept as a text module.',
                     '%d runs of text sat between elements and were kept as text modules.',
                     $text,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $text
             );
@@ -239,7 +239,7 @@ class ReportRenderer {
                     '%d bracketed token was not a shortcode at all and was kept as the text it was.',
                     '%d bracketed tokens were not shortcodes at all and were kept as the text they were.',
                     $bracketed,
-                    'jhmg-converter-for-wpbakery-to-divi'
+                    'jhmg-converter-for-wpbakery-to-divi-5'
                 ),
                 $bracketed
             );
