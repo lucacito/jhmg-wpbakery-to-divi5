@@ -72,11 +72,8 @@ test.describe.serial('The whole workflow, on one of WPBakery\'s own templates', 
     await page.goto(TOOLS);
     await expect(page.locator('.wbdc-wrap > h1')).toContainText('WPBakery to Divi 5 Converter');
 
-    // Free offers a radio and Pro a checkbox — same field, one of the two.
-    await page.check(
-      `input[name="wbdc_post_ids"][value="${sourceId}"], input[name="wbdc_post_ids[]"][value="${sourceId}"]`
-    );
-    await page.click('button:has-text("Check this page")');
+    await page.check(`input[name="wbdc_post_ids[]"][value="${sourceId}"]`);
+    await page.click('button:has-text("Check selected pages")');
     await page.waitForURL(/action=direct_report/);
     // This spec follows the copy path end to end: a separate draft, published
     // by hand, undone by trashing. Converting in place is its own spec below.
@@ -348,8 +345,8 @@ test.describe('converting in place', () => {
 
     await login(page);
     await page.goto(`${BASE}/wp-admin/tools.php?page=wbdc-converter&wbdc_s=In+place+check`);
-    await page.check(`input[name="wbdc_post_ids"][value="${sourceId}"], input[name="wbdc_post_ids[]"][value="${sourceId}"]`);
-    await page.click('button:has-text("Check this page")');
+    await page.check(`input[name="wbdc_post_ids[]"][value="${sourceId}"]`);
+    await page.click('button:has-text("Check selected pages")');
     await expect(page.locator('.wbdc-direct-report')).toBeVisible();
 
     // The default is in place: the opt-in box is offered and left unticked.

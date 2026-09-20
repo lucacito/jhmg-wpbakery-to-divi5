@@ -159,7 +159,7 @@
                                             "content": {
                                                 "innerContent": {
                                                     "desktop": {
-                                                        "value": "<div class=\"promo\"><script>window.wbdcPromo = 1;</script><p>Hand-written HTML.</p></div>"
+                                                        "value": "<div class=\"promo\"><p>Hand-written HTML.</p></div>"
                                                     }
                                                 }
                                             }

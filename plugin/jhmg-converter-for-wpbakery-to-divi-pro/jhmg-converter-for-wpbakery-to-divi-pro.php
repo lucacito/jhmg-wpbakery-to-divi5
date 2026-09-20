@@ -6,7 +6,7 @@
  * Version:           1.0.0
  * Requires at least: 5.9
  * Requires PHP:      8.0
- * Requires Plugins:  jhmg-converter-for-wpbakery-to-divi
+ * Requires Plugins:  jhmg-converter-for-wpbakery-to-divi-5
  * Author:            Lucas Lopvet
  * Author URI:        https://jhmediagroup.com
  * License:           GPLv2 or later

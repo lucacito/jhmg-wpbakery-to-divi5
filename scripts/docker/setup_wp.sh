@@ -67,10 +67,9 @@ run "wp plugin is-installed plugin-check --allow-root || wp plugin install plugi
 run "wp plugin activate plugin-check --allow-root"
 
 echo "Activating the converter plugin..."
-run "wp plugin activate jhmg-converter-for-wpbakery-to-divi --allow-root"
+run "wp plugin activate jhmg-converter-for-wpbakery-to-divi-5 --allow-root"
 # Pro is mounted and installable, but left switched off: the e2e suite proves
-# the free plugin's own surface, and Pro lifts the one-page-per-run limit the
-# free screens are worded around. Switch it on by hand to work on Pro.
+# the free plugin's own surface. Switch it on by hand to work on Pro.
 run "wp plugin deactivate jhmg-converter-for-wpbakery-to-divi-pro --allow-root || true"
 
 echo "Copying WP-CLI helper scripts..."

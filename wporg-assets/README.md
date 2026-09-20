@@ -2,7 +2,7 @@
 
 Files for the plugin directory's SVN `assets/` folder (separate from the plugin itself; committed
 after approval alongside `trunk/`). Screenshot numbers match the `== Screenshots ==` captions in
-`plugin/jhmg-converter-for-wpbakery-to-divi/readme.txt`.
+`plugin/jhmg-converter-for-wpbakery-to-divi-5/readme.txt`.
 
 - `icon.svg`, `banner-772x250.svg`, `banner-1544x500.svg` — the drawings, and the only thing edited
   by hand. The motif is the one the Beaver Builder and Elementor listings use: source mark → arrow →
@@ -30,7 +30,7 @@ next to it rather than guessed.
 npm run assets                 # SVG → PNG at exact sizes (Playwright Chromium)
 npm run assets -- screenshots  # re-take screenshot-1..3.png off the Docker site
 scripts/plugin-check.sh free   # the release gate; see the submission notes below
-scripts/build-submission-zip.sh  # dist/jhmg-converter-for-wpbakery-to-divi-<version>.zip + SHA-256
+scripts/build-submission-zip.sh  # dist/jhmg-converter-for-wpbakery-to-divi-5-<version>.zip + SHA-256
 ```
 
 `npm run assets` runs `scripts/render-assets.ts` on Node's own type stripping — no TypeScript
@@ -85,10 +85,10 @@ line	column	type	code	message	docs
 0	0	WARNING	trademarked_term	The plugin name includes a restricted term. Your chosen plugin name - "JHMG Converter For WPBakery to Divi 5" - contains the restricted term "wp" which cannot be used at all in your plugin name.	
 
 
-FILE: jhmg-converter-for-wpbakery-to-divi.php
+FILE: jhmg-converter-for-wpbakery-to-divi-5.php
 line	column	type	code	message	docs
 0	0	WARNING	trademarked_term	The plugin name includes a restricted term. Your chosen plugin name - "JHMG Converter For WPBakery to Divi 5" - contains the restricted term "wp" which cannot be used at all in your plugin name.	
-0	0	WARNING	trademarked_term	The plugin slug includes a restricted term. Your plugin slug - "jhmg-converter-for-wpbakery-to-divi" - contains the restricted term "wp" which cannot be used at all in your plugin slug.
+0	0	WARNING	trademarked_term	The plugin slug includes a restricted term. Your plugin slug - "jhmg-converter-for-wpbakery-to-divi-5" - contains the restricted term "wp" which cannot be used at all in your plugin slug.
 ```
 
 The "wp" being flagged is the one inside **WPBakery** — the builder this plugin converts, named in

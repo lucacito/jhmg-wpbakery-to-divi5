@@ -8,10 +8,9 @@ use WPBakeryDivi5Converter\Admin\DirectConversionPage;
 /**
  * "Convert a page already on this site."
  *
- * The two safety properties are the point: the rendered picker is never
- * trusted on the way back in (every submitted id is re-verified as a post that
- * really holds WPBakery content), and the selection is capped server-side at
- * `wbdc_direct_conversion_limit`.
+ * The safety property is the point: the rendered picker is never trusted on
+ * the way back in — every submitted id is re-verified as a post that really
+ * holds WPBakery content.
  */
 final class DirectConversionPageTest extends TestCase {
 
@@ -41,21 +40,17 @@ final class DirectConversionPageTest extends TestCase {
         return $id;
     }
 
-    public function test_it_reads_verifies_and_caps_selected_ids(): void {
+    public function test_it_reads_and_verifies_every_selected_id(): void {
         $this->seed( 201 );
         $this->seed( 202, 'B' );
-        $plain = $this->seed( 203, 'Plain', false );
-        $page  = new DirectConversionPage();
+        $this->seed( 203, 'Plain', false );
+        $page = new DirectConversionPage();
 
         $this->assertSame(
             [ 201, 202 ],
             $page->verified_post_ids( [ 'wbdc_post_ids' => [ '201', '202', '203', 'abc', '-1', '999', '201', [ 'x' ] ] ] )
         );
-        $this->assertSame( [ 201 ], $page->selected_post_ids( [ 'wbdc_post_ids' => [ '201', '202' ] ] ), 'free converts one page per run' );
-        $this->assertSame( [ 202 ], $page->selected_post_ids( [ 'wbdc_post_ids' => '202' ] ) );
-
-        add_filter( 'wbdc_direct_conversion_limit', fn(): int => 10 );
-        $this->assertSame( [ 201, 202 ], $page->selected_post_ids( [ 'wbdc_post_ids' => [ '201', '202', (string) $plain ] ] ) );
+        $this->assertSame( [ 202 ], $page->verified_post_ids( [ 'wbdc_post_ids' => '202' ] ) );
     }
 
     /** A page WPBakery never flagged still converts; the flag is a badge, not a gate. */

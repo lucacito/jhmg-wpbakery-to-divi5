@@ -15,7 +15,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
-SLUG=jhmg-converter-for-wpbakery-to-divi
+SLUG=jhmg-converter-for-wpbakery-to-divi-5
 SRC="plugin/$SLUG"
 MAIN="$SRC/$SLUG.php"
 

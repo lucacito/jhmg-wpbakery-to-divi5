@@ -1,7 +1,7 @@
 #!/usr/bin/env php
 <?php
 /**
- * Builds plugin/jhmg-converter-for-wpbakery-to-divi/data/wpbakery-params.json —
+ * Builds plugin/jhmg-converter-for-wpbakery-to-divi-5/data/wpbakery-params.json —
  * every parameter name WPBakery itself declares for each of its elements.
  *
  * Why the file exists (task-11-amendments §7). A field on a WPBakery core
@@ -93,7 +93,7 @@ const CONFIG_LIB = 'include/classes/editors/class-vc-config-lib.php';
  */
 const LEGACY_PARAMS = 'include/classes/migrations/class-wpb-template-attributes-migration.php';
 
-$out     = dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi/data/wpbakery-params.json';
+$out     = dirname( __DIR__ ) . '/plugin/jhmg-converter-for-wpbakery-to-divi-5/data/wpbakery-params.json';
 $sources = [];
 
 foreach ( array_slice( $argv, 1 ) as $argument ) {

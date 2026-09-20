@@ -40,7 +40,8 @@ becomes a `divi/heading` (h2) before the module, `el_id`/`el_class` go to `htmlA
 | `vc_message` | `divi/text` | exact; the colour preset supplies text, border and background from the 25-row message-box table |
 | `vc_toggle` | `divi/toggle` | exact; `open` → open state |
 | `vc_copyright` | `divi/text` | exact; `prefix` + `©` + the `current_date` token (`Y`) + `postfix` |
-| `vc_raw_html`, `vc_raw_js` | `divi/code` | exact; base64 content decoded verbatim |
+| `vc_raw_html` | `divi/code` | exact; base64 content decoded, then filtered for every user by `MarkupSanitiser` — script, style and event handlers are removed and reported (see `conversion-reporting.md`) |
+| `vc_raw_js` | — (no block) | never written; reported under `not_carried_over` kind `custom_code` with its length |
 | `vc_gutenberg` | `divi/code` | **approximate** — `do_blocks()` on this site (a static copy), the block comments kept verbatim from an export |
 | `vc_custom_field` | `divi/text` with the `post_meta_key` token | **approximate** — WPBakery resolves its meta token only inside a grid item |
 

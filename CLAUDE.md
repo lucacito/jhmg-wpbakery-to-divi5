@@ -135,13 +135,24 @@
   term is inherent to *WPBakery*. `RELEASE.md` lists all three verbatim with that reason.
   `scripts/plugin-check.sh pro` is informational: the Pro add-on is self-hosted, so its updater and
   its missing `readme.txt` are two structural ERRORs, also quoted in `RELEASE.md`.
-- Free converts one item per run (`wbdc_direct_conversion_limit` default 1); Pro raises it. Pro
-  consumes four free contracts and nothing else: `wbdc_pro_active`, `wbdc_direct_conversion_limit`,
+- **Free is fully functional (WordPress.org Guideline 5):** any number of pages per run, from the
+  site or an upload; nothing in free counts, caps or unlocks. Pro adds its own code (the Divi
+  Library exporter) and never lifts a limit in free — `DirectoryGuidelinesTest` guards it. Pro
+  consumes three free contracts and nothing else: `wbdc_pro_active`,
   `wbdc_library_exporter( null, $item, $options )` — asked once per item, so an exporter can return
   null for one and let the free path take over — and `WPBakeryPageRepository::filter_where()` /
   `::QUERY_FLAG`, the one source of truth for the content-match SQL. Changing any of them changes
   Pro. `ConversionCommitter`'s `convert_templates = false` **skips** a library item with a reason
   (`skipped => true`, `template_type => 'library'`), never converts it silently.
+- **Converted markup is filtered for every user, with no capability exemption** (`MarkupSanitiser`,
+  over the whole block tree, reported as `custom_code`) and `vc_raw_js` is never written — the
+  directory review called verbatim raw HTML/JS "arbitrary script insertion", and the second round
+  (Sep 2026, 1.2.0) rejected holding it to `unfiltered_html` too: an administrator gets the same
+  filtered markup an editor does. Never add an option, a capability check or any other path that
+  writes source markup around that filter. The allowed set is core's `post` list plus `iframe`
+  (embeds; `vc_gmaps` stores nothing else), never `srcdoc`. PHPUnit stubs core's list from
+  `tests/support/kses-allowed-post.json`; `scripts/docker/kses-parity.php` (in `test.sh`) checks
+  that dump against the container's WordPress, so the suite cannot pass on a filter no site uses.
 - Everything handed to `wp_update_post()` / `wp_insert_post()` **and to `update_post_meta()`** is
   `wp_slash()`ed: both unslash their input, so an unslashed value loses the backslash of every `\"`
   — the page renders `u003Cp` and `_wbdc_conversion_report` / `_wbdc_divi_data` stop being valid

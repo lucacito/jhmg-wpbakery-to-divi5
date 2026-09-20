@@ -2,7 +2,7 @@
 
 Two WordPress plugins that convert WPBakery Page Builder pages into native Divi 5 block pages:
 
-- `plugin/jhmg-converter-for-wpbakery-to-divi` — free (wordpress.org)
+- `plugin/jhmg-converter-for-wpbakery-to-divi-5` — free (wordpress.org)
 - `plugin/jhmg-converter-for-wpbakery-to-divi-pro` — Pro add-on (divi5lab.com)
 
 The converter reads the post's shortcode string and the three WPBakery metas and never scrapes

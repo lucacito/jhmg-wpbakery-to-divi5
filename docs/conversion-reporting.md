@@ -100,6 +100,33 @@ The engine catches `\Throwable` per node (`ConverterEngine::handlerFailed()`): i
 naming the node id, the tag and the exception, records `not_carried_over` kind `error`, and falls
 back to the labelled placeholder every unconvertible element gets. **The page always converts.**
 
+## Markup the converter does not publish
+
+`ConverterEngine` passes the finished block tree through `Converter\MarkupSanitiser`, always and
+for every user. There is no option and no capability that turns it off: `unfiltered_html` does not
+exempt an administrator, and an `unfiltered_html` key in the options array is not read. WordPress's
+own kses cannot see markup once it is JSON-escaped in a block attribute, so every string holding `<`
+in every block's settings goes through `wp_kses()` with the `post` list plus `iframe`
+(`MarkupSanitiser::allowedHtml()`; the iframe keeps the attributes core allows on any element, read
+off `div`, plus the embed attributes, and never `srcdoc`). A `<script>` or `<style>` element is
+removed with its contents, so the code inside does not stay behind as page text.
+
+A block that lost a tag or attribute gets one `not_carried_over` kind `custom_code` entry naming
+them: *"markup the converter does not publish was removed (onclick, &lt;script&gt;); add it to the
+page through Divi > Theme Options > Integration if it is still needed"*. Normalisation kses does on
+its own (quoting, entities) is not reported — tags and attributes are compared by count.
+
+`vc_raw_js` is never written either: one `custom_code` entry, *"Raw JS element (N characters of
+script) not converted; if the page still needs it, add it through Divi > Theme Options >
+Integration"*.
+
+The suite runs without WordPress, so `tests/bootstrap.php` stubs `wp_kses_allowed_html( 'post' )`
+from `tests/support/kses-allowed-post.json`, a dump of core's own list.
+`scripts/docker/kses-parity.php` (run by `test.sh` when the container is up) compares that file
+with the container's WordPress tag by tag and attribute by attribute, and asserts that core still
+excludes `script`, `style` and `iframe` and still carries the `data-*` wildcard — a drifted stub
+would mean the whole suite tests a filter no site uses.
+
 ## Page-level custom CSS
 
 The post's `_wpb_post_custom_css` has no per-module home, so it is reported once as

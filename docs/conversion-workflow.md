@@ -6,9 +6,8 @@ WPBakery post (post_content + 3 metas)           upload (.xml WXR / .txt / .html
         └──────────────────────┬─────────────────────────┘
                                ▼
                      ConversionPreflight  ── writes nothing; one fresh ConverterEngine per item
-                               │             (capped at `wbdc_direct_conversion_limit`)
                           ConversionPlan  ── blocks, serialized content, report, outline
-                               │  (the "Check this page" screen renders this)
+                               │  (the "Check selected pages" screen renders this)
                                ▼
                      ConversionCommitter  ── the only class that creates posts
                                │
@@ -40,7 +39,7 @@ converted a post and found it at `-2`.
 builds pages from; rewriting it as a Divi page would take it away from them. Uploads are copies too,
 for the obvious reason that a file is not a post.
 
-`ConversionPreflight` still writes nothing in either mode, which is what makes "Check this page"
+`ConversionPreflight` still writes nothing in either mode, which is what makes "Check selected pages"
 worth clicking.
 
 `WPBakeryImportParser` accepts two upload formats, because there are two ways a WPBakery page leaves
@@ -54,12 +53,12 @@ recorded in the warnings rather than passed over.
 
 Tools → **WPBakery → Divi 5** (`tools.php?page=wbdc-converter`, `manage_options`):
 
-- **Convert a page already on this site** — pick a page from the picker, **Check this page**
+- **Convert a page already on this site** — pick any number of pages, **Check selected pages**
   (`wbdc_direct_check`) → the report → **Convert to Divi 5** (`wbdc_direct_convert`) → results
   (Edit / View / Publish) → Recent conversions (Undo). Every submitted post ID is re-verified
-  server-side as an existing post that really holds WPBakery content, and the selection is capped at
-  `wbdc_direct_conversion_limit` (default **1** in free) — the rendered picker is never trusted on
-  the way back in.
+  server-side as an existing post that really holds WPBakery content — the rendered picker is never
+  trusted on the way back in. There is no per-run cap: WordPress.org Guideline 5, and
+  `DirectoryGuidelinesTest` fails if one comes back.
 - **Upload a file** — `wbdc_import` → the options screen → `wbdc_import_convert` → the same results
   screen. Upload results are kept for one hour.
 
@@ -119,13 +118,12 @@ upload has no source post at all, so nothing is copied for it.
 
 ## Pro and free: what couples them
 
-Pro is an add-on, not a fork. It depends on the free plugin at four named points, and a change to
+Pro is an add-on, not a fork. It depends on the free plugin at three named points, and a change to
 any of them affects Pro:
 
 | Free | Pro uses it for |
 |---|---|
-| filter `wbdc_pro_active` | Pro returns true; the free admin screens drop their upsell and unlock the Pro-only copy |
-| filter `wbdc_direct_conversion_limit` | Pro raises the per-run cap to `PHP_INT_MAX` |
+| filter `wbdc_pro_active` | Pro returns true; the free landing page swaps its Pro card for a link to the Pro screen |
 | filter `wbdc_library_exporter( null, array $item, array $options )` | `ConversionCommitter` asks it once **per item**, so Pro's `DiviLibraryExporter` can answer null for one (a lapsed licence, a template type it does not handle) and let the free path take over. A library item that falls through gets a warning saying so |
 | `Admin\WPBakeryPageRepository::filter_where()` + `::QUERY_FLAG` | Pro's `Admin\TemplatesRepository` reuses them rather than repeating the content-match SQL, so the "is this a WPBakery layout?" query has one source of truth |
 

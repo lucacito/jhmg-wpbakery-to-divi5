@@ -6,7 +6,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 which=${1:-all}; shift || true
-FREE=jhmg-converter-for-wpbakery-to-divi
+FREE=jhmg-converter-for-wpbakery-to-divi-5
 PRO=jhmg-converter-for-wpbakery-to-divi-pro
 case "$which" in
   free) plugins=("$FREE") ;;

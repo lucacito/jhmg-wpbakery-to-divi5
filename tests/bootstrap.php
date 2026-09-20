@@ -637,6 +637,70 @@ if ( ! function_exists( '__' ) ) { function __( string $text, string $domain = '
 if ( ! function_exists( '_x' ) ) { function _x( string $text, string $context, string $domain = 'default' ): string { return $text; } }
 if ( ! function_exists( '_n' ) ) { function _n( string $single, string $plural, int $number, string $domain = 'default' ): string { return $number === 1 ? $single : $plural; } }
 if ( ! function_exists( 'wp_kses_post' ) ) { function wp_kses_post( $t ): string { return (string) $t; } }
+if ( ! function_exists( 'wp_kses_allowed_html' ) ) {
+    /**
+     * Core's own `post` list, dumped from the Docker container's WordPress by
+     * `scripts/docker/kses-parity.php`, which also re-checks it. Guessing at a
+     * subset would mean the whole suite runs `MarkupSanitiser` against a filter
+     * that is not the one the site uses.
+     */
+    function wp_kses_allowed_html( $context = '' ): array {
+        static $tags = null;
+
+        if ( $tags === null ) {
+            $data = json_decode( (string) file_get_contents( __DIR__ . '/support/kses-allowed-post.json' ), true );
+            $tags = [];
+            foreach ( (array) ( $data['tags'] ?? [] ) as $tag => $attributes ) {
+                $tags[ $tag ] = array_fill_keys( (array) $attributes, true );
+            }
+        }
+
+        return $tags;
+    }
+}
+if ( ! function_exists( 'wp_kses' ) ) {
+    // Core's behaviour where MarkupSanitiser depends on it: a disallowed tag is
+    // removed and its text kept; a disallowed attribute is removed; a `data-*`
+    // attribute is kept when the element declares the `data-*` wildcard and the
+    // name matches core's `/^data-[a-z0-9_-]+$/` (wp_kses_attr_check()).
+    function wp_kses( $html, $allowed ): string {
+        return (string) preg_replace_callback( '#</?([a-zA-Z][\w:-]*)([^>]*)>#', static function ( array $m ) use ( $allowed ): string {
+            $name = strtolower( $m[1] );
+            if ( ! isset( $allowed[ $name ] ) ) {
+                return '';
+            }
+            if ( $m[0][1] === '/' ) {
+                return '</' . $name . '>';
+            }
+
+            $permitted = is_array( $allowed[ $name ] ) ? $allowed[ $name ] : [];
+            $attrs     = '';
+
+            preg_match_all(
+                '/([a-zA-Z_:][\w:.-]*)(?:\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+))?/',
+                (string) preg_replace( '#/\s*$#', '', $m[2] ),
+                $pairs,
+                PREG_SET_ORDER
+            );
+
+            foreach ( $pairs as $pair ) {
+                $attribute = strtolower( $pair[1] );
+                $allowed_here = isset( $permitted[ $attribute ] )
+                    || ( isset( $permitted['data-*'] ) && preg_match( '/^data-[a-z0-9_-]+$/', $attribute ) === 1 );
+
+                if ( ! $allowed_here ) {
+                    continue;
+                }
+
+                $attrs .= isset( $pair[2] ) && $pair[2] !== ''
+                    ? ' ' . $attribute . '="' . trim( $pair[2], '"\'' ) . '"'
+                    : ' ' . $attribute;
+            }
+
+            return '<' . $name . $attrs . ( str_ends_with( rtrim( $m[2] ), '/' ) ? ' />' : '>' );
+        }, (string) $html );
+    }
+}
 if ( ! function_exists( 'wp_strip_all_tags' ) ) {
     // Core trims unconditionally (wp-includes/formatting.php:5636), not only
     // when $remove_breaks is set — task-8-fix-round-1.md, #9.
@@ -768,7 +832,7 @@ if ( ! function_exists( 'wp_remote_post' ) ) {
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-$free = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi/jhmg-converter-for-wpbakery-to-divi.php';
+$free = __DIR__ . '/../plugin/jhmg-converter-for-wpbakery-to-divi-5/jhmg-converter-for-wpbakery-to-divi-5.php';
 if ( file_exists( $free ) ) {
     require_once $free;
 }

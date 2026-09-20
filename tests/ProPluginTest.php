@@ -6,7 +6,6 @@
  */
 
 use PHPUnit\Framework\TestCase;
-use WPBakeryDivi5Converter\Conversion\ConversionPreflight;
 use WPBakeryDivi5Converter\Admin\AdminPage;
 use WPBakeryDivi5Converter\Conversion\InstalledPostSource;
 use WPBakeryDivi5Converter\History\ImportHistory;
@@ -66,11 +65,10 @@ final class ProPluginTest extends TestCase {
 
     // --- wiring -----------------------------------------------------------------
 
-    public function test_pro_raises_the_limit_declares_itself_and_registers_the_library_exporter(): void {
+    public function test_pro_declares_itself_and_registers_the_library_exporter(): void {
         ProPlugin::instance()->register_hooks();
 
         $this->assertTrue( apply_filters( 'wbdc_pro_active', false ) );
-        $this->assertSame( PHP_INT_MAX, ConversionPreflight::limit() );
         $this->assertInstanceOf( DiviLibraryExporter::class, apply_filters( 'wbdc_library_exporter', null, [], [] ) );
         $this->assertSame( 'wpbakery-to-divi5-pro', WBDCP_PRODUCT_SLUG );
     }
@@ -349,7 +347,7 @@ final class ProPluginTest extends TestCase {
 
         $this->assertSame( '1.0.0', WBDCP_PLUGIN_VERSION );
         $this->assertMatchesRegularExpression( '/^\s*\*\s*Version:\s*' . preg_quote( WBDCP_PLUGIN_VERSION, '/' ) . '\s*$/m', $main );
-        $this->assertStringContainsString( 'Requires Plugins:  jhmg-converter-for-wpbakery-to-divi', $main );
+        $this->assertStringContainsString( 'Requires Plugins:  jhmg-converter-for-wpbakery-to-divi-5', $main );
         $this->assertStringEndsWith( 'jhmg-converter-for-wpbakery-to-divi-pro/', WBDCP_PLUGIN_DIR );
     }
 
