@@ -3,7 +3,7 @@ Contributors: lucaslopvet
 Tags: divi migration, page builder converter, wpbakery to divi, divi 5, shortcode converter
 Requires at least: 5.9
 Tested up to: 7.1
-Stable tag: 1.2.0
+Stable tag: 1.2.1
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -42,7 +42,7 @@ Counted by `scripts/element-coverage.php` straight off the converter's own handl
 
 **Design settings** — WPBakery's Design Options CSS is read rule by rule: margins and padding (with units and tablet/phone values), background colours, images, gradients and overlays, borders, radius and shadows, typography (family, weight, size, line height, letter spacing, alignment, transform, decoration), text colours, minimum heights, widths, alignment, custom IDs and classes, and responsive visibility. Anything with no Divi setting is carried as custom CSS on the module rather than lost. Font Awesome icons become the identical Divi icon.
 
-**Raw HTML and Raw JS** — a Raw HTML element becomes a Divi Code module. Its markup is held to what your account may publish: an administrator with the `unfiltered_html` capability gets it as written, anyone else gets it through WordPress's own HTML filter, and the report names every tag or attribute that was removed. The same filter covers every other converted module. A Raw JS element is never converted; the report lists it so you can decide whether the page still needs it.
+**Raw HTML and Raw JS** — a Raw HTML element becomes a Divi Code module, and its markup goes through WordPress's own HTML filter first: scripts, style blocks and event handlers are removed, and the report names every tag and attribute that went, so you can decide what the page still needs and add it yourself through Divi > Theme Options > Integration. That happens for everyone, including administrators — the plugin has no setting and no capability that turns it off, and it never writes code of its own. The same filter covers every other converted module. A Raw JS element is never converted; the report lists it.
 
 **Reported, not silently lost** — animations, visibility rules, click actions, third-party connections, hover colours, backgrounds that could only be approximated, global colours that could not be resolved, images whose attachment is not on this site, and any WPBakery setting this converter did not map. A field a theme bolted onto a WPBakery element is reported separately, as a theme feature rather than as a converter gap, because that is what it is.
 
@@ -121,9 +121,12 @@ commonly missing WPBakery elements get built first.
 
 == Changelog ==
 
+= 1.2.1 =
+* Converted markup now goes through WordPress's HTML filter for every user, with no exemption for the `unfiltered_html` capability. Scripts, style blocks and event handlers are never written into a Divi module, and the report names each one that was removed.
+
 = 1.2.0 =
 * Convert any number of pages in one run, from this site or from an upload. There is no per-run limit.
-* Converted markup is held to what your account may publish: users without the `unfiltered_html` capability get it through WordPress's HTML filter, and the report names what was removed. Raw JS elements are reported, never converted.
+* Converted markup is filtered through WordPress's own HTML filter, and the report names what was removed. Raw JS elements are reported, never converted.
 * The plugin folder and text domain are now `jhmg-converter-for-wpbakery-to-divi-5`.
 
 = 1.1.0 =
@@ -145,6 +148,9 @@ commonly missing WPBakery elements get built first.
 * Font Awesome icons map to the identical Divi icons
 
 == Upgrade Notice ==
+
+= 1.2.1 =
+Scripts, style blocks and event handlers are no longer carried into a Divi module for anyone, administrators included. The report lists each one so you can add it back through Divi's own Integration settings if the page needs it.
 
 = 1.2.0 =
 Convert as many pages as you like in one run. Raw JS elements are no longer copied into Divi; the report lists them.

@@ -144,10 +144,15 @@
   `::QUERY_FLAG`, the one source of truth for the content-match SQL. Changing any of them changes
   Pro. `ConversionCommitter`'s `convert_templates = false` **skips** a library item with a reason
   (`skipped => true`, `template_type => 'library'`), never converts it silently.
-- **Converted markup is held to the converting user's `unfiltered_html`** (`MarkupSanitiser`, over
-  the whole block tree, reported as `custom_code`) and `vc_raw_js` is never written — the directory
-  review called verbatim raw HTML/JS "arbitrary script insertion". Never add a path that writes
-  source markup around that filter.
+- **Converted markup is filtered for every user, with no capability exemption** (`MarkupSanitiser`,
+  over the whole block tree, reported as `custom_code`) and `vc_raw_js` is never written — the
+  directory review called verbatim raw HTML/JS "arbitrary script insertion", and the second round
+  (Sep 2026, 1.2.0) rejected holding it to `unfiltered_html` too: an administrator gets the same
+  filtered markup an editor does. Never add an option, a capability check or any other path that
+  writes source markup around that filter. The allowed set is core's `post` list plus `iframe`
+  (embeds; `vc_gmaps` stores nothing else), never `srcdoc`. PHPUnit stubs core's list from
+  `tests/support/kses-allowed-post.json`; `scripts/docker/kses-parity.php` (in `test.sh`) checks
+  that dump against the container's WordPress, so the suite cannot pass on a filter no site uses.
 - Everything handed to `wp_update_post()` / `wp_insert_post()` **and to `update_post_meta()`** is
   `wp_slash()`ed: both unslash their input, so an unslashed value loses the backslash of every `\"`
   — the page renders `u003Cp` and `_wbdc_conversion_report` / `_wbdc_divi_data` stop being valid

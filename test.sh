@@ -23,6 +23,11 @@ if [ -n "$CONTAINER" ] && [ -n "$(docker ps -q --filter "id=$CONTAINER" 2>/dev/n
     rm -f "$parity_stderr"
     exit $parity_status
   fi
+
+  echo "Checking the kses stub against WordPress's own post list..."
+  docker cp tests/support/kses-allowed-post.json "$CONTAINER:/tmp/kses-allowed-post.json" >/dev/null
+  docker cp scripts/docker/kses-parity.php "$CONTAINER:/tmp/kses-parity.php" >/dev/null
+  docker exec -i "$CONTAINER" bash -lc "wp eval-file /tmp/kses-parity.php --allow-root"
 else
   echo "Skipping parser parity: the WordPress container is not running (scripts/docker/setup_wp.sh)."
 fi

@@ -7,44 +7,59 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Converted markup is held to what the person converting may publish.
+ * Converted markup is filtered, for every user, with no capability exemption.
  *
  * A conversion moves HTML that already sits in a page into Divi block
- * attributes. WordPress filters post content through kses for a user without
- * `unfiltered_html`, but it cannot see markup once it is JSON-escaped inside a
- * block attribute — so the converter does that filtering itself, over every
- * string in the converted tree, before anything is written. A user who holds
- * `unfiltered_html` (an administrator on a single site) could already type the
- * same markup into any post, and gets it as written.
+ * attributes. WordPress filters post content through kses on save, but it
+ * cannot see markup once it is JSON-escaped inside a block attribute — so the
+ * converter does that filtering itself, over every string in the converted
+ * tree, before anything is written. It runs whoever is converting: the
+ * converter is not a code editor, and never turns a page it reads into a
+ * script, a style block or an event handler on a page it writes. What it took
+ * out is named in the report, so the author can decide what the page still
+ * needs and add it themselves through Divi's own Integration settings.
  *
  * The allowed set is WordPress's own `post` list plus `iframe`, because video
- * and map embeds are ordinary page content. What kses removed is compared tag
- * by tag and attribute by attribute, so the report names what went (`script`,
- * `onclick`) rather than flagging every quote kses normalised.
+ * and map embeds are ordinary page content and `vc_gmaps` stores nothing else;
+ * `srcdoc` is not among the attributes kept, and kses holds `src` to the
+ * allowed protocols, so a kept iframe is a remote document and never inline
+ * script. What kses removed is compared tag by tag and attribute by attribute,
+ * so the report names what went (`script`, `onclick`) rather than flagging
+ * every quote kses normalised.
  */
 final class MarkupSanitiser {
 
-    public static function mayPostUnfiltered(): bool {
-        return function_exists( 'current_user_can' ) && current_user_can( 'unfiltered_html' );
-    }
-
-    /** @return array<string,array<string,bool>> */
+    /**
+     * WordPress's own `post` list plus `iframe`.
+     *
+     * The iframe keeps the attributes core allows on any element — which it
+     * reads off `div` rather than restating, so a core release that adds one
+     * adds it here too — plus the embed attributes `vc_gmaps` and `wp_oembed_get()`
+     * write. `srcdoc` is deliberately not among them: it would be a document
+     * this converter wrote, and kses holds `src` to the allowed protocols, so
+     * what stays is a remote page and never inline script.
+     *
+     * @return array<string,array<string,bool>>
+     */
     public static function allowedHtml(): array {
         $allowed = wp_kses_allowed_html( 'post' );
 
-        $allowed['iframe'] = [
+        $common = is_array( $allowed['div'] ?? null ) ? $allowed['div'] : [];
+
+        $allowed['iframe'] = $common + [
             'src'             => true,
             'width'           => true,
             'height'          => true,
-            'title'           => true,
+            'name'            => true,
             'allow'           => true,
             'allowfullscreen' => true,
             'frameborder'     => true,
             'loading'         => true,
+            'marginheight'    => true,
+            'marginwidth'     => true,
             'referrerpolicy'  => true,
-            'style'           => true,
-            'class'           => true,
-            'id'              => true,
+            'sandbox'         => true,
+            'scrolling'       => true,
         ];
 
         return $allowed;

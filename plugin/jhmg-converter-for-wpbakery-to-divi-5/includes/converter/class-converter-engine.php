@@ -29,12 +29,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ConverterEngine {
 
-    /** @var array{mode: string, attachments: array<int,string>, render_shortcodes: bool, unfiltered_html: bool} */
+    /** @var array{mode: string, attachments: array<int,string>, render_shortcodes: bool} */
     private array $options = [
         'mode'              => 'import',
         'attachments'       => [],
         'render_shortcodes' => false,
-        'unfiltered_html'   => false,
     ];
 
     private ConverterRegistry $registry;
@@ -188,15 +187,15 @@ class ConverterEngine {
             $elements[] = $this->ensureSection( $block );
         }
 
-        if ( ! $this->options['unfiltered_html'] ) {
-            $elements = MarkupSanitiser::tree( $elements, function ( string $node_id, array $removed ): void {
-                $this->logNotCarriedOver(
-                    'custom_code',
-                    $node_id,
-                    'markup your account may not publish was removed (' . implode( ', ', $removed ) . '); a user with the unfiltered_html capability converts it as written'
-                );
-            } );
-        }
+        // Every converted string, for every user: the converter never writes
+        // markup WordPress's own filter would not let through.
+        $elements = MarkupSanitiser::tree( $elements, function ( string $node_id, array $removed ): void {
+            $this->logNotCarriedOver(
+                'custom_code',
+                $node_id,
+                'markup the converter does not publish was removed (' . implode( ', ', $removed ) . '); add it to the page through Divi > Theme Options > Integration if it is still needed'
+            );
+        } );
 
         return [
             'divi'        => [ 'elements' => $elements ],
@@ -206,8 +205,8 @@ class ConverterEngine {
     }
 
     /**
-     * @param array{mode?: string, attachments?: array<int,string>, render_shortcodes?: bool, unfiltered_html?: bool} $options
-     * @return array{mode: string, attachments: array<int,string>, render_shortcodes: bool, unfiltered_html: bool}
+     * @param array{mode?: string, attachments?: array<int,string>, render_shortcodes?: bool} $options
+     * @return array{mode: string, attachments: array<int,string>, render_shortcodes: bool}
      */
     private function resolveOptions( array $options ): array {
         $mode = ( $options['mode'] ?? '' ) === 'direct' ? 'direct' : 'import';
@@ -222,8 +221,6 @@ class ConverterEngine {
             'mode'              => $mode,
             'attachments'       => $attachments,
             'render_shortcodes' => (bool) $render,
-            // Markup is held to what the person converting may publish.
-            'unfiltered_html'   => (bool) ( $options['unfiltered_html'] ?? MarkupSanitiser::mayPostUnfiltered() ),
         ];
     }
 

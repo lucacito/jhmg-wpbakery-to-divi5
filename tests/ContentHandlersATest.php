@@ -464,14 +464,14 @@ Another line[/vc_column_text]' ) );
     // Raw HTML / JS
     // -------------------------------------------------------------------------
 
-    public function test_raw_html_round_trips_a_script_tag(): void {
+    public function test_raw_html_becomes_a_code_module_without_its_script(): void {
         $html      = '<div class="promo"><script>window.x = 1;</script></div>';
         $shortcode = '[vc_raw_html]' . base64_encode( rawurlencode( $html ) ) . '[/vc_raw_html]';
 
         $module = $this->firstModule( $this->convert( $this->row( $shortcode ) ) );
 
         $this->assertSame( 'divi/code', $module['name'] );
-        $this->assertSame( $html, $this->read( $module['settings'], 'content.innerContent.desktop.value' ) );
+        $this->assertSame( '<div class="promo"></div>', $this->read( $module['settings'], 'content.innerContent.desktop.value' ) );
     }
 
     /** A Raw JS element is only ever a script, and the converter never writes one. */
@@ -479,7 +479,7 @@ Another line[/vc_column_text]' ) );
         $js        = '<script>console.log(1);</script>';
         $shortcode = '[vc_raw_js]' . base64_encode( rawurlencode( $js ) ) . '[/vc_raw_js]';
 
-        $result = $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => true ] );
+        $result = $this->convert( $this->row( $shortcode ) );
 
         $this->assertSame( [], $this->modules( $result ) );
         $this->assertStringNotContainsString( 'console.log', (string) json_encode( $result['divi'] ) );
@@ -491,15 +491,14 @@ Another line[/vc_column_text]' ) );
     }
 
     /**
-     * Without `unfiltered_html` (a multisite administrator, an editor) the
-     * markup is held to what that user may publish, and the report names what
-     * went. With it, the element converts as written.
+     * The markup is filtered whoever is converting. There is no capability that
+     * turns the filter off, and the report names what went.
      */
-    public function test_raw_html_is_held_to_what_the_converting_user_may_publish(): void {
+    public function test_raw_html_is_filtered_for_every_user(): void {
         $html      = '<div class="promo" onclick="steal()"><script>window.x = 1;</script><iframe src="https://www.youtube.com/embed/abc" width="560"></iframe></div>';
         $shortcode = '[vc_raw_html]' . base64_encode( rawurlencode( $html ) ) . '[/vc_raw_html]';
 
-        $filtered = $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => false ] );
+        $filtered = $this->convert( $this->row( $shortcode ) );
         $value    = (string) $this->read( $this->firstModule( $filtered )['settings'], 'content.innerContent.desktop.value' );
 
         $this->assertStringNotContainsString( '<script', $value );
@@ -508,20 +507,15 @@ Another line[/vc_column_text]' ) );
         $this->assertStringContainsString( '<div class="promo">', $value );
         $this->assertStringContainsString( '<iframe src="https://www.youtube.com/embed/abc" width="560">', $value, 'an embed is page content' );
         $this->assertSame(
-            [ [ 'kind' => 'custom_code', 'node_id' => 'vc_raw_html-1', 'detail' => 'markup your account may not publish was removed (onclick, <script>); a user with the unfiltered_html capability converts it as written' ] ],
+            [ [ 'kind' => 'custom_code', 'node_id' => 'vc_raw_html-1', 'detail' => 'markup the converter does not publish was removed (onclick, <script>); add it to the page through Divi > Theme Options > Integration if it is still needed' ] ],
             $filtered['report']['not_carried_over']
         );
-
-        $verbatim = $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => true ] );
-        $this->assertSame( $html, $this->read( $this->firstModule( $verbatim )['settings'], 'content.innerContent.desktop.value' ) );
-        $this->assertSame( [], $verbatim['report']['not_carried_over'] );
     }
 
     /** Every module's markup is filtered, not only the Code module's. */
     public function test_the_filter_reaches_text_modules_and_leaves_clean_markup_unreported(): void {
         $result = $this->convert(
-            $this->row( '[vc_column_text]<p onmouseover="x()">Hi</p>[/vc_column_text][vc_column_text]<p><strong>Fine</strong></p>[/vc_column_text]' ),
-            [ 'unfiltered_html' => false ]
+            $this->row( '[vc_column_text]<p onmouseover="x()">Hi</p>[/vc_column_text][vc_column_text]<p><strong>Fine</strong></p>[/vc_column_text]' )
         );
 
         $this->assertStringNotContainsString( 'onmouseover', (string) json_encode( $result['divi'] ) );
@@ -529,16 +523,34 @@ Another line[/vc_column_text]' ) );
         $this->assertSame( 'vc_column_text-1', $result['report']['not_carried_over'][0]['node_id'] );
     }
 
-    /** The capability decides when the caller does not. */
-    public function test_the_default_comes_from_the_current_users_capability(): void {
+    /**
+     * `unfiltered_html` does not exempt anyone: an administrator who holds it
+     * gets the same filtered markup an editor does. The directory does not
+     * permit a plugin to publish script, whoever asked for it.
+     */
+    public function test_the_unfiltered_html_capability_does_not_turn_the_filter_off(): void {
+        $shortcode = '[vc_raw_html]' . base64_encode( rawurlencode( '<p>Hi</p><script>1</script>' ) ) . '[/vc_raw_html]';
+
+        foreach ( [ true, false ] as $may_post_unfiltered ) {
+            $GLOBALS['__test_caps'] = $may_post_unfiltered;
+            try {
+                $value = $this->read( $this->firstModule( $this->convert( $this->row( $shortcode ) ) )['settings'], 'content.innerContent.desktop.value' );
+            } finally {
+                unset( $GLOBALS['__test_caps'] );
+            }
+
+            $this->assertSame( '<p>Hi</p>', $value );
+        }
+    }
+
+    /** The option is gone: passing it cannot switch the filter off either. */
+    public function test_an_unfiltered_html_option_is_ignored(): void {
         $shortcode = '[vc_raw_html]' . base64_encode( rawurlencode( '<script>1</script>' ) ) . '[/vc_raw_html]';
 
-        $GLOBALS['__test_caps'] = false;
-        try {
-            $value = $this->read( $this->firstModule( $this->convert( $this->row( $shortcode ) ) )['settings'], 'content.innerContent.desktop.value' );
-        } finally {
-            unset( $GLOBALS['__test_caps'] );
-        }
+        $value = $this->read(
+            $this->firstModule( $this->convert( $this->row( $shortcode ), [ 'unfiltered_html' => true ] ) )['settings'],
+            'content.innerContent.desktop.value'
+        );
 
         $this->assertSame( '', $value );
     }
